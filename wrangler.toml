@@ -5,4 +5,4 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "treck"
-database_id = "VUL-IN-NA-AANMAKEN"
+database_id = "5ddc9d7b-88b3-4739-ad06-45de6f707ff9"
