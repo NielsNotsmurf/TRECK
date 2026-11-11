@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 gebouwd 11-11 (test door gebruiker). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 klaar 11-11; fase 4 gebouwd 11-11 (test door gebruiker). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
 
 ## Fases
 | Fase | Doel | Klaar als |
@@ -48,6 +48,9 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Typebalk sorteert favorieten op woordovereenkomst; niet-passende worden vaag.
 - 2026-11-11 Uiterlijk: kaarten, licht/donker, invoerbalk vast onderaan.
 - 2026-11-11 Fase 3: lege dag in het verleden toont schatting = gemiddelde van ingevulde dagen in de 14 dagen ervoor (per gebruiker). Wordt live berekend, niet opgeslagen, dus telt nooit mee in echte data; grijs/cursief met ≈. Geen schatting zonder eerdere invoer.
+- 2026-11-11 Fase 4 via Apple Health + iOS-opdracht i.p.v. Garmin Personal API: geen OAuth/ontwikkelaarsaanvraag, zelfde route als fase 5. Garmin Connect → Apple Health (actieve + rustenergie).
+- 2026-11-11 Tabel `burn` (user_id, date, kcal); `POST /api/burn {date, active, resting}` overschrijft die dag. Sleutel = eigen sessie via menu "Sleutel iOS-opdracht" (blijft na uitloggen).
+- 2026-11-11 Dagkaart: "Verbruik X kcal · tekort/overschot Y" (verbruik − intake; bij schatting met ≈).
 
 ## Open vragen
 - Geen.

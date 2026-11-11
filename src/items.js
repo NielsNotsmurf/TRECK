@@ -17,7 +17,24 @@ export async function onRequestGet({ request, env, user }) {
   }
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
   const fav = await favs(env, user.id);
-  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n });
+  const b = await env.DB.prepare('SELECT kcal FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
+  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n, burn: b ? b.kcal : null });
+}
+
+// Fase 4: POST {date, active, resting} (of {date, kcal}) vanuit de iOS-opdracht (Garmin -> Apple Health). Overschrijft die dag.
+export async function burn({ request, env, user }) {
+  const b = await request.json();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : new Date().toISOString().slice(0, 10);
+  const num = (v) => { // iOS stuurt soms "1.812,4 kcal"
+    let t = String(v ?? '').replace(/[^\d.,]/g, '');
+    t = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;
+    return parseFloat(t) || 0;
+  };
+  const kcal = Math.round(num(b.kcal) || num(b.active) + num(b.resting));
+  if (!kcal) return Response.json({ error: 'Geen verbruik ontvangen' }, { status: 400 });
+  await env.DB.prepare('INSERT INTO burn (user_id, date, kcal, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT (user_id, date) DO UPDATE SET kcal = excluded.kcal, updated_at = excluded.updated_at')
+    .bind(user.id, date, kcal, new Date().toISOString()).run();
+  return Response.json({ ok: true, date, kcal });
 }
 
 // DELETE ?id=123

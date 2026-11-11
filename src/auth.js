@@ -13,6 +13,7 @@ export async function ensureSchema(env) {
     env.DB.prepare('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, pw TEXT NOT NULL, approved INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT NOT NULL)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS meals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, items TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(user_id, name))'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS burn (user_id INTEGER NOT NULL, date TEXT NOT NULL, kcal INTEGER NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (user_id, date))'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, payload TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)'),
   ]);
   const { results } = await env.DB.prepare('PRAGMA table_info(items)').all();
@@ -108,6 +109,9 @@ export async function decide({ request, env }) {
   return new Response(null, { status: 204 });
 }
 
+// Sleutel voor de iOS-opdracht: een eigen sessie die blijft bestaan na uitloggen op de telefoon.
+export async function syncKey({ env, user }) { return session(env, user); }
+
 // Uitloggen: alleen deze sessie. Account verwijderen: gebruiker met al zijn data.
 export const token = (request) => (request.headers.get('authorization') || '').replace('Bearer ', '');
 export async function logout({ request, env }) {
@@ -115,7 +119,7 @@ export async function logout({ request, env }) {
   return new Response(null, { status: 204 });
 }
 export async function deleteAccount({ env, user }) {
-  await env.DB.batch(['items', 'queue', 'meals', 'sessions'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id))
+  await env.DB.batch(['items', 'queue', 'meals', 'sessions', 'burn'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id))
     .concat(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id)));
   return new Response(null, { status: 204 });
 }

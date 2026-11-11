@@ -32,6 +32,8 @@
   #total small { font-size:16px; font-weight:600; color:var(--muted); margin-left:4px; }
   #total.est, #total.est + #macros b { color:var(--muted); font-style:italic; }
   #macros { display:flex; gap:8px; margin-top:12px; }
+  #burn { text-align:center; font-size:14px; color:var(--muted); margin-top:10px; }
+  #burn .neg { color:#2a9d5c; } #burn .pos { color:#d9822b; }
   #macros div { flex:1; text-align:center; background:var(--bg); border-radius:12px; padding:8px 0; }
   #macros b { display:block; font-size:18px; }
   #macros span { font-size:12px; color:var(--muted); }
@@ -102,6 +104,7 @@
     <div id="nav"><button class="icon" id="prev" aria-label="Vorige dag">‹</button><span id="day"></span><button class="icon" id="next" aria-label="Volgende dag">›</button></div>
     <div id="total">0<small>kcal</small></div>
     <div id="macros"></div>
+    <div id="burn"></div>
   </section>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
   <h2>Gegeten</h2>
@@ -120,6 +123,7 @@
   <h2 style="margin-top:0">Mijn gerechten</h2>
   <ul id="meals"></ul>
   <div class="row">
+    <button id="syncKey">Sleutel iOS-opdracht</button>
     <button id="logout">Uitloggen</button>
     <button id="delAccount" class="danger">Account verwijderen</button>
     <button id="closeSheet">Sluiten</button>

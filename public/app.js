@@ -19,7 +19,7 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total, estimate, queued } = await api(`/api/items?date=${day}`);
+  const { items, total, estimate, queued, burn } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
   const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
   const t = est || total;
@@ -27,6 +27,8 @@ async function load() {
   $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
   $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
     .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
+  const diff = burn - t.kcal; // fase 4: verbruik uit Garmin via Apple Health
+  $('burn').innerHTML = burn == null ? 'Verbruik: nog niet binnen' : `Verbruik ${burn} kcal · <b class="${diff >= 0 ? 'neg' : 'pos'}">${est ? '≈ ' : ''}${diff >= 0 ? 'tekort' : 'overschot'} ${Math.abs(diff)}</b>`;
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
@@ -251,6 +253,11 @@ $('menuBtn').onclick = () => {
 };
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
 $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };
+$('syncKey').onclick = async () => {
+  const { token: k } = await api('/api/synckey', { method: 'POST' });
+  try { await navigator.clipboard.writeText(k); alert('Sleutel gekopieerd. Plak hem in de iOS-opdracht bij "Bearer ".'); }
+  catch { prompt('Kopieer deze sleutel voor de iOS-opdracht:', k); }
+};
 $('logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); bye(); };
 $('delAccount').onclick = async () => {
   if (!confirm('Account en al je gegevens definitief verwijderen?')) return;

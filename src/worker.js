@@ -27,6 +27,8 @@ export default {
     if (route === 'POST /api/quick') return memory.add(ctx);
     if (route === 'POST /api/meals') return memory.save(ctx);
     if (route === 'DELETE /api/meals') return memory.remove(ctx);
+    if (route === 'POST /api/burn') return items.burn(ctx);
+    if (route === 'POST /api/synckey') return auth.syncKey(ctx);
     if (route === 'POST /api/logout') return auth.logout(ctx);
     if (route === 'DELETE /api/account') return auth.deleteAccount(ctx);
     if (user.admin && route === 'GET /api/pending') return auth.pending(ctx);
