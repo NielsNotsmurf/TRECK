@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TRECK">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<title>TRECK</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fff; --fg:#111; --muted:#777; --line:#ddd; --accent:#e4572e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111; --fg:#eee; --muted:#999; --line:#333; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px -apple-system, system-ui, sans-serif;
+         padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px); }
+  header { display:flex; align-items:center; justify-content:space-between; padding:12px 0; }
+  header button { font-size:24px; background:none; border:0; color:var(--fg); padding:4px 12px; }
+  #day { font-weight:600; }
+  #total { font-size:32px; font-weight:700; text-align:center; }
+  #macros { text-align:center; color:var(--muted); margin-bottom:12px; }
+  ul { list-style:none; padding:0; margin:0 0 16px; }
+  li { display:flex; gap:8px; align-items:center; border-top:1px solid var(--line); padding:10px 0; }
+  li div { flex:1; }
+  li small { color:var(--muted); display:block; }
+  li button { background:none; border:0; color:var(--muted); font-size:20px; }
+  textarea { width:100%; min-height:72px; font:inherit; padding:10px; border:1px solid var(--line);
+             border-radius:10px; background:var(--bg); color:var(--fg); }
+  .row { display:flex; gap:8px; margin-top:8px; }
+  .row > * { flex:1; padding:14px 0; font:inherit; font-weight:600; border-radius:10px;
+             border:1px solid var(--line); background:var(--bg); color:var(--fg); text-align:center; }
+  #send { background:var(--accent); color:#fff; border:0; }
+  .on { background:var(--accent) !important; color:#fff !important; }
+  #status { color:var(--muted); min-height:1.4em; margin-top:8px; }
+  input[type=file] { display:none; }
+</style>
+</head>
+<body>
+<header><button id="prev">‹</button><span id="day"></span><button id="next">›</button></header>
+<div id="total">0 kcal</div>
+<div id="macros"></div>
+<ul id="list"></ul>
+<textarea id="text" placeholder="Wat heb je gegeten? Bijv. 'gisteravond pasta bolognese'"></textarea>
+<div class="row">
+  <label id="photoBtn">Foto<input id="photo" type="file" accept="image/*"></label>
+  <button id="mic">Opnemen</button>
+  <button id="send">Verstuur</button>
+</div>
+<div id="status"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+{ "name": "treck", "private": true, "type": "module",
+  "scripts": { "dev": "wrangler pages dev", "db:local": "wrangler d1 execute treck --local --file=schema.sql", "db:remote": "wrangler d1 execute treck --remote --file=schema.sql" },
+  "devDependencies": { "wrangler": "4.160.1" } }
