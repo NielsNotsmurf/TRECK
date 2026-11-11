@@ -30,13 +30,26 @@
   .row { display:flex; gap:8px; margin-top:8px; }
   .row > * { flex:1; padding:14px 0; font:inherit; font-weight:600; border-radius:10px;
              border:1px solid var(--line); background:var(--bg); color:var(--fg); text-align:center; }
-  #send { background:var(--accent); color:#fff; border:0; }
+  #send, #loginBtn { background:var(--accent); color:#fff; border:0; }
   .on { background:var(--accent) !important; color:#fff !important; }
-  #status { color:var(--muted); min-height:1.4em; margin-top:8px; }
+  #status, .status { color:var(--muted); min-height:1.4em; margin-top:8px; }
   input[type=file] { display:none; }
+  #login input { width:100%; font:inherit; padding:12px; margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg); }
+  #login h1 { text-align:center; margin:48px 0 16px; }
+  #pending li button { color:var(--accent); font-weight:600; }
+  .hidden { display:none !important; }
 </style>
 </head>
 <body>
+<form id="login" class="hidden">
+  <h1>TRECK</h1>
+  <input id="name" autocomplete="username" placeholder="Naam (of admin)" autocapitalize="none">
+  <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
+  <div class="row"><button type="button" id="registerBtn">Account aanvragen</button><button type="submit" id="loginBtn">Inloggen</button></div>
+  <div id="gbtn" style="margin-top:16px;display:flex;justify-content:center"></div>
+  <div id="loginStatus" class="status"></div>
+</form>
+<main id="app" class="hidden">
 <header><button id="prev">‹</button><span id="day"></span><button id="next">›</button></header>
 <div id="total">0 kcal</div>
 <div id="macros"></div>
@@ -48,6 +61,8 @@
   <button id="send">Verstuur</button>
 </div>
 <div id="status"></div>
+<ul id="pending"></ul>
+</main>
 <script src="app.js"></script>
 </body>
 </html>

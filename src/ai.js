@@ -44,7 +44,10 @@ export async function analyseer({ text, image, audio, now }, env) {
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) {
+    // retry = tijdelijk (drukte/storing): de invoer gaat dan in de wachtrij.
+    throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { retry: res.status === 429 || res.status >= 500 });
+  }
   const out = await res.json();
   const json = out.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
   return JSON.parse(json).items;

@@ -2,6 +2,9 @@ name = "treck"
 main = "src/worker.js"
 compatibility_date = "2026-11-01"
 
+[triggers]
+crons = ["*/10 * * * *"]
+
 [assets]
 directory = "public"
 binding = "ASSETS"
