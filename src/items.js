@@ -1,15 +1,16 @@
 // GET ?date=JJJJ-MM-DD -> {items, total}
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, user }) {
   const date = new URL(request.url).searchParams.get('date');
-  const { results } = await env.DB.prepare('SELECT * FROM items WHERE date = ? ORDER BY created_at, id').bind(date).all();
+  const { results } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND date = ? ORDER BY created_at, id').bind(user.id, date).all();
   const total = { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
   for (const r of results) for (const k in total) total[k] += r[k];
-  return Response.json({ items: results, total });
+  const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
+  return Response.json({ items: results, total, queued: n });
 }
 
 // DELETE ?id=123
-export async function onRequestDelete({ request, env }) {
+export async function onRequestDelete({ request, env, user }) {
   const id = new URL(request.url).searchParams.get('id');
-  await env.DB.prepare('DELETE FROM items WHERE id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM items WHERE id = ? AND user_id = ?').bind(id, user.id).run();
   return new Response(null, { status: 204 });
 }

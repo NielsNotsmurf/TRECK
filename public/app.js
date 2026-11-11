@@ -3,15 +3,15 @@ const pad = (n) => String(n).padStart(2, '0');
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const DAGEN = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
 
-let key = localStorage.getItem('treck-key');
-if (!key) { key = prompt('Toegangscode'); localStorage.setItem('treck-key', key); }
+let token = localStorage.getItem('treck-token');
+let admin = localStorage.getItem('treck-admin') === '1';
 
 let day = iso(new Date());
 let image = null, audio = null, rec = null;
 
 async function api(path, opts = {}) {
-  const res = await fetch(path, { ...opts, headers: { 'content-type': 'application/json', 'x-key': key } });
-  if (res.status === 401) { localStorage.removeItem('treck-key'); location.reload(); }
+  const res = await fetch(path, { ...opts, headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` } });
+  if (res.status === 401 && token) { localStorage.removeItem('treck-token'); location.reload(); }
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.status);
   return res.status === 204 ? null : res.json();
 }
@@ -19,7 +19,8 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total } = await api(`/api/items?date=${day}`);
+  const { items, total, queued } = await api(`/api/items?date=${day}`);
+  if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
   $('total').textContent = `${total.kcal} kcal`;
   $('macros').textContent = `E ${total.protein_g} g · K ${total.carbs_g} g · V ${total.fat_g} g`;
   $('list').innerHTML = '';
@@ -82,16 +83,49 @@ $('send').onclick = async () => {
   const now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
   $('status').textContent = 'Analyseren…'; $('send').disabled = true;
   try {
-    const { items } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, audio, now }) });
-    $('status').textContent = items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
-    if (items.length) day = items[0].date;
+    const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, audio, now }) });
+    $('status').textContent = queued ? 'Gemini is druk: bewaard, wordt automatisch later verwerkt.' : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
+    if (items?.length) day = items[0].date;
     $('text').value = ''; image = audio = null; $('photo').value = '';
     $('photoBtn').classList.remove('on'); $('mic').classList.remove('on'); $('mic').textContent = 'Opnemen';
-    load();
-  } catch (e) {
+      } catch (e) {
     $('status').textContent = `Fout: ${e.message}`;
   }
   $('send').disabled = false;
 };
 
-load();
+
+// Inloggen / account aanvragen
+const creds = () => JSON.stringify({ name: $('name').value, pw: $('pw').value });
+$('registerBtn').onclick = async () => {
+  try {
+    const { pending } = await api('/api/register', { method: 'POST', body: creds() });
+    $('loginStatus').textContent = pending ? 'Aangevraagd. Je kunt inloggen zodra je bent goedgekeurd.' : 'Account klaar, log nu in.';
+  } catch (e) { $('loginStatus').textContent = e.message; }
+};
+$('login').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api('/api/login', { method: 'POST', body: creds() });
+    localStorage.setItem('treck-token', r.token); localStorage.setItem('treck-admin', r.admin ? '1' : '0');
+    location.reload();
+  } catch (e) { $('loginStatus').textContent = e.message; }
+};
+
+// Beheerder: wachtende gebruikers goedkeuren of weigeren
+async function loadPending() {
+  const { users } = await api('/api/pending');
+  $('pending').innerHTML = '';
+  for (const u of users) {
+    const li = document.createElement('li');
+    li.innerHTML = '<div></div><button>Goedkeuren</button><button aria-label="Weigeren">×</button>';
+    li.querySelector('div').textContent = `Nieuw: ${u.name}`;
+    const [ok, no] = li.querySelectorAll('button');
+    const decide = (v) => async () => { await api('/api/decide', { method: 'POST', body: JSON.stringify({ id: u.id, ok: v }) }); loadPending(); };
+    ok.onclick = decide(true); no.onclick = decide(false);
+    $('pending').append(li);
+  }
+}
+
+if (token) { $('app').classList.remove('hidden'); load(); if (admin) loadPending(); }
+else $('login').classList.remove('hidden');

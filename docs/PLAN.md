@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: fase 1 gebouwd, wacht op deploy en klaar-als-test op iPhone. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 klaar (getest op iPhone 11-11). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
 
 ## Fases
 | Fase | Doel | Klaar als |
@@ -32,8 +32,13 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Code in GitHub-repo NielsNotsmurf/TRECK.
 - 2026-11-11 Gratis limiet (gemeten, dev.to 9-11-2026): 3.1 Flash-Lite 500/dag per project → ruim voor 1–3 personen; 3.5 Flash maar 20/dag → niet gebruiken. Meer personen = kolom user_id + eigen geheim per persoon (later).
 
+- 2026-11-11 Inloggen: naam + wachtwoord (PBKDF2), sessietoken; nieuwe gebruikers wachten op goedkeuring door ADMIN_USER in de app. Items per user_id.
+- 2026-11-11 Wachtrij: Gemini 429/5xx → tabel `queue`, cron elke 10 min probeert 5 oudste opnieuw (max 50 pogingen); `now` van invoer blijft bewaard.
+
 ## Open vragen
 - Geen.
 
 ## Later
-- Meerdere gebruikers: user_id in items + eigen geheim per persoon.
+- Offline invoer bewaren op de telefoon als er geen internet is.
+- Uitloggen en wachtwoord wijzigen.
+- Beperking op inlogpogingen.
