@@ -99,18 +99,39 @@ $('send').onclick = async () => {
 const creds = () => JSON.stringify({ name: $('name').value, pw: $('pw').value });
 $('registerBtn').onclick = async () => {
   try {
-    const { pending } = await api('/api/register', { method: 'POST', body: creds() });
-    $('loginStatus').textContent = pending ? 'Aangevraagd. Je kunt inloggen zodra je bent goedgekeurd.' : 'Account klaar, log nu in.';
+    await api('/api/register', { method: 'POST', body: creds() });
+    $('loginStatus').textContent = 'Aangevraagd. Je kunt inloggen zodra je bent goedgekeurd.';
   } catch (e) { $('loginStatus').textContent = e.message; }
 };
 $('login').onsubmit = async (e) => {
   e.preventDefault();
   try {
-    const r = await api('/api/login', { method: 'POST', body: creds() });
-    localStorage.setItem('treck-token', r.token); localStorage.setItem('treck-admin', r.admin ? '1' : '0');
-    location.reload();
+    loggedIn(await api('/api/login', { method: 'POST', body: creds() }));
   } catch (e) { $('loginStatus').textContent = e.message; }
 };
+function loggedIn(r) {
+  if (r.pending) { $('loginStatus').textContent = 'Aangevraagd. Je kunt inloggen zodra je bent goedgekeurd.'; return; }
+  localStorage.setItem('treck-token', r.token); localStorage.setItem('treck-admin', r.admin ? '1' : '0');
+  location.reload();
+}
+
+// Inloggen met Google (alleen als GOOGLE_CLIENT_ID is ingesteld)
+async function setupGoogle() {
+  const { googleClientId } = await api('/api/config');
+  if (!googleClientId) return;
+  const s = Object.assign(document.createElement('script'), { src: 'https://accounts.google.com/gsi/client' });
+  s.onload = () => {
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: async ({ credential }) => {
+        try { loggedIn(await api('/api/google', { method: 'POST', body: JSON.stringify({ credential }) })); }
+        catch (e) { $('loginStatus').textContent = e.message; }
+      },
+    });
+    google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'nl' });
+  };
+  document.head.append(s);
+}
 
 // Beheerder: wachtende gebruikers goedkeuren of weigeren
 async function loadPending() {
@@ -128,4 +149,4 @@ async function loadPending() {
 }
 
 if (token) { $('app').classList.remove('hidden'); load(); if (admin) loadPending(); }
-else $('login').classList.remove('hidden');
+else { $('login').classList.remove('hidden'); setupGoogle(); }

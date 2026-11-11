@@ -8,6 +8,9 @@ export default {
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    await auth.ensureSchema(env);
+    if (route === 'GET /api/config') return Response.json({ googleClientId: env.GOOGLE_CLIENT_ID || null });
+    if (route === 'POST /api/google') return auth.google({ request, env });
     if (route === 'POST /api/register') return auth.register({ request, env });
     if (route === 'POST /api/login') return auth.login({ request, env });
 
@@ -22,6 +25,7 @@ export default {
     return new Response('Niet gevonden', { status: 404 });
   },
   async scheduled(event, env) {
+    await auth.ensureSchema(env);
     await analyze.retryQueue(env);
   },
 };

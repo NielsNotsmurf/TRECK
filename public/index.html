@@ -43,9 +43,10 @@
 <body>
 <form id="login" class="hidden">
   <h1>TRECK</h1>
-  <input id="name" autocomplete="username" placeholder="Naam" autocapitalize="none">
+  <input id="name" autocomplete="username" placeholder="Naam (of admin)" autocapitalize="none">
   <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
   <div class="row"><button type="button" id="registerBtn">Account aanvragen</button><button type="submit" id="loginBtn">Inloggen</button></div>
+  <div id="gbtn" style="margin-top:16px;display:flex;justify-content:center"></div>
   <div id="loginStatus" class="status"></div>
 </form>
 <main id="app" class="hidden">
