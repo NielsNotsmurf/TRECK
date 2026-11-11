@@ -7,7 +7,7 @@ let token = localStorage.getItem('treck-token');
 let admin = localStorage.getItem('treck-admin') === '1';
 
 let day = iso(new Date());
-let image = null, audio = null, rec = null;
+let image = null;
 
 async function api(path, opts = {}) {
   const res = await fetch(path, { ...opts, headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` } });
@@ -82,39 +82,18 @@ $('photo').onchange = async (e) => {
   $('photoBtn').classList.add('on');
 };
 
-$('mic').onclick = async () => {
-  if (rec) { rec.stop(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    rec = new MediaRecorder(stream);
-    const chunks = [];
-    rec.ondataavailable = (e) => chunks.push(e.data);
-    rec.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      const blob = new Blob(chunks, { type: rec.mimeType });
-      audio = { mime: (rec.mimeType || 'audio/mp4').split(';')[0], data: await b64(blob) };
-      rec = null;
-      $('mic').textContent = 'Opname ✓';
-    };
-    rec.start();
-    $('mic').textContent = '■ Stop'; $('mic').classList.add('on');
-  } catch {
-    $('status').textContent = 'Microfoon werkt niet; gebruik de dicteerknop van je toetsenbord.';
-  }
-};
-
 $('send').onclick = async () => {
   const text = $('text').value.trim();
-  if (!text && !image && !audio) return;
+  if (!text && !image) return;
   const n = new Date();
   const now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
   $('status').textContent = 'Analyseren…'; $('send').disabled = true;
   try {
-    const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, audio, now }) });
+    const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });
     $('status').textContent = queued ? 'Gemini is druk: bewaard, wordt automatisch later verwerkt.' : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
     if (items?.length) day = items[0].date;
-    $('text').value = ''; image = audio = null; $('photo').value = '';
-    $('photoBtn').classList.remove('on'); $('mic').classList.remove('on'); $('mic').textContent = '🎙 Opnemen';
+    $('text').value = ''; image = null; $('photo').value = '';
+    $('photoBtn').classList.remove('on');
     load(); loadQuick();
   } catch (e) {
     $('status').textContent = `Fout: ${e.message}`;
