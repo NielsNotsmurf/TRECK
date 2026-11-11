@@ -34,4 +34,4 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - Geen.
 
 ## Later
-- (leeg)
+- Meerdere gebruikers: user_id in items + eigen geheim per persoon.
