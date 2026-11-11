@@ -1,3 +1,3 @@
 { "name": "TRECK", "short_name": "TRECK", "start_url": "/", "display": "standalone",
-  "background_color": "#111111", "theme_color": "#111111",
+  "background_color": "#0e0e0e", "theme_color": "#0e0e0e",
   "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }] }

@@ -2,6 +2,7 @@
 import * as analyze from './analyze.js';
 import * as items from './items.js';
 import * as auth from './auth.js';
+import * as memory from './memory.js';
 
 export default {
   async fetch(request, env) {
@@ -20,6 +21,12 @@ export default {
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);
     if (route === 'DELETE /api/items') return items.onRequestDelete(ctx);
+    if (route === 'GET /api/quick') return memory.quick(ctx);
+    if (route === 'POST /api/quick') return memory.add(ctx);
+    if (route === 'POST /api/meals') return memory.save(ctx);
+    if (route === 'DELETE /api/meals') return memory.remove(ctx);
+    if (route === 'POST /api/logout') return auth.logout(ctx);
+    if (route === 'DELETE /api/account') return auth.deleteAccount(ctx);
     if (user.admin && route === 'GET /api/pending') return auth.pending(ctx);
     if (user.admin && route === 'POST /api/decide') return auth.decide(ctx);
     return new Response('Niet gevonden', { status: 404 });

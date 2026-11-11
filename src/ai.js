@@ -1,5 +1,5 @@
 // De enige plek die de AI-provider kent. Wisselen = alleen dit bestand aanpassen.
-// analyseer({text, image, audio, now}, env) -> [{date, product, portion, kcal, protein_g, carbs_g, fat_g}]
+// analyseer({text, image, audio, now, memory}, env) -> [{date, product, portion, kcal, protein_g, carbs_g, fat_g}]
 
 const MODEL = 'gemini-3.1-flash-lite';
 
@@ -27,8 +27,9 @@ const SCHEMA = {
   required: ['items'],
 };
 
-export async function analyseer({ text, image, audio, now }, env) {
+export async function analyseer({ text, image, audio, now, memory }, env) {
   const parts = [{ text: PROMPT(now) }];
+  if (memory) parts.push({ text: memory });
   if (text) parts.push({ text: `Invoer: ${text}` });
   if (image) parts.push({ inline_data: { mime_type: image.mime, data: image.data } });
   if (audio) parts.push({ inline_data: { mime_type: audio.mime, data: audio.data } });

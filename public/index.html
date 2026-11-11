@@ -4,65 +4,114 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TRECK">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <title>TRECK</title>
 <style>
-  :root { color-scheme: light dark; --bg:#fff; --fg:#111; --muted:#777; --line:#ddd; --accent:#e4572e; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#111; --fg:#eee; --muted:#999; --line:#333; } }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px -apple-system, system-ui, sans-serif;
-         padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px); }
-  header { display:flex; align-items:center; justify-content:space-between; padding:12px 0; }
-  header button { font-size:24px; background:none; border:0; color:var(--fg); padding:4px 12px; }
-  #day { font-weight:600; }
-  #total { font-size:32px; font-weight:700; text-align:center; }
-  #macros { text-align:center; color:var(--muted); margin-bottom:12px; }
-  ul { list-style:none; padding:0; margin:0 0 16px; }
-  li { display:flex; gap:8px; align-items:center; border-top:1px solid var(--line); padding:10px 0; }
-  li div { flex:1; }
-  li small { color:var(--muted); display:block; }
-  li button { background:none; border:0; color:var(--muted); font-size:20px; }
-  textarea { width:100%; min-height:72px; font:inherit; padding:10px; border:1px solid var(--line);
-             border-radius:10px; background:var(--bg); color:var(--fg); }
-  .row { display:flex; gap:8px; margin-top:8px; }
-  .row > * { flex:1; padding:14px 0; font:inherit; font-weight:600; border-radius:10px;
-             border:1px solid var(--line); background:var(--bg); color:var(--fg); text-align:center; }
-  #send, #loginBtn { background:var(--accent); color:#fff; border:0; }
-  .on { background:var(--accent) !important; color:#fff !important; }
-  #status, .status { color:var(--muted); min-height:1.4em; margin-top:8px; }
+  :root { color-scheme: light dark; --bg:#f4f4f2; --card:#fff; --fg:#151515; --muted:#8a8a8a; --line:#e7e7e4; --accent:#e4572e; --soft:#fbe9e3; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e0e0e; --card:#1b1b1b; --fg:#f2f2f2; --muted:#8d8d8d; --line:#2a2a2a; --soft:#3a1f17; } }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background:var(--bg); }
+  body { margin:0; color:var(--fg); font:16px/1.35 -apple-system, system-ui, sans-serif; max-width:560px; margin:0 auto;
+         padding: calc(env(safe-area-inset-top) + 8px) 16px 0; }
+  button, label, input, textarea { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  .card { background:var(--card); border-radius:18px; padding:16px; margin-bottom:12px; }
+  .top { display:flex; align-items:center; justify-content:space-between; height:44px; }
+  .brand { font-weight:800; letter-spacing:.12em; font-size:15px; }
+  .brand b { color:var(--accent); }
+  .icon { background:none; border:0; font-size:22px; width:44px; height:44px; border-radius:22px; }
+  .icon:active { background:var(--line); }
+  #nav { display:flex; align-items:center; justify-content:space-between; }
+  #day { font-weight:600; text-transform:capitalize; }
+  #total { font-size:44px; font-weight:800; text-align:center; letter-spacing:-.02em; margin-top:4px; }
+  #total small { font-size:16px; font-weight:600; color:var(--muted); margin-left:4px; }
+  #macros { display:flex; gap:8px; margin-top:12px; }
+  #macros div { flex:1; text-align:center; background:var(--bg); border-radius:12px; padding:8px 0; }
+  #macros b { display:block; font-size:18px; }
+  #macros span { font-size:12px; color:var(--muted); }
+  h2 { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 4px 8px; }
+  #quick { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+  #quick::-webkit-scrollbar { display:none; }
+  .chip { flex:none; border:0; background:var(--card); border-radius:999px; padding:9px 14px; white-space:nowrap; max-width:240px; overflow:hidden; text-overflow:ellipsis; }
+  .chip.saved { background:var(--soft); color:var(--accent); font-weight:600; }
+  ul { list-style:none; padding:0; margin:0; }
+  #list li, #pending li, #meals li { display:flex; gap:8px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+  #list li:first-child, #meals li:first-child, #pending li:first-child { border-top:0; }
+  li div { flex:1; min-width:0; }
+  li small { color:var(--muted); display:block; font-size:13px; }
+  li .kcal { font-weight:600; font-variant-numeric:tabular-nums; }
+  li button { background:none; border:0; color:var(--muted); font-size:18px; width:36px; height:36px; border-radius:18px; flex:none; }
+  li button:active { background:var(--line); }
+  .empty { color:var(--muted); text-align:center; padding:12px 0; }
+  #compose { position:sticky; bottom:0; padding:10px 0 calc(env(safe-area-inset-bottom) + 10px); background:linear-gradient(transparent, var(--bg) 18px); }
+  #compose .card { margin:0; padding:10px; box-shadow:0 6px 24px rgba(0,0,0,.08); }
+  textarea { width:100%; min-height:48px; max-height:140px; padding:8px; border:0; resize:none; background:none; outline:none; font-size:16px; }
+  .row { display:flex; gap:8px; margin-top:6px; }
+  .row > * { flex:1; padding:12px 0; font-weight:600; border-radius:12px; border:0; background:var(--bg); text-align:center; }
+  .primary, #send, #loginBtn { background:var(--accent) !important; color:#fff !important; }
+  .on { background:var(--soft) !important; color:var(--accent) !important; }
+  #status, .status { color:var(--muted); font-size:14px; text-align:center; min-height:1.3em; margin-top:6px; }
+  #status:empty { display:none; }
   input[type=file] { display:none; }
-  #login input { width:100%; font:inherit; padding:12px; margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg); }
-  #login h1 { text-align:center; margin:48px 0 16px; }
-  #pending li button { color:var(--accent); font-weight:600; }
+  #login { padding-top:12vh; }
+  #login h1 { text-align:center; font-size:40px; letter-spacing:.14em; margin:0; }
+  #login h1 b { color:var(--accent); }
+  #login p { text-align:center; color:var(--muted); margin:6px 0 24px; }
+  #login input { width:100%; padding:14px; margin-top:8px; border:0; border-radius:12px; background:var(--card); font-size:16px; }
+  #pending li button { color:var(--accent); font-weight:600; width:auto; font-size:15px; padding:0 8px; }
+  #sheet { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; z-index:9; }
+  #sheet .card { width:100%; max-width:560px; margin:0 auto; border-radius:20px 20px 0 0; padding-bottom:calc(env(safe-area-inset-bottom) + 16px); }
+  #sheet .row { flex-direction:column; }
+  .danger { color:#d33 !important; }
   .hidden { display:none !important; }
 </style>
 </head>
 <body>
 <form id="login" class="hidden">
-  <h1>TRECK</h1>
-  <input id="name" autocomplete="username" placeholder="Naam (of admin)" autocapitalize="none">
+  <h1>TR<b>E</b>CK</h1>
+  <p>Trek bijhouden, zonder gedoe.</p>
+  <input id="name" autocomplete="username" placeholder="Naam" autocapitalize="none">
   <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
-  <div class="row"><button type="button" id="registerBtn">Account aanvragen</button><button type="submit" id="loginBtn">Inloggen</button></div>
+  <div class="row"><button type="submit" id="loginBtn">Inloggen</button></div>
+  <div class="row"><button type="button" id="registerBtn">Account aanvragen</button></div>
   <div id="gbtn" style="margin-top:16px;display:flex;justify-content:center"></div>
   <div id="loginStatus" class="status"></div>
 </form>
 <main id="app" class="hidden">
-<header><button id="prev">‹</button><span id="day"></span><button id="next">›</button></header>
-<div id="total">0 kcal</div>
-<div id="macros"></div>
-<ul id="list"></ul>
-<textarea id="text" placeholder="Wat heb je gegeten? Bijv. 'gisteravond pasta bolognese'"></textarea>
-<div class="row">
-  <label id="photoBtn">Foto<input id="photo" type="file" accept="image/*"></label>
-  <button id="mic">Opnemen</button>
-  <button id="send">Verstuur</button>
-</div>
-<div id="status"></div>
-<ul id="pending"></ul>
+  <div class="top"><span class="brand">TR<b>E</b>CK</span><button class="icon" id="menuBtn" aria-label="Menu">⋯</button></div>
+  <section class="card">
+    <div id="nav"><button class="icon" id="prev" aria-label="Vorige dag">‹</button><span id="day"></span><button class="icon" id="next" aria-label="Volgende dag">›</button></div>
+    <div id="total">0<small>kcal</small></div>
+    <div id="macros"></div>
+  </section>
+  <div id="quickWrap" class="hidden"><h2>Snel toevoegen</h2><div id="quick"></div></div>
+  <h2>Gegeten</h2>
+  <section class="card"><ul id="list"></ul></section>
+  <section class="card hidden" id="pendingCard"><h2 style="margin-top:0">Wacht op goedkeuring</h2><ul id="pending"></ul></section>
+  <div id="compose"><div class="card">
+    <textarea id="text" rows="1" placeholder="Wat heb je gegeten? Bijv. 'mijn ontbijt' of 'gisteravond pasta'"></textarea>
+    <div class="row">
+      <label id="photoBtn">📷 Foto<input id="photo" type="file" accept="image/*"></label>
+      <button id="mic">🎙 Opnemen</button>
+      <button id="send">Verstuur</button>
+    </div>
+    <div id="status"></div>
+  </div></div>
 </main>
+<div id="sheet" class="hidden"><div class="card">
+  <h2 style="margin-top:0">Mijn gerechten</h2>
+  <ul id="meals"></ul>
+  <div class="row">
+    <button id="logout">Uitloggen</button>
+    <button id="delAccount" class="danger">Account verwijderen</button>
+    <button id="closeSheet">Sluiten</button>
+  </div>
+</div></div>
 <script src="app.js"></script>
 </body>
 </html>

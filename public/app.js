@@ -21,18 +21,45 @@ async function load() {
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
   const { items, total, queued } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
-  $('total').textContent = `${total.kcal} kcal`;
-  $('macros').textContent = `E ${total.protein_g} g · K ${total.carbs_g} g · V ${total.fat_g} g`;
-  $('list').innerHTML = '';
+  $('total').innerHTML = `${total.kcal}<small>kcal</small>`;
+  $('macros').innerHTML = [['Eiwit', total.protein_g], ['Koolh.', total.carbs_g], ['Vet', total.fat_g]]
+    .map(([k, v]) => `<div><b>${v} g</b><span>${k}</span></div>`).join('');
+  $('list').innerHTML = items.length ? '' : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
-    li.innerHTML = `<div></div><span></span><button aria-label="Wis">×</button>`;
+    li.innerHTML = `<div></div><span class="kcal"></span><button aria-label="Bewaar als gerecht">☆</button><button aria-label="Wis">×</button>`;
     li.querySelector('div').textContent = i.product;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: i.portion }));
     li.querySelector('span').textContent = `${i.kcal}`;
-    li.querySelector('button').onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); };
+    const [star, del] = li.querySelectorAll('button');
+    star.onclick = async () => {
+      const name = prompt('Bewaar deze maaltijd als gerecht, bijv. "Mijn ontbijt":', i.product);
+      if (!name) return;
+      await api('/api/meals', { method: 'POST', body: JSON.stringify({ input_id: i.input_id, name }) });
+      $('status').textContent = `"${name}" bewaard. Typ of zeg die naam, of tik hem hierboven aan.`;
+      loadQuick();
+    };
+    del.onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); };
     $('list').append(li);
   }
+}
+
+// Fase 2: eigen gerechten en vaak gegeten combinaties met één tik toevoegen.
+let meals = [];
+async function loadQuick() {
+  const q = await api('/api/quick');
+  meals = q.meals;
+  $('quick').innerHTML = '';
+  for (const m of [...q.meals.map((m) => ({ ...m, saved: true })), ...q.combos]) {
+    const kcal = m.items.reduce((s, i) => s + i.kcal, 0);
+    const b = Object.assign(document.createElement('button'), { className: `chip${m.saved ? ' saved' : ''}`, textContent: `${m.saved ? '★ ' : ''}${m.name} · ${kcal}` });
+    b.onclick = async () => {
+      await api('/api/quick', { method: 'POST', body: JSON.stringify({ items: m.items, date: day }) });
+      $('status').textContent = `${m.name} toegevoegd`; load();
+    };
+    $('quick').append(b);
+  }
+  $('quickWrap').classList.toggle('hidden', !$('quick').children.length);
 }
 
 function shift(n) { const d = new Date(day + 'T12:00'); d.setDate(d.getDate() + n); day = iso(d); load(); }
@@ -70,7 +97,7 @@ $('mic').onclick = async () => {
       $('mic').textContent = 'Opname ✓';
     };
     rec.start();
-    $('mic').textContent = 'Stop'; $('mic').classList.add('on');
+    $('mic').textContent = '■ Stop'; $('mic').classList.add('on');
   } catch {
     $('status').textContent = 'Microfoon werkt niet; gebruik de dicteerknop van je toetsenbord.';
   }
@@ -87,8 +114,9 @@ $('send').onclick = async () => {
     $('status').textContent = queued ? 'Gemini is druk: bewaard, wordt automatisch later verwerkt.' : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
     if (items?.length) day = items[0].date;
     $('text').value = ''; image = audio = null; $('photo').value = '';
-    $('photoBtn').classList.remove('on'); $('mic').classList.remove('on'); $('mic').textContent = 'Opnemen';
-      } catch (e) {
+    $('photoBtn').classList.remove('on'); $('mic').classList.remove('on'); $('mic').textContent = '🎙 Opnemen';
+    load(); loadQuick();
+  } catch (e) {
     $('status').textContent = `Fout: ${e.message}`;
   }
   $('send').disabled = false;
@@ -146,7 +174,31 @@ async function loadPending() {
     ok.onclick = decide(true); no.onclick = decide(false);
     $('pending').append(li);
   }
+  $('pendingCard').classList.toggle('hidden', !users.length);
 }
 
-if (token) { $('app').classList.remove('hidden'); load(); if (admin) loadPending(); }
+// Menu: gerechten beheren, uitloggen, account verwijderen.
+const bye = () => { localStorage.removeItem('treck-token'); localStorage.removeItem('treck-admin'); location.reload(); };
+$('menuBtn').onclick = () => {
+  $('meals').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Tik ☆ bij een item om er een te bewaren.</li>';
+  for (const m of meals) {
+    const li = document.createElement('li');
+    li.innerHTML = '<div></div><button aria-label="Wis gerecht">×</button>';
+    li.querySelector('div').textContent = m.name;
+    li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: m.items.map((i) => i.product).join(', ') }));
+    li.querySelector('button').onclick = async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); li.remove(); };
+    $('meals').append(li);
+  }
+  $('sheet').classList.remove('hidden');
+};
+$('closeSheet').onclick = () => $('sheet').classList.add('hidden');
+$('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };
+$('logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); bye(); };
+$('delAccount').onclick = async () => {
+  if (!confirm('Account en al je gegevens definitief verwijderen?')) return;
+  await api('/api/account', { method: 'DELETE' }); bye();
+};
+
+if (token) { $('app').classList.remove('hidden'); load(); loadQuick(); if (admin) loadPending(); }
 else { $('login').classList.remove('hidden'); setupGoogle(); }
+$('text').oninput = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };

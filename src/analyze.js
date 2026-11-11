@@ -1,8 +1,9 @@
 import { analyseer } from './ai.js';
+import { context } from './memory.js';
 
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
 async function verwerk(input, userId, env) {
-  const items = await analyseer(input, env);
+  const items = await analyseer({ ...input, memory: await context(env, userId) }, env);
   const note = input.text || (input.audio ? '[spraak]' : '') || (input.image ? '[foto]' : '');
   const inputId = crypto.randomUUID();
   const createdAt = new Date().toISOString();

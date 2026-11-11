@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: fase 1 klaar (getest op iPhone 11-11). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 klaar (getest op iPhone 11-11); fase 2 gebouwd 11-11, wacht op test op iPhone. Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
 
 ## Fases
 | Fase | Doel | Klaar als |
@@ -38,11 +38,15 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Admin = naam `admin` + `APP_SECRET`. Google-inlog via Google Identity Services (ID-token gecheckt via tokeninfo, `GOOGLE_CLIENT_ID`). Apple-inlog niet: kost een betaald Apple-account.
 - 2026-11-11 Database migreert zichzelf bij eerste aanvraag (`ensureSchema`).
 - 2026-11-11 Werkwijze: Claude merget zelf en pusht direct naar main (geen PR's/preview-builds).
+- 2026-11-11 Fase 2: tabel `meals` (eigen gerechten, items als JSON). ☆ bij item bewaart die hele invoer onder een naam. AI krijgt eigen gerechten + vaste porties (producten ≥2x gegeten) mee als context.
+- 2026-11-11 Snel toevoegen: chips met eigen gerechten + combinaties die in 60 dagen ≥2x gegeten zijn; één tik kopieert items naar de dag zonder AI-verzoek.
+- 2026-11-11 Menu (⋯): gerechten wissen, uitloggen (wist sessie), account verwijderen (wist items, wachtrij, gerechten, sessies, gebruiker).
+- 2026-11-11 Uiterlijk: kaarten, licht/donker, invoerbalk vast onderaan.
 
 ## Open vragen
 - Geen.
 
 ## Later
 - Offline invoer bewaren op de telefoon als er geen internet is.
-- Uitloggen en wachtwoord wijzigen.
+- Wachtwoord wijzigen.
 - Beperking op inlogpogingen.
