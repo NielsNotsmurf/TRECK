@@ -19,12 +19,15 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total, queued } = await api(`/api/items?date=${day}`);
+  const { items, total, estimate, queued } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
-  $('total').innerHTML = `${total.kcal}<small>kcal</small>`;
-  $('macros').innerHTML = [['Eiwit', total.protein_g], ['Koolh.', total.carbs_g], ['Vet', total.fat_g]]
-    .map(([k, v]) => `<div><b>${v} g</b><span>${k}</span></div>`).join('');
-  $('list').innerHTML = items.length ? '' : '<li class="empty">Nog niets ingevoerd</li>';
+  const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
+  const t = est || total;
+  $('total').classList.toggle('est', !!est);
+  $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
+  $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
+    .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
+  $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
     li.innerHTML = `<div></div><span class="kcal"></span><button aria-label="Bewaar als gerecht">☆</button><button aria-label="Wis">×</button>`;
