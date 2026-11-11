@@ -1,3 +1,4 @@
+import { analyseer } from './ai.js';
 // Fase 2 Geheugen: eigen gerechten op naam, vaste porties en snelle combinaties.
 const KEYS = ['product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g'];
 const pick = (i) => Object.fromEntries(KEYS.map((k) => [k, i[k]]));
@@ -44,14 +45,30 @@ export async function add({ request, env, user }) {
   return new Response(null, { status: 204 });
 }
 
-// POST {input_id, name} -> invoer bewaren als eigen gerecht. DELETE ?id= -> wissen.
+// POST {name, items} of {name, input_id} (+ id bij aanpassen) -> bewaren als eigen gerecht. DELETE ?id= -> wissen.
 export async function save({ request, env, user }) {
-  const { input_id, name } = await request.json();
-  const { results } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND input_id = ? ORDER BY id').bind(user.id, input_id).all();
-  if (!results.length || !String(name || '').trim()) return Response.json({ error: 'Niets om te bewaren' }, { status: 400 });
-  await env.DB.prepare('INSERT OR REPLACE INTO meals (user_id, name, items, created_at) VALUES (?, ?, ?, ?)')
-    .bind(user.id, name.trim(), JSON.stringify(results.map(pick)), new Date().toISOString()).run();
+  const { id, input_id, name, items: given } = await request.json();
+  let items = given;
+  if (input_id) ({ results: items } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND input_id = ? ORDER BY id').bind(user.id, input_id).all());
+  items = (items || []).filter((i) => String(i.product || '').trim())
+    .map((i) => ({ ...pick(i), ...Object.fromEntries(KEYS.slice(2).map((k) => [k, Math.round(i[k]) || 0])) }));
+  if (!items.length || !String(name || '').trim()) return Response.json({ error: 'Geef een naam en minstens één product' }, { status: 400 });
+  const at = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').bind(id || 0, user.id),
+    env.DB.prepare('INSERT OR REPLACE INTO meals (user_id, name, items, created_at) VALUES (?, ?, ?, ?)').bind(user.id, name.trim(), JSON.stringify(items), at),
+  ]);
   return new Response(null, { status: 204 });
+}
+
+// POST {text, now} -> {items}: AI vult een preset in, niets wordt opgeslagen.
+export async function parse({ request, env, user }) {
+  const input = await request.json();
+  try {
+    return Response.json({ items: await analyseer({ ...input, memory: await context(env, user.id) }, env) });
+  } catch (e) {
+    return Response.json({ error: e.retry ? 'Gemini is druk, probeer het zo opnieuw of vul zelf in' : e.message }, { status: 502 });
+  }
 }
 export async function remove({ request, env, user }) {
   await env.DB.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').bind(new URL(request.url).searchParams.get('id'), user.id).run();

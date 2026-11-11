@@ -31,6 +31,8 @@ async function load() {
     li.querySelector('div').textContent = i.product;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: i.portion }));
     li.querySelector('span').textContent = `${i.kcal}`;
+    li.querySelector('div').onclick = () => editor({ title: 'Aanpassen', items: [i], single: true,
+      save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...x, id: i.id }) }); load(); } });
     const [star, del] = li.querySelectorAll('button');
     star.onclick = async () => {
       const name = prompt('Bewaar deze maaltijd als gerecht, bijv. "Mijn ontbijt":', i.product);
@@ -45,22 +47,86 @@ async function load() {
 }
 
 // Fase 2: eigen gerechten en vaak gegeten combinaties met één tik toevoegen.
-let meals = [];
+let meals = [], chips = [];
 async function loadQuick() {
   const q = await api('/api/quick');
   meals = q.meals;
+  chips = [...q.meals.map((m) => ({ ...m, saved: true })), ...q.combos];
+  renderQuick();
+}
+
+// Typebalk = zoeken: favorieten sorteren op overeenkomst met wat je typt.
+function score(m, words) {
+  const hay = `${m.name} ${m.items.map((i) => i.product).join(' ')}`.toLowerCase();
+  return words.reduce((s, w) => s + (hay.includes(w) ? 2 : w.length > 3 && hay.includes(w.slice(0, 4)) ? 1 : 0), 0);
+}
+function renderQuick() {
+  const words = $('text').value.toLowerCase().split(/\W+/).filter((w) => w.length > 1);
+  const list = chips.map((m, n) => ({ m, n, s: score(m, words) })).sort((a, b) => b.s - a.s || a.n - b.n);
   $('quick').innerHTML = '';
-  for (const m of [...q.meals.map((m) => ({ ...m, saved: true })), ...q.combos]) {
-    const kcal = m.items.reduce((s, i) => s + i.kcal, 0);
-    const b = Object.assign(document.createElement('button'), { className: `chip${m.saved ? ' saved' : ''}`, textContent: `${m.saved ? '★ ' : ''}${m.name} · ${kcal}` });
+  const plus = Object.assign(document.createElement('button'), { className: 'chip add', textContent: '+', ariaLabel: 'Nieuwe preset' });
+  plus.onclick = () => editor({ title: 'Nieuwe preset', name: '', items: [], save: saveMeal() });
+  $('quick').append(plus);
+  for (const { m, s } of list) {
+    const kcal = m.items.reduce((t, i) => t + i.kcal, 0);
+    const b = Object.assign(document.createElement('button'), { className: `chip${m.saved ? ' saved' : ''}${words.length && !s ? ' dim' : ''}`, textContent: `${m.saved ? '★ ' : ''}${m.name} · ${kcal}` });
     b.onclick = async () => {
       await api('/api/quick', { method: 'POST', body: JSON.stringify({ items: m.items, date: day }) });
-      $('status').textContent = `${m.name} toegevoegd`; load();
+      $('status').textContent = `${m.name} toegevoegd`; $('text').value = ''; renderQuick(); load();
     };
     $('quick').append(b);
   }
-  $('quickWrap').classList.toggle('hidden', !$('quick').children.length);
+  $('quick').scrollLeft = 0;
 }
+$('text').addEventListener('input', renderQuick);
+
+const saveMeal = (id) => async (name, items) => {
+  await api('/api/meals', { method: 'POST', body: JSON.stringify({ id, name, items }) });
+  await loadQuick();
+};
+
+// Editor: één gegeten item aanpassen, of een preset maken/aanpassen (velden of AI-balk).
+const NUMS = [['kcal', 'kcal'], ['protein_g', 'Eiwit'], ['carbs_g', 'Koolh.'], ['fat_g', 'Vet']];
+function edRow(i = {}) {
+  const r = document.createElement('div');
+  r.className = 'edrow';
+  r.innerHTML = `<input data-k="product" placeholder="Product"><input data-k="portion" placeholder="Portie"><button aria-label="Wis">×</button>
+    <div class="nums">${NUMS.map(([k, l]) => `<label>${l}<input data-k="${k}" type="number" inputmode="decimal"></label>`).join('')}</div>`;
+  r.querySelectorAll('input').forEach((el) => { el.value = i[el.dataset.k] ?? ''; });
+  r.querySelector('button').onclick = () => r.remove();
+  $('edRows').append(r);
+}
+let edSave = null;
+function editor({ title, name, items, single, save }) {
+  $('edTitle').textContent = title;
+  $('edName').classList.toggle('hidden', !!single); $('edName').value = name || '';
+  $('edAi').classList.toggle('hidden', !!single); $('edAiText').value = '';
+  $('edAdd').classList.toggle('hidden', !!single);
+  $('edRows').innerHTML = ''; (items.length ? items : [{}]).forEach(edRow);
+  $('edRows').classList.toggle('single', !!single);
+  $('edStatus').textContent = '';
+  edSave = save;
+  $('editor').classList.remove('hidden');
+}
+$('edAdd').onclick = () => edRow();
+$('edCancel').onclick = () => $('editor').classList.add('hidden');
+$('edAiBtn').onclick = async () => {
+  const text = $('edAiText').value.trim(); if (!text) return;
+  $('edStatus').textContent = 'AI vult in…';
+  try {
+    const { items } = await api('/api/parse', { method: 'POST', body: JSON.stringify({ text, now: new Date().toString() }) });
+    $('edRows').innerHTML = ''; items.forEach(edRow);
+    if (!$('edName').value) $('edName').value = text;
+    $('edStatus').textContent = 'Pas aan waar nodig en sla op.';
+  } catch (e) { $('edStatus').textContent = e.message; }
+};
+$('edSave').onclick = async () => {
+  const items = [...$('edRows').children].map((r) => Object.fromEntries([...r.querySelectorAll('input')]
+    .map((el) => [el.dataset.k, el.type === 'number' ? Math.round(+el.value || 0) : el.value.trim()]))).filter((i) => i.product);
+  if (!items.length) { $('edStatus').textContent = 'Vul minstens één product in.'; return; }
+  try { await edSave($('edName').value.trim(), items); $('editor').classList.add('hidden'); }
+  catch (e) { $('edStatus').textContent = e.message; }
+};
 
 function shift(n) { const d = new Date(day + 'T12:00'); d.setDate(d.getDate() + n); day = iso(d); load(); }
 $('prev').onclick = () => shift(-1);
@@ -159,12 +225,13 @@ async function loadPending() {
 // Menu: gerechten beheren, uitloggen, account verwijderen.
 const bye = () => { localStorage.removeItem('treck-token'); localStorage.removeItem('treck-admin'); location.reload(); };
 $('menuBtn').onclick = () => {
-  $('meals').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Tik ☆ bij een item om er een te bewaren.</li>';
+  $('meals').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Tik ☆ bij een item of + bij Snel toevoegen.</li>';
   for (const m of meals) {
     const li = document.createElement('li');
     li.innerHTML = '<div></div><button aria-label="Wis gerecht">×</button>';
     li.querySelector('div').textContent = m.name;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: m.items.map((i) => i.product).join(', ') }));
+    li.querySelector('div').onclick = () => { $('sheet').classList.add('hidden'); editor({ title: 'Preset aanpassen', name: m.name, items: m.items, save: saveMeal(m.id) }); };
     li.querySelector('button').onclick = async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); li.remove(); };
     $('meals').append(li);
   }

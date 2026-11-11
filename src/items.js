@@ -14,3 +14,11 @@ export async function onRequestDelete({ request, env, user }) {
   await env.DB.prepare('DELETE FROM items WHERE id = ? AND user_id = ?').bind(id, user.id).run();
   return new Response(null, { status: 204 });
 }
+
+// PUT {id, product, portion, kcal, protein_g, carbs_g, fat_g} -> handmatig aanpassen
+export async function onRequestPut({ request, env, user }) {
+  const i = await request.json();
+  await env.DB.prepare('UPDATE items SET product = ?, portion = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ? WHERE id = ? AND user_id = ?')
+    .bind(i.product, i.portion, Math.round(i.kcal) || 0, Math.round(i.protein_g) || 0, Math.round(i.carbs_g) || 0, Math.round(i.fat_g) || 0, i.id, user.id).run();
+  return new Response(null, { status: 204 });
+}

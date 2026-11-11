@@ -64,9 +64,22 @@
   #login p { text-align:center; color:var(--muted); margin:6px 0 24px; }
   #login input { width:100%; padding:14px; margin-top:8px; border:0; border-radius:12px; background:var(--card); font-size:16px; }
   #pending li button { color:var(--accent); font-weight:600; width:auto; font-size:15px; padding:0 8px; }
-  #sheet { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; z-index:9; }
-  #sheet .card { width:100%; max-width:560px; margin:0 auto; border-radius:20px 20px 0 0; padding-bottom:calc(env(safe-area-inset-bottom) + 16px); }
+  .sheet { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; z-index:9; }
+  .sheet .card { width:100%; max-width:560px; margin:0 auto; border-radius:20px 20px 0 0; padding-bottom:calc(env(safe-area-inset-bottom) + 16px); max-height:92vh; overflow-y:auto; }
   #sheet .row { flex-direction:column; }
+  .chip.add { background:var(--accent); color:#fff; font-weight:700; padding:9px 16px; }
+  .chip.dim { opacity:.4; }
+  #list li div, #meals li div { cursor:pointer; }
+  .sheet input { width:100%; padding:11px 12px; border:0; border-radius:10px; background:var(--bg); font-size:16px; min-width:0; }
+  .airow { display:flex; gap:8px; margin:8px 0; }
+  .airow button { flex:none; border:0; border-radius:10px; padding:0 16px; font-weight:600; }
+  .edrow { border-top:1px solid var(--line); padding:10px 0; display:grid; grid-template-columns:1fr 1fr 36px; gap:6px; }
+  .edrow .nums { grid-column:1 / 3; display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+  .edrow label { font-size:11px; color:var(--muted); text-align:center; }
+  .edrow label input { text-align:center; margin-top:2px; padding:9px 4px; }
+  .edrow > button { background:none; border:0; color:var(--muted); font-size:20px; }
+  .single .edrow > button { visibility:hidden; }
+  .link { background:none; border:0; color:var(--accent); font-weight:600; padding:10px 0; }
   .danger { color:#d33 !important; }
   .hidden { display:none !important; }
 </style>
@@ -89,7 +102,7 @@
     <div id="total">0<small>kcal</small></div>
     <div id="macros"></div>
   </section>
-  <div id="quickWrap" class="hidden"><h2>Snel toevoegen</h2><div id="quick"></div></div>
+  <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
   <h2>Gegeten</h2>
   <section class="card"><ul id="list"></ul></section>
   <section class="card hidden" id="pendingCard"><h2 style="margin-top:0">Wacht op goedkeuring</h2><ul id="pending"></ul></section>
@@ -102,7 +115,7 @@
     <div id="status"></div>
   </div></div>
 </main>
-<div id="sheet" class="hidden"><div class="card">
+<div id="sheet" class="sheet hidden"><div class="card">
   <h2 style="margin-top:0">Mijn gerechten</h2>
   <ul id="meals"></ul>
   <div class="row">
@@ -110,6 +123,15 @@
     <button id="delAccount" class="danger">Account verwijderen</button>
     <button id="closeSheet">Sluiten</button>
   </div>
+</div></div>
+<div id="editor" class="sheet hidden"><div class="card">
+  <h2 id="edTitle" style="margin-top:0"></h2>
+  <input id="edName" placeholder="Naam, bijv. Mijn ontbijt">
+  <div class="airow" id="edAi"><input id="edAiText" placeholder="Of beschrijf het, bijv. 2 boterhammen kaas"><button id="edAiBtn" class="primary">AI</button></div>
+  <div id="edRows"></div>
+  <button class="link" id="edAdd">+ product</button>
+  <div class="row"><button id="edCancel">Annuleer</button><button id="edSave" class="primary">Opslaan</button></div>
+  <div id="edStatus" class="status"></div>
 </div></div>
 <script src="app.js"></script>
 </body>

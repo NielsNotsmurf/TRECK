@@ -42,6 +42,9 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Snel toevoegen: chips met eigen gerechten + combinaties die in 60 dagen ≥2x gegeten zijn; één tik kopieert items naar de dag zonder AI-verzoek.
 - 2026-11-11 Menu (⋯): gerechten wissen, uitloggen (wist sessie), account verwijderen (wist items, wachtrij, gerechten, sessies, gebruiker).
 - 2026-11-11 Opnameknop weg: invoer = tekst (met dicteren via iOS-toetsenbord) + foto. Worker accepteert audio nog.
+- 2026-11-11 Item aantikken = handmatig aanpassen (PUT /api/items); ☆ daarna bewaart de aangepaste waarden.
+- 2026-11-11 Preset maken met + bij Snel toevoegen: velden per product of AI-balk (/api/parse, slaat niets op) en daarna alles bewerkbaar. Preset aantikken in menu = aanpassen.
+- 2026-11-11 Typebalk sorteert favorieten op woordovereenkomst; niet-passende worden vaag.
 - 2026-11-11 Uiterlijk: kaarten, licht/donker, invoerbalk vast onderaan.
 
 ## Open vragen
