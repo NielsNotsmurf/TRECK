@@ -1,4 +1,4 @@
-import { analyseer } from '../../src/ai.js';
+import { analyseer } from './ai.js';
 
 // POST {text?, image?:{mime,data}, audio?:{mime,data}, now} -> {items}
 export async function onRequestPost({ request, env }) {
