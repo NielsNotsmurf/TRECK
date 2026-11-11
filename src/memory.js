@@ -37,11 +37,12 @@ export async function quick({ env, user }) {
 
 // POST {items, date} -> zonder AI toevoegen aan de dag.
 export async function add({ request, env, user }) {
-  const { items, date } = await request.json();
+  const { items, date, meal_id } = await request.json();
   const inputId = crypto.randomUUID(), at = new Date().toISOString();
   const stmt = env.DB.prepare(`INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[snel]', ?, ?)`);
-  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, at, user.id)));
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const note = meal_id ? `meal:${meal_id}` : '[snel]';
+  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, note, at, user.id)));
   return new Response(null, { status: 204 });
 }
 
@@ -54,9 +55,11 @@ export async function save({ request, env, user }) {
     .map((i) => ({ ...pick(i), ...Object.fromEntries(KEYS.slice(2).map((k) => [k, Math.round(i[k]) || 0])) }));
   if (!items.length || !String(name || '').trim()) return Response.json({ error: 'Geef een naam en minstens één product' }, { status: 400 });
   const at = new Date().toISOString();
+  const old = id && await env.DB.prepare('SELECT source FROM meals WHERE id = ? AND user_id = ?').bind(id, user.id).first();
+  const source = input_id || old?.source || null;
   await env.DB.batch([
     env.DB.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').bind(id || 0, user.id),
-    env.DB.prepare('INSERT OR REPLACE INTO meals (user_id, name, items, created_at) VALUES (?, ?, ?, ?)').bind(user.id, name.trim(), JSON.stringify(items), at),
+    env.DB.prepare('INSERT OR REPLACE INTO meals (user_id, name, items, created_at, source) VALUES (?, ?, ?, ?, ?)').bind(user.id, name.trim(), JSON.stringify(items), at, source),
   ]);
   return new Response(null, { status: 204 });
 }
@@ -73,4 +76,11 @@ export async function parse({ request, env, user }) {
 export async function remove({ request, env, user }) {
   await env.DB.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').bind(new URL(request.url).searchParams.get('id'), user.id).run();
   return new Response(null, { status: 204 });
+}
+
+// Welke favoriet hoort bij een gegeten item: bewaard vanuit die invoer, of toegevoegd vanuit die favoriet.
+export async function favs(env, userId) {
+  const { results } = await env.DB.prepare('SELECT id, source FROM meals WHERE user_id = ?').bind(userId).all();
+  const ids = new Set(results.map((m) => m.id)), bySource = Object.fromEntries(results.map((m) => [m.source, m.id]));
+  return (i) => bySource[i.input_id] || (String(i.note).startsWith('meal:') && ids.has(+i.note.slice(5)) ? +i.note.slice(5) : null);
 }

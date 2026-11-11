@@ -37,12 +37,18 @@ async function load() {
     li.querySelector('div').onclick = () => editor({ title: 'Aanpassen', items: [i], single: true,
       save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...x, id: i.id }) }); load(); } });
     const [star, del] = li.querySelectorAll('button');
+    if (i.fav) { star.textContent = '★'; star.style.color = 'var(--accent)'; star.ariaLabel = 'Uit favorieten'; }
     star.onclick = async () => {
-      const name = prompt('Bewaar deze maaltijd als gerecht, bijv. "Mijn ontbijt":', i.product);
-      if (!name) return;
-      await api('/api/meals', { method: 'POST', body: JSON.stringify({ input_id: i.input_id, name }) });
-      $('status').textContent = `"${name}" bewaard. Typ of zeg die naam, of tik hem hierboven aan.`;
-      loadQuick();
+      if (i.fav) {
+        await api(`/api/meals?id=${i.fav}`, { method: 'DELETE' });
+        $('status').textContent = 'Uit favorieten gehaald';
+      } else {
+        const name = prompt('Bewaar deze maaltijd als favoriet, bijv. "Mijn ontbijt":', i.product);
+        if (!name) return;
+        await api('/api/meals', { method: 'POST', body: JSON.stringify({ input_id: i.input_id, name }) });
+        $('status').textContent = `"${name}" bewaard. Typ die naam, of tik hem hierboven aan.`;
+      }
+      load(); loadQuick();
     };
     del.onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); };
     $('list').append(li);
@@ -74,7 +80,7 @@ function renderQuick() {
     const kcal = m.items.reduce((t, i) => t + i.kcal, 0);
     const b = Object.assign(document.createElement('button'), { className: `chip${m.saved ? ' saved' : ''}${words.length && !s ? ' dim' : ''}`, textContent: `${m.saved ? '★ ' : ''}${m.name} · ${kcal}` });
     b.onclick = async () => {
-      await api('/api/quick', { method: 'POST', body: JSON.stringify({ items: m.items, date: day }) });
+      await api('/api/quick', { method: 'POST', body: JSON.stringify({ items: m.items, date: day, meal_id: m.saved ? m.id : undefined }) });
       $('status').textContent = `${m.name} toegevoegd`; $('text').value = ''; renderQuick(); load();
     };
     $('quick').append(b);
@@ -99,8 +105,10 @@ function edRow(i = {}) {
   r.querySelector('button').onclick = () => r.remove();
   $('edRows').append(r);
 }
-let edSave = null;
-function editor({ title, name, items, single, save }) {
+let edSave = null, edRemove = null;
+$('edDel').onclick = async () => { await edRemove(); $('editor').classList.add('hidden'); };
+function editor({ title, name, items, single, save, remove }) {
+  $('edDel').classList.toggle('hidden', !remove); edRemove = remove;
   $('edTitle').textContent = title;
   $('edName').classList.toggle('hidden', !!single); $('edName').value = name || '';
   $('edAi').classList.toggle('hidden', !!single); $('edAiText').value = '';
@@ -234,8 +242,9 @@ $('menuBtn').onclick = () => {
     li.innerHTML = '<div></div><button aria-label="Wis gerecht">×</button>';
     li.querySelector('div').textContent = m.name;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: m.items.map((i) => i.product).join(', ') }));
-    li.querySelector('div').onclick = () => { $('sheet').classList.add('hidden'); editor({ title: 'Preset aanpassen', name: m.name, items: m.items, save: saveMeal(m.id) }); };
-    li.querySelector('button').onclick = async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); li.remove(); };
+    li.querySelector('div').onclick = () => { $('sheet').classList.add('hidden'); editor({ title: 'Preset aanpassen', name: m.name, items: m.items, save: saveMeal(m.id),
+      remove: async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); load(); } }); };
+    li.querySelector('button').onclick = async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); load(); li.remove(); };
     $('meals').append(li);
   }
   $('sheet').classList.remove('hidden');

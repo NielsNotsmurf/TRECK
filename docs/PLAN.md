@@ -44,6 +44,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Opnameknop weg: invoer = tekst (met dicteren via iOS-toetsenbord) + foto. Worker accepteert audio nog.
 - 2026-11-11 Item aantikken = handmatig aanpassen (PUT /api/items); ☆ daarna bewaart de aangepaste waarden.
 - 2026-11-11 Preset maken met + bij Snel toevoegen: velden per product of AI-balk (/api/parse, slaat niets op) en daarna alles bewerkbaar. Preset aantikken in menu = aanpassen.
+- 2026-11-11 ☆ synchroon: meals.source = input_id, snel toegevoegd item krijgt note `meal:id`; gevulde ★ opnieuw tikken = uit favorieten. Ook verwijderen in preset-editor.
 - 2026-11-11 Typebalk sorteert favorieten op woordovereenkomst; niet-passende worden vaag.
 - 2026-11-11 Uiterlijk: kaarten, licht/donker, invoerbalk vast onderaan.
 - 2026-11-11 Fase 3: lege dag in het verleden toont schatting = gemiddelde van ingevulde dagen in de 14 dagen ervoor (per gebruiker). Wordt live berekend, niet opgeslagen, dus telt nooit mee in echte data; grijs/cursief met ≈. Geen schatting zonder eerdere invoer.

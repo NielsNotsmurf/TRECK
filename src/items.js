@@ -1,3 +1,4 @@
+import { favs } from './memory.js';
 // GET ?date=JJJJ-MM-DD -> {items, total}
 export async function onRequestGet({ request, env, user }) {
   const date = new URL(request.url).searchParams.get('date');
@@ -15,7 +16,8 @@ export async function onRequestGet({ request, env, user }) {
     }
   }
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
-  return Response.json({ items: results, total, estimate, queued: n });
+  const fav = await favs(env, user.id);
+  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n });
 }
 
 // DELETE ?id=123

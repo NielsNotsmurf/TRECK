@@ -17,6 +17,8 @@ export async function ensureSchema(env) {
   ]);
   const { results } = await env.DB.prepare('PRAGMA table_info(items)').all();
   if (!results.some((c) => c.name === 'user_id')) await env.DB.prepare('ALTER TABLE items ADD COLUMN user_id INTEGER').run();
+  const { results: m } = await env.DB.prepare('PRAGMA table_info(meals)').all();
+  if (!m.some((c) => c.name === 'source')) await env.DB.prepare('ALTER TABLE meals ADD COLUMN source TEXT').run();
   schemaOk = true;
 }
 
