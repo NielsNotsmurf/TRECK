@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: plan klaar, vragen beantwoord, wacht op akkoord voor fase 1. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 gebouwd, wacht op deploy en klaar-als-test op iPhone. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
 
 ## Fases
 | Fase | Doel | Klaar als |
@@ -27,6 +27,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Weegschaal: via Apple Health + iOS-opdracht (dekt alle merken).
 - 2026-11-11 Gebruiker kiest gratis: Gemini gratis laag (data mag voor training). Groq alleen als audio-terugval (geen betrouwbare gratis vision).
 - 2026-11-11 Weegschaal = generieke bol.com/AliExpress-schaal → fase 5 via de app van de schaal → Apple Health → iOS-opdracht.
+- 2026-11-11 Fase 1: Pages Functions (`functions/api`), AI in `src/ai.js`, foto client-side verkleind tot 1024 px, toegang via header `x-key`.
 - 2026-11-11 Code in GitHub-repo NielsNotsmurf/TRECK.
 - 2026-11-11 Gratis limiet (gemeten, dev.to 9-11-2026): 3.1 Flash-Lite 500/dag per project → ruim voor 1–3 personen; 3.5 Flash maar 20/dag → niet gebruiken. Meer personen = kolom user_id + eigen geheim per persoon (later).
 
