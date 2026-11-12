@@ -165,7 +165,8 @@ $('send').onclick = async () => {
   const text = $('text').value.trim();
   if (!text && !image) return;
   const n = new Date();
-  const now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  let now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  if (day !== iso(n)) now += `. Geopende dag in de app: ${DAGEN[new Date(day + 'T12:00').getDay()]} ${day}`; // invoer hoort standaard bij de geopende dag
   $('status').textContent = 'Analyseren…'; $('send').disabled = true;
   try {
     const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });

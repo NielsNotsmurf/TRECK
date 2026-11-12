@@ -5,7 +5,7 @@ const MODEL = 'gemini-3.1-flash-lite';
 
 const PROMPT = (now) => `Je bent een voedingsassistent. Nu is het: ${now}.
 Bepaal uit de invoer (tekst, foto en/of spraak) elk gegeten product of gerecht.
-Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; "gisteravond", "zaterdag" e.d. omrekenen vanaf nu; standaard vandaag),
+Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; "gisteravond", "zaterdag" e.d. omrekenen vanaf nu; standaard de geopende dag als die genoemd is, anders vandaag),
 product (kort, Nederlands), portion (bijv. "1 bord, ca. 350 g"), kcal, protein_g, carbs_g, fat_g (getallen, schatting).
 Geen eten herkend? Geef een lege lijst.`;
 
