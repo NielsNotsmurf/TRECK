@@ -40,13 +40,21 @@ export async function analyseer({ text, image, audio, now, memory, fast }, env, 
   return JSON.parse(out || '{"items":[]}').items || [];
 }
 
-// Spraak → tekst, zodat de gebruiker hem kan nalezen vóór versturen. Telt als AI-verzoek.
-export async function transcribe({ request, env, user }) {
+// Spraak → tekst via Groq Whisper (losse spraakdienst, gratis 2000/dag): telt niet mee in de AI-limiet.
+export async function transcribe({ request, env }) {
   const { audio } = await request.json();
-  try {
-    const out = await ask([{ text: 'Schrijf letterlijk uit wat er gezegd wordt (meestal Nederlands). Alleen de uitgeschreven tekst, niets anders.' }, { inline_data: { mime_type: audio.mime, data: audio.data } }], {}, env, user.id, true);
-    return Response.json({ text: out.trim() });
-  } catch (e) { return Response.json({ error: e.message }, { status: e.limit ? 429 : 502 }); }
+  if (!env.GROQ_API_KEY) return Response.json({ error: 'GROQ_API_KEY ontbreekt' }, { status: 502 });
+  const form = new FormData();
+  const ext = audio.mime.includes('webm') ? 'webm' : audio.mime.includes('ogg') ? 'ogg' : 'm4a';
+  form.append('file', new Blob([Uint8Array.from(atob(audio.data), (c) => c.charCodeAt(0))], { type: audio.mime }), `spraak.${ext}`);
+  form.append('model', env.WHISPER_MODEL || 'whisper-large-v3');
+  form.append('language', 'nl');
+  form.append('response_format', 'json');
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST', body: form, signal: AbortSignal.timeout(20000), headers: { authorization: `Bearer ${env.GROQ_API_KEY}` },
+  }).catch((e) => ({ ok: false, status: 0, text: async () => e.message }));
+  if (!res.ok) return Response.json({ error: `Whisper ${res.status}: ${(await res.text()).slice(0, 200)}` }, { status: 502 });
+  return Response.json({ text: ((await res.json()).text || '').trim() });
 }
 
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
