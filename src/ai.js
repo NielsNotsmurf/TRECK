@@ -80,5 +80,5 @@ export async function status({ env }) {
   const now = new Date();
   const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
   const reset = new Date(now.getTime() + (new Date(la).setHours(24, 0, 0, 0) - la.getTime()));
-  return Response.json({ used: u.n, limit: Number(env.AI_DAY_LIMIT) || 500, full: !!u.full, reset: reset.toISOString() });
+  return Response.json({ used: u.n, limit: Number(env.AI_DAY_LIMIT) || 100, full: !!u.full, reset: reset.toISOString() });
 }
