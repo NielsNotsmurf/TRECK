@@ -61,16 +61,22 @@ export async function burn({ request, env, user }) {
   const h = (k) => request.headers.get(k);
   const b = await request.json().catch(() => ({}));
   for (const k of ['date', 'kcal', 'active', 'resting']) if (b[k] == null && h(k)) b[k] = h(k);
+  if (b.date && !parseDate(b.date)) return Response.json({ error: `Datum niet herkend: ${b.date}` }, { status: 400 });
   const date = parseDate(b.date) || nlToday();
   const num = (v) => { // iOS stuurt soms "1.812,4 kcal"; leeg = null
     if (v == null || v === '') return null;
-    let t = String(v).replace(/[^\d.,]/g, '');
+    const parts = String(v).match(/\d[\d.,]*/g) || [];
+    if (parts.length !== 1) return NaN; // lijst of rommel (bijv. hele Health Samples i.p.v. Repeat Item)
+    let t = parts[0];
     t = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;
     return Math.round(parseFloat(t)) || 0;
   };
   let active = num(b.active), resting = num(b.resting);
   if (b.kcal != null && active == null && resting == null) { active = num(b.kcal); resting = 0; }
   if (active == null && resting == null) return Response.json({ error: 'Geen verbruik ontvangen' }, { status: 400 });
+  if ([active, resting].some((x) => Number.isNaN(x) || x > 15000)) {
+    return Response.json({ error: `Onlogische waarde (active: ${b.active}, resting: ${b.resting}). Kies Repeat Item → Value.` }, { status: 400 });
+  }
   await env.DB.prepare(`INSERT INTO burn (user_id, date, active, resting, kcal, updated_at) VALUES (?1, ?2, ?3, ?4, COALESCE(?3, 0) + COALESCE(?4, 0), ?5)
     ON CONFLICT (user_id, date) DO UPDATE SET active = COALESCE(?3, active), resting = COALESCE(?4, resting),
     kcal = COALESCE(?3, active, 0) + COALESCE(?4, resting, 0), updated_at = ?5`)
