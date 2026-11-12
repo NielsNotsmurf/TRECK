@@ -297,18 +297,20 @@ $('pushBtn').onclick = async () => {
   if (!('Notification' in window) || !navigator.serviceWorker) return alert('Meldingen werken alleen als TRECK op je beginscherm staat (iOS 16.4+).');
   const perm = Notification.requestPermission(); // direct in de tik, anders weigert iOS
   try {
-    const { publicKey, times } = await api('/api/push');
+    const { publicKey, times, weigh } = await api('/api/push');
     const t = prompt('Herinneren om (bijv. 12:30, 20:00). Leeg = uit:', times ? times.replace(/,/g, ', ') : '10:00, 14:00, 20:00, 22:00');
     if (t === null) return;
+    const w = prompt('Wekelijks wegen (dag en tijd, bijv. ma 08:00). Leeg = uit:', weigh || 'ma 08:00');
+    if (w === null) return;
     let sub = null;
-    if (t.trim()) {
+    if (t.trim() || w.trim()) {
       if (await perm !== 'granted') return alert('Meldingen geweigerd. Zet ze aan via iOS Instellingen → Meldingen → TRECK.');
       const reg = await navigator.serviceWorker.ready;
       sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true,
         applicationServerKey: Uint8Array.from(atob(publicKey.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)) });
     }
-    const r = await api('/api/push', { method: 'POST', body: JSON.stringify({ sub, times: t }) });
-    alert(r.times ? `Herinnering om ${r.times.replace(/,/g, ', ')}. Je krijgt nu een testmelding.` : 'Meldingen staan uit.');
+    const r = await api('/api/push', { method: 'POST', body: JSON.stringify({ sub, times: t, weigh: w }) });
+    alert(r.times || r.weigh ? `Eten: ${r.times.replace(/,/g, ', ') || 'uit'}\nWegen: ${r.weigh || 'uit'}\nJe krijgt nu een testmelding.` : 'Meldingen staan uit.');
   } catch (e) { alert(e.message); }
 };
 $('logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); bye(); };

@@ -3,7 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2026-11-01"
 
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["* * * * *"]
 
 [assets]
 directory = "public"

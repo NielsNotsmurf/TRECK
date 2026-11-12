@@ -1,4 +1,4 @@
-// Fase 6: herinneringen via Web Push (zonder payload, sw.js toont vaste tekst). VAPID-sleutel wordt eenmalig gemaakt en server-side in D1 bewaard.
+// Fase 6: herinneringen via Web Push (zonder payload; sw.js haalt de tekst op via /api/pushmsg). VAPID-sleutel wordt eenmalig gemaakt en server-side in D1 bewaard.
 const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const nlNow = () => new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 16); // "JJJJ-MM-DD UU:MM"
 
@@ -22,36 +22,47 @@ async function send(env, sub) {
   return !(res.status === 404 || res.status === 410);
 }
 
-// GET -> {publicKey, times}
-export async function get({ env, user }) {
-  const row = await env.DB.prepare('SELECT times FROM push WHERE user_id = ?').bind(user.id).first();
-  return Response.json({ publicKey: (await vapid(env)).pub, times: row?.times || '' });
+// GET ?e=endpoint (zonder login, voor sw.js) -> tekst van de laatste melding
+export async function msg({ request, env }) {
+  const row = await env.DB.prepare('SELECT msg FROM push WHERE endpoint = ?').bind(new URL(request.url).searchParams.get('e')).first();
+  return Response.json({ msg: row?.msg || null });
 }
 
-// POST {sub, times:"12:30,20:00"} -> opslaan + testmelding. Lege times = uit.
+// GET -> {publicKey, times, weigh}
+export async function get({ env, user }) {
+  const row = await env.DB.prepare('SELECT times, weigh FROM push WHERE user_id = ?').bind(user.id).first();
+  return Response.json({ publicKey: (await vapid(env)).pub, times: row?.times || '', weigh: row?.weigh || '' });
+}
+
+// POST {sub, times:"12:30,20:00", weigh:"ma 08:00"} -> opslaan + testmelding. Lege times = uit.
 export async function save({ request, env, user }) {
   const b = await request.json();
   const times = (b.times || '').match(/\d{1,2}[:.]\d{2}/g)?.map((t) => t.replace('.', ':').padStart(5, '0')).sort().join(',') || '';
-  if (!times || !b.sub?.endpoint) {
+  const w = (b.weigh || '').toLowerCase().match(/(ma|di|wo|do|vr|za|zo)\D*(\d{1,2})[:.](\d{2})/);
+  const weigh = w ? `${w[1]} ${w[2].padStart(2, '0')}:${w[3]}` : '';
+  if (!(times || weigh) || !b.sub?.endpoint) {
     await env.DB.prepare('DELETE FROM push WHERE user_id = ?').bind(user.id).run();
-    return Response.json({ times: '' });
+    return Response.json({ times: '', weigh: '' });
   }
   const sub = { endpoint: b.sub.endpoint, origin: new URL(request.url).origin };
-  await env.DB.prepare('INSERT OR REPLACE INTO push (user_id, endpoint, origin, times, sent) VALUES (?, ?, ?, ?, ?)')
-    .bind(user.id, sub.endpoint, sub.origin, times, nlNow()).run();
+  await env.DB.prepare('INSERT OR REPLACE INTO push (user_id, endpoint, origin, times, sent, weigh, msg) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(user.id, sub.endpoint, sub.origin, times, nlNow(), weigh, 'Meldingen staan aan.').run();
   await send(env, sub);
-  return Response.json({ times });
+  return Response.json({ times, weigh });
 }
 
-// Cron (elke 10 min): stuur per gekozen tijd één melding, binnen 30 min na die tijd.
+// Cron (elke minuut): stuur per gekozen tijd één melding, binnen 30 min na die tijd.
 export async function remind(env) {
   const now = nlNow(), [today, hm] = now.split(' ');
   const mins = (t) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+  const dag = new Date().toLocaleDateString('nl-NL', { weekday: 'short', timeZone: 'Europe/Amsterdam' }).slice(0, 2);
   const { results } = await env.DB.prepare('SELECT * FROM push').all();
   for (const r of results) {
-    const t = r.times.split(',').filter((t) => t <= hm && mins(hm) - mins(t) < 30).pop();
-    if (!t || r.sent >= `${today} ${t}`) continue;
-    await env.DB.prepare('UPDATE push SET sent = ? WHERE user_id = ?').bind(now, r.user_id).run();
+    const slots = r.times.split(',').filter(Boolean).map((t) => [t, 'Al ingevoerd wat je gegeten hebt?']);
+    if (r.weigh?.startsWith(dag)) slots.push([r.weigh.slice(3), 'Tijd om te wegen: tik op je gewicht in TRECK.']);
+    const s = slots.sort((a, b) => (a[0] > b[0]) - (a[0] < b[0])).filter(([t]) => t <= hm && mins(hm) - mins(t) < 30).pop(); // zelfde tijd: wegen wint
+    if (!s || r.sent >= `${today} ${s[0]}`) continue;
+    await env.DB.prepare('UPDATE push SET sent = ?, msg = ? WHERE user_id = ?').bind(now, s[1], r.user_id).run();
     if (!(await send(env, r))) await env.DB.prepare('DELETE FROM push WHERE user_id = ?').bind(r.user_id).run();
   }
 }

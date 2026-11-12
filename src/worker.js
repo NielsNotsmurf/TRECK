@@ -14,6 +14,7 @@ export default {
     if (route === 'GET /api/config') return Response.json({ googleClientId: env.GOOGLE_CLIENT_ID || null });
     if (route === 'POST /api/google') return auth.google({ request, env });
     if (route === 'POST /api/register') return auth.register({ request, env });
+    if (route === 'GET /api/pushmsg') return push.msg({ request, env });
     if (route === 'POST /api/login') return auth.login({ request, env });
 
     const user = await auth.currentUser(request, env);
@@ -43,7 +44,7 @@ export default {
   },
   async scheduled(event, env) {
     await auth.ensureSchema(env);
-    await analyze.retryQueue(env);
+    if (new Date(event.scheduledTime).getMinutes() % 10 === 0) await analyze.retryQueue(env); // wachtrij blijft elke 10 min
     await push.remind(env);
   },
 };
