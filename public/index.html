@@ -145,7 +145,11 @@
   #balTxt { white-space:nowrap; } #why { text-wrap:balance; }
   #a2hs { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 8px); max-width:536px; margin:0 auto; z-index:20; display:flex; align-items:center; gap:12px;
     background:var(--card); border-radius:14px; padding:12px 12px 12px 14px; box-shadow:0 8px 24px rgba(0,0,0,.18); font-size:15px; }
-  #a2hs img { width:40px; height:40px; border-radius:9px; } #a2hs p { margin:0; flex:1; line-height:1.3; } #a2hs .ic { width:17px; height:17px; vertical-align:-3px; color:#007aff; }
+  #a2hs img { width:40px; height:40px; border-radius:9px; } #a2hs p, #a2hsT { margin:0; flex:1; line-height:1.3; } #a2hs { align-items:flex-start; }
+  #a2hs ol { margin:6px 0 0; padding:0; list-style:none; counter-reset:s; } #a2hs li small { display:block; color:var(--muted); font-size:12px; } #a2hs li small .ic { width:14px; height:14px; } #a2hs li { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:14px; }
+  #a2hs li::before { counter-increment:s; content:counter(s); flex:none; width:18px; height:18px; border-radius:9px; background:var(--fill); font-size:12px; font-weight:600; display:grid; place-items:center; }
+  #a2hs .k { flex:none; min-width:28px; height:28px; padding:0 6px; border-radius:7px; background:var(--fill); display:inline-grid; place-items:center; color:#007aff; font-size:13px; } #a2hs li .k .ic { width:18px; height:18px; }
+ #a2hs .ic { width:17px; height:17px; vertical-align:-3px; color:#007aff; }
   #a2hs button { border:0; background:none; color:var(--accent); font-weight:600; padding:6px; } #a2hsX { color:var(--muted) !important; }
   #list li.mate { opacity:.55; } /* rest van het gerecht tijdens slepen */
   /* Fase 12: Inzichten */
@@ -345,6 +349,8 @@
   <symbol id="i-spark" viewBox="0 0 24 24"><path d="m11 3 1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9zM18.5 15l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/></symbol>
   <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21a6 6 0 0 0 6-6c0-4.5-3.5-6.5-4.5-11-2 2-3.5 4.5-3.5 7-1-.7-1.6-1.8-1.8-3C6.8 9.8 6 12.3 6 15a6 6 0 0 0 6 6z"/></symbol>
   <symbol id="i-scale" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8 10a5 5 0 0 1 8 0M12 10l1.3-1.8"/></symbol>
+  <symbol id="i-a2hs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
@@ -369,7 +375,10 @@
   <symbol id="f-wine" viewBox="0 0 24 24"><path d="M7.5 3h9l.5 5a5 5 0 0 1-10 0zM12 13v7.5M8 21h8M7.3 7h9.4"/></symbol>
   <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></symbol>
 </svg>
-<div id="a2hs" class="hidden"><img src="icon.png" alt=""><p id="a2hsT">Zet TRECK op je beginscherm: tik op <svg class="ic"><use href="#i-share"/></svg> en kies <b>Zet op beginscherm</b>.</p>
+<div id="a2hs" class="hidden"><img src="icon.png" alt=""><div id="a2hsT"><b>Zet TRECK op je beginscherm</b><ol>
+  <li><span class="k"><svg class="ic"><use href="#i-share"/></svg></span><span>Tik op <b>Deel</b> in Safari<small>Niet te zien? Tik eerst op <svg class="ic"><use href="#i-dots"/></svg> naast de adresbalk.</small></span></li>
+  <li><span class="k"><svg class="ic"><use href="#i-a2hs"/></svg></span><span>Scroll omlaag en tik op <b>Zet op beginscherm</b></span></li>
+  <li><span class="k"><b>Voeg toe</b></span><span>Tik rechtsboven op <b>Voeg toe</b></span></li></ol></div>
   <button id="a2hsGo" class="hidden">Installeer</button><button id="a2hsX">Niet nu</button></div>
 <form id="login" class="hidden">
   <h1>TR<b>E</b>CK</h1>
