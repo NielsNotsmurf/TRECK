@@ -74,6 +74,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - Fase 10: item-icoon = Apple-voedselemoji in een tegel, gekozen op trefwoord in de productnaam (client, geen AI); verwijderen zit in het item-scherm i.p.v. op elke regel.
 - 2026-11-12 Fase 12: statistieken zonder AI (GET /api/stats?days=7|30|90), vandaag telt niet mee in gemiddelden (dag nog niet af); periode start bij de eerste data. Grafieken als inline SVG, geen bibliotheek.
 - 2026-11-12 Fase 12: AI-samenvatting (POST /api/insight) = 30 dagtotalen als CSV + doel naar Gemini, max 4 zinnen, geen advies/programma; bewaard in config k=insight:<id> per NL-dag, telt mee in de limiet per gebruiker. Geen stappenteller-data, alleen calorieën (besluit gebruiker).
+- 2026-11-12 Beginscherm-uitnodiging: iOS = banner met uitleg (Deel → Zet op beginscherm), elders installeerknop; "Niet nu" = nooit meer (localStorage). Verbruik-regel alleen zichtbaar als er ooit verbruik binnenkwam (Garmin/Apple Health is optioneel).
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).

@@ -112,19 +112,21 @@ async function load() {
   }
   $('balArc').style.strokeDashoffset = 395.8 * (1 - (bl == null ? 0 : Math.max(bf, 0.03)));
   $('balArc').classList.toggle('good', good);
-  $('balTxt').textContent = bl == null ? '' : `${bl >= 0 ? 'tekort' : 'overschot'} ${Math.abs(bl)}${want ? ` · doel ${want > 0 ? 'tekort' : 'overschot'} ${Math.abs(want)}` : ''}`;
+  $('balTxt').textContent = bl == null ? '' : `${bl >= 0 ? 'tekort' : 'overschot'} ${Math.abs(bl)}`; // kort: past in de ring
   $('balTxt').className = bl == null ? '' : good ? 'neg' : 'pos';
-  $('why').textContent = T ? T.why : `Tijdelijk doel: ${burn ? 'verbruik' : '2000'}${delta ? ` ${delta > 0 ? '+' : '−'} ${Math.abs(delta)}` : ''} kcal. Persoonlijk doel na 14 gelogde dagen en 2 wegingen (week uit elkaar) · nu ${target?.days ?? 0} d, ${target?.weighs ?? 0} wegingen`;
+  const todo = [(target?.days ?? 0) < 14 && `${14 - (target?.days ?? 0)} dagen loggen`, (target?.weighs ?? 0) < 2 && `${2 - (target?.weighs ?? 0)}× wegen`].filter(Boolean);
+  $('why').textContent = T ? `Verbruik ≈ ${T.tdee} kcal · ${paceTxt(G, P)}` : `Tijdelijk doel · persoonlijk na ${todo.join(' en ') || 'een weging een week later'}`;
   $('motto').textContent = est ? 'Geschat op je gemiddelde' : !t.kcal ? (day === today() ? 'Klaar voor een goede dag?' : 'Niets gelogd op deze dag')
     : f < 0.5 ? `Lekker bezig, nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg, nog ${left} kcal` : f <= 1.05 ? 'Precies op koers' : (G === 'gain' ? `Doel gehaald, ${-left} kcal erboven` : `${-left} kcal boven je doel, morgen weer een dag`);
   $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']]
-    .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? ` · nog ${T[m] - t[m]}` : ''}</span></div>`).join('');
+    .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? `<em>nog ${T[m] - t[m]}</em>` : ''}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
   const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
   const at = burnAt ? new Date(burnAt) : null;
   const upto = !at ? '' : iso(at) === day ? ` t/m ${pad(at.getHours())}:${pad(at.getMinutes())}` : iso(at) > day ? ' hele dag' : '';
-  const sum = (p, label) => p.days ? `${label} ${bal(p.diff)} <small>(${p.days} d)</small>` : '';
+  const sum = (p, label) => p.days ? `${label} ${bal(p.diff)}` : '';
   $('burnCell').parentNode.classList.toggle('hidden', day > today());
+  $('burnCell').classList.toggle('hidden', !d.linked); // zonder Garmin/Apple Health geen verbruik-regel
   $('burnVal').textContent = burn == null ? '' : `${burnEst ? '≈ ' : ''}${burn} kcal`;
   $('burn').innerHTML = `Verbruik${upto}<small>${burn == null ? 'Nog niet binnen' : 'Vandaag ' + bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`
     + `${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).map((x) => `<br>${x}`).join('')}</small>`;
@@ -770,4 +772,17 @@ $('delAccount').onclick = () => actions('Je account en al je gegevens worden def
 
 if (token) { ['app', 'tabs', 'compose'].forEach(show); load(); loadQuick(); if (admin) loadPending(); }
 else { show('login'); setupGoogle(); }
+
+// Uitnodiging voor het beginscherm: iOS (Safari) uitleg, elders de installeerknop. Wegtikken = nooit meer.
+(() => {
+  let off = false; try { off = localStorage.getItem('treck-a2hs') === '0'; } catch {}
+  if (off || navigator.standalone || matchMedia('(display-mode: standalone)').matches) return;
+  const close = () => { hide('a2hs'); try { localStorage.setItem('treck-a2hs', '0'); } catch {} };
+  $('a2hsX').onclick = close;
+  if (/iP(hone|ad|od)/.test(navigator.userAgent)) { show('a2hs'); return; }
+  addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); $('a2hsT').textContent = 'Installeer TRECK als app op je beginscherm.';
+    $('a2hsGo').classList.remove('hidden'); $('a2hsGo').onclick = () => { e.prompt(); close(); }; show('a2hs');
+  });
+})();
 $('text').oninput = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };

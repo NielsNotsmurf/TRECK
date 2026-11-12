@@ -29,7 +29,8 @@ export async function onRequestGet({ request, env, user }) {
     .bind(user.id, from, date, user.id).first();
   const me = await env.DB.prepare('SELECT name, pace FROM users WHERE id = ?').bind(user.id).first();
   const { results: review } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND review = 1 ORDER BY created_at, id').bind(user.id).all();
-  return Response.json({ me, review, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
+  const linked = !!(await env.DB.prepare('SELECT 1 FROM burn WHERE user_id = ? LIMIT 1').bind(user.id).first());
+  return Response.json({ me, review, linked, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
     burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
     week: await period(monday), month: await period(date.slice(0, 8) + '01'),
     target: await target(env, user.id, monday),
