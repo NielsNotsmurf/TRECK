@@ -22,28 +22,30 @@ export async function quick({ env, user }) {
   const { results: meals } = await env.DB.prepare('SELECT id, name, items FROM meals WHERE user_id = ? ORDER BY name').bind(user.id).all();
   const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
   const { results } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND date >= ? ORDER BY id').bind(user.id, since).all();
-  const inputs = {};
-  for (const r of results) (inputs[r.input_id] ||= []).push(pick(r));
+  const inputs = {}, hour = {}; // Fase 11: gemiddeld uur (NL) per combinatie/gerecht, om op tijdstip te sorteren
+  const nlHour = (t) => +new Date(t).toLocaleString('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Europe/Amsterdam' }) % 24;
+  for (const r of results) { (inputs[r.input_id] ||= []).push(pick(r)); hour[r.input_id] = nlHour(r.created_at); if (r.note?.startsWith('meal:')) (hour[r.note] ||= []).push(nlHour(r.created_at)); }
+  const avg = (a) => (a?.length ? Math.round(a.reduce((x, y) => x + y) / a.length) : null);
   const count = {};
-  for (const items of Object.values(inputs)) {
+  for (const [id, items] of Object.entries(inputs)) {
     const sig = items.map((i) => i.product.toLowerCase()).sort().join(' + ');
-    count[sig] = { n: (count[sig]?.n || 0) + 1, items };
+    count[sig] = { n: (count[sig]?.n || 0) + 1, items, hs: [...(count[sig]?.hs || []), hour[id]] };
   }
   const named = new Set(meals.map((m) => JSON.parse(m.items).map((i) => i.product.toLowerCase()).sort().join(' + ')));
   const combos = Object.entries(count).filter(([s, c]) => c.n > 1 && !named.has(s))
-    .sort((a, b) => b[1].n - a[1].n).slice(0, 6).map(([, c]) => ({ name: c.items.map((i) => i.product).join(' + '), items: c.items }));
-  return Response.json({ meals: meals.map((m) => ({ ...m, items: JSON.parse(m.items) })), combos });
+    .sort((a, b) => b[1].n - a[1].n).slice(0, 6).map(([, c]) => ({ name: c.items.map((i) => i.product).join(' + '), items: c.items, h: avg(c.hs) }));
+  return Response.json({ meals: meals.map((m) => ({ ...m, items: JSON.parse(m.items), h: avg(hour[`meal:${m.id}`]) })), combos });
 }
 
 // POST {items, date} -> zonder AI toevoegen aan de dag.
 export async function add({ request, env, user }) {
   const { items, date, meal_id } = await request.json();
   const inputId = crypto.randomUUID(), at = new Date().toISOString();
-  const stmt = env.DB.prepare(`INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const stmt = env.DB.prepare(`INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, meal)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const note = meal_id ? `meal:${meal_id}` : '[snel]';
-  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, note, at, user.id, i.amount || null, i.unit || null)));
-  return new Response(null, { status: 204 });
+  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, note, at, user.id, i.amount || null, i.unit || null, i.meal || null)));
+  return Response.json({ input_id: inputId }); // Fase 11: voor "Ongedaan maken"
 }
 
 // POST {name, items} of {name, input_id} (+ id bij aanpassen) -> bewaren als eigen gerecht. DELETE ?id= -> wissen.

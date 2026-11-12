@@ -18,7 +18,7 @@ async function verwerk(input, userId, env) {
       note, createdAt, userId, i.amount || null, i.unit || null,
     )));
   }
-  return items;
+  return items.map((i) => ({ ...i, input_id: inputId }));
 }
 
 // POST {text?, image?:{mime,data}, audio?:{mime,data}, now} -> {items} of {queued: true}

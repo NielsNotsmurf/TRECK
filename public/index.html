@@ -178,6 +178,84 @@
   .btn { display:block; width:100%; margin-top:12px; padding:14px; border:0; border-radius:12px; font-weight:600; font-size:17px; background:var(--fill); color:var(--accent); }
   .btn.primary { background:var(--accent); color:#fff; }
   #pending li button { border:0; background:none; color:var(--accent); font-weight:600; font-size:15px; padding:0 4px; }
+
+  /* Fase 11: UX-polish (HIG) */
+  #mini { position:fixed; top:0; left:0; right:0; z-index:8; height:calc(env(safe-area-inset-top) + 44px); padding-top:env(safe-area-inset-top); text-align:center; line-height:44px;
+          font-weight:600; background:var(--bar); -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); border-bottom:.5px solid var(--line);
+          opacity:0; pointer-events:none; transition:opacity .2s; text-transform:capitalize; }
+  body.scrolled:not(.tab-other) #mini { opacity:1; }
+  #nav > div:first-child { position:relative; }
+  #datePick { position:absolute; inset:0; opacity:0; width:100%; height:100%; border:0; padding:0; -webkit-appearance:none; }
+  #todayBtn { border:0; background:var(--fill); color:var(--accent); border-radius:17px; height:34px; padding:0 12px; font-size:15px; font-weight:600; }
+  #ring.est .trk { stroke-dasharray:2 5; stroke-linecap:butt; } #ring.est #arc { opacity:0; }
+  #estTag { font-size:11px; font-weight:600; color:var(--muted); border:1px dashed var(--muted); border-radius:6px; padding:1px 6px; margin-top:6px; text-transform:uppercase; }
+  h2.sec { display:flex; justify-content:space-between; }
+  #list li { display:block; padding:0; }
+  #list .swrap { position:relative; overflow:hidden; }
+  #list .row { position:relative; z-index:1; display:flex; gap:12px; align-items:center; padding:10px 16px; background:var(--card); transition:transform .25s; }
+  #list .sw { position:absolute; top:0; bottom:0; right:0; display:flex; }
+  #list .sw button { width:74px; border:0; color:#fff; font-size:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  #list .sw .ic { width:22px; height:22px; }
+  #list .adj { display:none; padding:0 16px 12px 68px; }
+  #list li.open .adj { display:flex; }
+  .adj .link { padding:0; font-size:15px; }
+  #list li::before { z-index:2; }
+  .row, .chip { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+  @keyframes flash { from { background:var(--soft); } }
+  #list li.new .row { animation:flash 2.5s ease-out; }
+  #toast { position:fixed; left:12px; right:12px; bottom:calc(var(--nav) + var(--cmp) + env(safe-area-inset-bottom) + 10px); max-width:536px; margin:0 auto; z-index:8;
+           display:flex; align-items:center; gap:12px; background:rgba(44,44,46,.94); color:#fff; border-radius:13px; padding:12px 16px; font-size:15px; animation:up .25s; }
+  #toast span { flex:1; } #toast button { border:0; background:none; color:#ff9f0a; font-weight:600; font-size:15px; padding:0; }
+  #bubble { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; width:max-content; max-width:calc(100% - 44px); margin:0 0 8px 44px; padding:8px 14px;
+            background:var(--card); border-radius:18px; font-size:15px; }
+  #bubble.err { color:var(--red); } #bubble button { border:0; background:none; padding:0; color:var(--accent); font-weight:600; font-size:15px; }
+  .dots i { display:inline-block; width:7px; height:7px; margin-right:3px; border-radius:50%; background:var(--muted); animation:blink 1.2s infinite; }
+  .dots i:nth-child(2) { animation-delay:.2s; } .dots i:nth-child(3) { animation-delay:.4s; }
+  @keyframes blink { 50% { opacity:.25; } }
+  body.kb #tabs { display:none; }
+  .as { width:100%; max-width:560px; margin:0 auto; padding:0 8px calc(env(safe-area-inset-bottom) + 8px); animation:up .25s cubic-bezier(.2,.8,.2,1); }
+  .as .group { margin-bottom:8px; border-radius:14px; } .as .cell { justify-content:center; color:var(--accent); font-size:20px; min-height:57px; } .as .cell > div { flex:none; }
+  .astitle { text-align:center; color:var(--muted); font-size:13px; padding:14px 16px; }
+  #actsX { font-weight:600; }
+  .sheet.alert { align-items:flex-start; padding-top:18vh; }
+  .alert > .card { max-width:300px; border-radius:14px; padding:18px 16px 0; text-align:center; background:var(--card); animation:none; }
+  .alert b { display:block; font-size:17px; } .alert p { margin:4px 0 12px; font-size:13px; }
+  .sheet .alert-in, #askIn { background:var(--bg); border-radius:8px; padding:8px 10px; font-size:15px; }
+  .alert .btns { display:flex; margin:16px -16px 0; border-top:.5px solid var(--line); }
+  .alert .btns button { flex:1; border:0; background:none; color:var(--accent); font-size:17px; padding:12px; }
+  .alert .btns button + button { border-left:.5px solid var(--line); font-weight:600; }
+  .sheet input.tgl { -webkit-appearance:none; appearance:none; width:51px; height:31px; border-radius:16px; background:var(--fill); position:relative; flex:none; padding:0; margin:0; transition:background .2s; }
+  .sheet input.tgl::after { content:''; position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:transform .2s; }
+  .sheet input.tgl:checked { background:var(--ok); } .sheet input.tgl:checked::after { transform:translateX(20px); }
+  .sheet .cell input[type=time], .sheet .cell select { width:auto; flex:none; padding:6px 10px; border:0; border-radius:8px; background:var(--fill); font-size:17px; color:var(--fg); }
+  .cell .x { border:0; background:none; color:var(--muted); padding:0; display:grid; } .cell .x .ic { width:20px; height:20px; }
+  .seg { display:flex; background:var(--fill); border-radius:9px; padding:2px; margin:4px 0 12px; }
+  .seg button { flex:1; border:0; background:none; border-radius:7px; padding:7px 0; font-size:13px; font-weight:500; }
+  .seg button.on { background:var(--card); box-shadow:0 3px 8px rgba(0,0,0,.12); font-weight:600; }
+  .big { text-align:center; padding:20px 16px; } .big b { display:block; font-size:34px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .big span { color:var(--muted); font-size:15px; }
+  .sheet input[type=range] { padding:0; accent-color:var(--accent); background:none; }
+  .aibar.warn i { background:var(--warn); }
+  #prof { display:flex; align-items:center; gap:14px; padding:14px 16px; }
+  #prof .av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#ff9f0a,#f2542d); color:#fff; font-size:24px; font-weight:600; display:grid; place-items:center; flex:none; text-transform:uppercase; }
+  #prof b { font-size:20px; } #prof small { display:block; color:var(--muted); font-size:15px; margin-top:2px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--red); flex:none; } .dot.ok { background:var(--ok); }
+  .chk { width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line); background:none; flex:none; display:grid; place-items:center; padding:0; color:#fff; }
+  .chk .ic { width:15px; height:15px; stroke-width:3; opacity:0; } .done .chk { background:var(--ok); border-color:var(--ok); } .done .chk .ic { opacity:1; }
+  .steps li { position:relative; display:flex; gap:12px; align-items:flex-start; padding:12px 16px; font-size:15px; line-height:1.4; } .steps li > div { flex:1; }
+  .steps li.done > div { color:var(--muted); } .steps a { color:var(--accent); } .steps code { font-size:12px; }
+  #burns li.miss .kcal { color:var(--red); } #burns li.miss .kcal::after { content:''; }
+  #edHero { text-align:center; padding:8px 0 4px; } #edHero .food { width:64px; height:64px; font-size:38px; border-radius:16px; margin:0 auto 8px; }
+  #edHero b { font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; } #edHero span { color:var(--muted); }
+  .amt { display:flex; border-bottom:.5px solid var(--line); } .amt input { flex:1; } .amt select { border:0; background:none; color:var(--accent); font-size:17px; padding:0 16px; }
+  #edMeta .cell { background:var(--card); } #edMeta input, #edMeta select { width:auto; }
+  .pwrow { display:flex; align-items:center; background:var(--card); } .pwrow button { border:0; background:none; color:var(--muted); padding:0 14px; display:grid; }
+  #loginStatus.err { color:var(--red); text-align:left; padding:0 16px; }
+  .spin { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:rot .8s linear infinite; vertical-align:-3px; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+  #tabs button.soon { opacity:.45; } #tabs button.soon.act { opacity:1; color:var(--muted); }
+  #tabs .act .ic { fill:currentColor; fill-opacity:.22; }
+  .back { display:flex; align-items:center; margin-left:-8px; } .back .ic { width:22px; height:22px; stroke-width:2.4; }
 </style>
 </head>
 <body>
@@ -201,6 +279,8 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></symbol>
 </svg>
 <form id="login" class="hidden">
@@ -208,22 +288,23 @@
   <p>Trek bijhouden, zonder gedoe.</p>
   <div class="fields">
     <input id="name" autocomplete="username" placeholder="Naam" autocapitalize="none">
-    <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
+    <div class="pwrow"><input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)"><button type="button" id="eye" aria-label="Toon wachtwoord"><svg class="ic"><use href="#i-eye"/></svg></button></div>
   </div>
+  <div id="loginStatus" class="status"></div>
   <button type="submit" id="loginBtn" class="btn primary">Inloggen</button>
   <button type="button" id="registerBtn" class="btn">Account aanvragen</button>
   <div id="gbtn" style="margin-top:16px;display:flex;justify-content:center"></div>
-  <div id="loginStatus" class="status"></div>
 </form>
 <main id="app" class="hidden">
-  <section class="card hidden" id="soon"><svg class="ic"><use id="soonI" href="#i-book"/></svg><h3 id="soonT"></h3><p>Komt in een volgende fase.</p></section>
+  <section class="card hidden" id="soon"><svg class="ic"><use id="soonI" href="#i-book"/></svg><h3 id="soonT"></h3><p>Binnenkort beschikbaar.</p></section>
   <div id="todayView">
-  <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div></div>
-    <div class="btns"><button class="round" id="prev" aria-label="Vorige dag"><svg class="ic"><use href="#i-left"/></svg></button><button class="round" id="next" aria-label="Volgende dag"><svg class="ic"><use href="#i-right"/></svg></button></div></div>
+  <div id="mini"></div>
+  <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
+    <div class="btns"><button id="todayBtn" class="hidden">Vandaag</button><button class="round" id="prev" aria-label="Vorige dag"><svg class="ic"><use href="#i-left"/></svg></button><button class="round" id="next" aria-label="Volgende dag"><svg class="ic"><use href="#i-right"/></svg></button></div></div>
   <section class="card">
     <div id="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="grad"><stop offset="0" stop-color="#ff9f0a"/><stop offset="1" stop-color="#f2542d"/></linearGradient></defs>
       <circle class="trk" cx="60" cy="60" r="52"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
-      <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div></div></div>
+      <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div><div id="estTag" class="hidden">Schatting</div></div></div>
     <div id="motto"></div>
     <div id="macros"></div>
     <div id="why"></div>
@@ -233,13 +314,12 @@
     <button class="cell" id="weight"></button>
   </div>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
-  <h2>Gegeten</h2>
-  <ul class="group" id="list"></ul>
+  <div id="list"></div>
   <section class="hidden" id="pendingCard"><h2>Wacht op goedkeuring</h2><ul class="group" id="pending"></ul></section>
   </div>
 </main>
 <div id="compose" class="hidden"><div>
-  <div id="status"></div>
+  <div id="bubble" class="hidden"></div>
   <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ er context bij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg"><svg class="ic"><use href="#i-x"/></svg></button></div>
   <div class="bar">
     <label id="photoBtn" aria-label="Foto"><svg class="ic"><use href="#i-camera"/></svg><input id="photo" type="file" accept="image/*" hidden></label>
@@ -249,57 +329,95 @@
 </div></div>
 <nav id="tabs" class="hidden">
   <button data-tab="today" class="act"><svg class="ic"><use href="#i-fork"/></svg>Vandaag</button>
-  <button data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
-  <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
-  <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
+  <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
+  <button class="soon" data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
+  <button class="soon" data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
   <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
 </nav>
 <div id="sheet" class="sheet hidden"><div class="card">
   <div class="head"><span></span><b>Meer</b><button id="closeSheet">Klaar</button></div>
+  <div class="group" id="prof"><span class="av" id="profAv"></span><div><b id="profName"></b><small id="profSub"></small></div></div>
   <h2>Doel en AI</h2>
   <div class="group has-tile">
-    <button class="cell nav" id="goalBtn"><span class="tile" style="background:#f2542d"><svg class="ic"><use href="#i-target"/></svg></span><div>Doel<small id="goalSub">Afvallen (−0,5 kg/week)</small></div></button>
+    <button class="cell nav" id="goalBtn"><span class="tile" style="background:#f2542d"><svg class="ic"><use href="#i-target"/></svg></span><div>Doel</div><span class="val" id="goalSub"></span></button>
     <button class="cell nav" id="planBtn"><span class="tile" style="background:#ffcc00"><svg class="ic fill"><use href="#i-star"/></svg></span><div>Abonnement<small id="planSub">Gratis: 10 AI-verzoeken per dag</small></div></button>
-    <div class="cell" style="flex-wrap:wrap"><span class="tile" style="background:#af52de"><svg class="ic"><use href="#i-spark"/></svg></span><div>AI vandaag<small id="aiSub"></small></div><span class="val" id="aiTxt">…</span>
+    <div class="cell" style="flex-wrap:wrap" id="aiCell"><span class="tile" style="background:#af52de"><svg class="ic"><use href="#i-spark"/></svg></span><div>AI vandaag<small id="aiSub"></small></div><span class="val" id="aiTxt">…</span>
       <div id="aiBar" class="aibar" style="flex-basis:100%;padding:0 0 12px 41px"><span><i id="aiFill"></i></span></div></div>
   </div>
   <h2>Koppelingen</h2>
   <div class="group has-tile">
-    <button class="cell nav" id="pushBtn"><span class="tile" style="background:#ff3b30"><svg class="ic"><use href="#i-bell"/></svg></span><div>Meldingen<small id="pushSub">Herinneringen om te loggen</small></div></button>
-    <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>iOS &amp; Garmin<small>Verbruik via Apple Health</small></div></button>
+    <button class="cell nav" id="pushBtn"><span class="tile" style="background:#ff3b30"><svg class="ic"><use href="#i-bell"/></svg></span><div>Meldingen</div><span class="val" id="pushSub"></span></button>
+    <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>iOS &amp; Garmin</div><span class="val" id="garminSub"></span></button>
+    <button class="cell nav" id="mealsBtn"><span class="tile" style="background:#34c759"><svg class="ic"><use href="#i-book"/></svg></span><div>Mijn gerechten</div><span class="val" id="mealsSub"></span></button>
   </div>
-  <h2>Mijn gerechten</h2>
-  <ul class="group" id="meals"></ul>
   <div class="group" style="margin-top:28px">
     <button class="cell center" id="logout"><div>Uitloggen</div></button>
     <button class="cell center danger" id="delAccount"><div>Account verwijderen</div></button>
   </div>
 </div></div>
 <div id="garmin" class="sheet hidden"><div class="card">
-  <div class="head"><span></span><b>iOS &amp; Garmin</b><button id="closeGarmin">Klaar</button></div>
-  <ol class="help">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>iOS &amp; Garmin</b><button id="closeGarmin">Klaar</button></div>
+  <div class="group"><div class="cell"><span class="dot" id="gDot"></span><div id="gStat">Laatst ontvangen<small id="gWhen"></small></div></div></div>
+  <h2>Instellen</h2>
+  <ul class="group steps" id="steps">
     <li>Garmin Connect → Instellingen → Verbonden apps → Apple Gezondheid: Actieve en Rustenergie aan.</li>
     <li>Tik hieronder op <b>Kopieer sleutel</b>.</li>
     <li><a href="https://www.icloud.com/shortcuts/2525ede97e6b4983a72b4ef96c300ff8" target="_blank" rel="noopener"><b>Installeer de TRECK-opdracht</b></a>. Plak daarna in beide <b>Get contents of URL</b>-acties je sleutel bij <code>authorization</code>.</li>
     <li>Opdrachten → Automation → +: <b>App</b> Garmin Connect <i>Is Closed</i>, en <b>Time of Day</b> 23:55 dagelijks. Beide <i>Run Immediately</i> → TRECK-opdracht.</li>
     <li>Druk één keer op de afspeelknop en controleer hieronder of elke dag binnenkomt.</li>
-  </ol>
+  </ul>
   <div class="group"><button class="cell center" id="syncKey"><div>Kopieer sleutel</div></button></div>
-  <h2>Ontvangen (30 dagen)</h2>
+  <h2>Ontvangen (14 dagen)</h2>
   <ul class="group" id="burns"></ul>
   <div class="group"><button class="cell center danger" id="burnClear"><div>Verbruik wissen</div></button></div>
 </div></div>
 <div id="editor" class="sheet hidden"><div class="card">
   <div class="head"><button id="edCancel">Annuleer</button><b id="edTitle"></b><button id="edSave">Bewaar</button></div>
+  <div id="edHero" class="hidden"><div class="food" id="edIcon"></div><b id="edKcal">0</b> <span>kcal</span></div>
   <div class="fields" id="edTop">
     <input id="edName" placeholder="Naam, bijv. Mijn ontbijt">
     <div class="airow" id="edAi"><input id="edAiText" placeholder="Of beschrijf het, bijv. 2 boterhammen kaas"><button id="edAiBtn"><svg class="ic"><use href="#i-spark"/></svg>AI</button></div>
   </div>
   <div id="edRows"></div>
   <button class="link" id="edAdd"><svg class="ic"><use href="#i-plus"/></svg>Product toevoegen</button>
+  <div class="group hidden" id="edMeta" style="margin-top:12px">
+    <label class="cell"><div>Dag</div><input id="edDate" type="date"></label>
+    <label class="cell"><div>Maaltijd</div><select id="edMeal"><option value="ontbijt">Ontbijt</option><option value="lunch">Lunch</option><option value="diner">Avondeten</option><option value="snack">Tussendoor</option></select></label>
+  </div>
   <div class="group hidden" id="edDelWrap"><button class="cell center danger" id="edDel"><div>Verwijder</div></button></div>
   <div id="edStatus" class="status"></div>
 </div></div>
+<div id="meals" class="sheet hidden"><div class="card">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Mijn gerechten</b><button id="mealNew">Nieuw</button></div>
+  <ul class="group" id="mealList"></ul>
+</div></div>
+<div id="goalSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Doel</b><button id="goalSave">Bewaar</button></div>
+  <div class="seg" id="goalSeg"><button data-g="lose">Afvallen</button><button data-g="keep">Op gewicht</button><button data-g="gain">Aankomen</button></div>
+  <div class="group" id="paceWrap"><div class="cell" style="flex-wrap:wrap"><div>Tempo</div><span class="val" id="paceVal"></span>
+    <input id="pace" type="range" min="0.1" max="1" step="0.05" style="flex-basis:100%;margin:0 0 12px"></div></div>
+  <div class="group big"><b id="goalKcal"></b><span id="goalHint"></span></div>
+  <h2>Voortgang naar een persoonlijk doel</h2>
+  <div class="group">
+    <div class="cell" style="flex-wrap:wrap"><div>Gelogde dagen</div><span class="val" id="gDays"></span><div class="aibar" style="flex-basis:100%;padding:0 0 12px"><span><i id="gDaysBar"></i></span></div></div>
+    <div class="cell" style="flex-wrap:wrap"><div>Wegingen<small>Minstens 2, een week uit elkaar</small></div><span class="val" id="gW"></span><div class="aibar" style="flex-basis:100%;padding:0 0 12px"><span><i id="gWBar"></i></span></div></div>
+  </div>
+</div></div>
+<div id="pushSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Meldingen</b><button id="pushSave">Bewaar</button></div>
+  <div class="help hidden" id="pushNote" style="padding-left:16px"></div>
+  <h2>Herinnering om te loggen</h2>
+  <ul class="group" id="pushTimes"></ul>
+  <div class="group"><button class="cell" id="pushAdd" style="color:var(--accent)"><svg class="ic"><use href="#i-plus"/></svg><div>Tijd toevoegen</div></button></div>
+  <h2>Wekelijks wegen</h2>
+  <div class="group"><div class="cell"><select id="wDay"><option value="ma">ma</option><option value="di">di</option><option value="wo">wo</option><option value="do">do</option><option value="vr">vr</option><option value="za">za</option><option value="zo">zo</option></select>
+    <input id="wTime" type="time" value="08:00"><span style="flex:1"></span><input id="wOn" type="checkbox" class="tgl" aria-label="Wegen aan"></div></div>
+  <div class="group"><button class="cell center" id="pushTest"><div>Stuur testmelding</div></button></div>
+</div></div>
+<div id="acts" class="sheet hidden"><div class="as"><div class="group" id="actsList"></div><div class="group"><button class="cell" id="actsX"><div>Annuleer</div></button></div></div></div>
+<div id="ask" class="sheet alert hidden"><div class="card"><b id="askT"></b><p id="askM"></p><input id="askIn"><div class="status" id="askS"></div>
+  <div class="btns"><button id="askX">Annuleer</button><button id="askOk">Bewaar</button></div></div></div>
+<div id="toast" class="hidden"></div>
 <script src="app.js"></script>
 </body>
 </html>

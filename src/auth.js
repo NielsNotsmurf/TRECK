@@ -29,6 +29,9 @@ export async function ensureSchema(env) {
   const { results: us } = await env.DB.prepare('PRAGMA table_info(users)').all();
   if (!us.some((c) => c.name === 'plan')) await env.DB.prepare('ALTER TABLE users ADD COLUMN plan TEXT').run();
   if (!us.some((c) => c.name === 'goal')) await env.DB.prepare('ALTER TABLE users ADD COLUMN goal TEXT').run();
+  if (!us.some((c) => c.name === 'pace')) await env.DB.prepare('ALTER TABLE users ADD COLUMN pace REAL').run();
+  const { results: it } = await env.DB.prepare('PRAGMA table_info(items)').all();
+  if (!it.some((c) => c.name === 'meal')) await env.DB.prepare('ALTER TABLE items ADD COLUMN meal TEXT').run();
   const { results: pu } = await env.DB.prepare('PRAGMA table_info(push)').all();
   if (!pu.some((c) => c.name === 'weigh')) await env.DB.batch(['weigh', 'msg'].map((c) => env.DB.prepare(`ALTER TABLE push ADD COLUMN ${c} TEXT`)));
   await env.DB.prepare('DELETE FROM burn WHERE active > 15000 OR resting > 15000').run(); // foute invoer uit test opdracht
