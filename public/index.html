@@ -134,9 +134,10 @@
   <h2 style="margin-top:0">iOS &amp; Garmin koppelen</h2>
   <ol class="help">
     <li>Garmin Connect → Instellingen → Verbonden apps → Apple Gezondheid: Actieve en Rustenergie aan.</li>
-    <li>Opdrachten-app: per soort (Active / Resting Calories) <b>Find Health Samples</b> met Source = Connect, Start Date in de laatste maand, Group by Day, Fill Missing uit.</li>
-    <li>Daaronder <b>Repeat with each</b> → <b>Get contents of URL</b>: POST naar <code>https://treck.nielsscholtes91.workers.dev/api/burn</code>, headers <code>authorization</code> = Bearer + sleutel, <code>date</code> = Repeat Item → Start Date, <code>active</code> of <code>resting</code> = Repeat Item → Value.</li>
-    <li>Automation: bij sluiten van Garmin Connect en dagelijks 23:55, Run Immediately.</li>
+    <li>Tik hieronder op <b>Kopieer sleutel</b>.</li>
+    <li><a href="https://www.icloud.com/shortcuts/2525ede97e6b4983a72b4ef96c300ff8" target="_blank" rel="noopener"><b>Installeer de TRECK-opdracht</b></a>. Plak daarna in beide <b>Get contents of URL</b>-acties je sleutel bij <code>authorization</code>.</li>
+    <li>Opdrachten → Automation → +: <b>App</b> Garmin Connect <i>Is Closed</i>, en <b>Time of Day</b> 23:55 dagelijks. Beide <i>Run Immediately</i> → TRECK-opdracht.</li>
+    <li>Druk één keer op ▶️ en controleer hieronder of elke dag binnenkomt.</li>
   </ol>
   <div class="row"><button id="syncKey" class="primary">Kopieer sleutel</button></div>
   <h2>Ontvangen (30 dagen)</h2>
