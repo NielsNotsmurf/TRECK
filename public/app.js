@@ -19,7 +19,7 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total, estimate, queued, burn, burnEst, burnAt, week, month } = await api(`/api/items?date=${day}`);
+  const { items, total, estimate, queued, burn, burnEst, burnAt, week, month, weights } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
   const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
   const t = est || total;
@@ -36,6 +36,14 @@ async function load() {
   $('burn').innerHTML = day > iso(new Date()) ? '' : (burn == null ? 'Verbruik: nog niet binnen'
     : `Verbruik${upto} ${burnEst ? '≈ ' : ''}${burn} kcal · ${bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`)
     + `<br>${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).join(' · ')}`;
+  // Fase 5: gewicht (weegschaal via Apple Health), laatste weging t/m deze dag + lijn van 30 dagen.
+  const kg = (x) => x.toFixed(1).replace('.', ',');
+  const w = weights.at(-1), w0 = weights[0];
+  const pts = weights.map((x) => [(new Date(x.date) - new Date(day)) / 864e5 + 30, x.kg]);
+  const lo = Math.min(...pts.map((p) => p[1])), hi = Math.max(...pts.map((p) => p[1])) || 1;
+  $('weight').innerHTML = !w ? '' : `Gewicht ${kg(w.kg)} kg${w.date === day ? '' : ` <small>(${+w.date.slice(8)}-${+w.date.slice(5, 7)})</small>`}`
+    + (weights.length > 1 ? ` · 30 d ${w.kg - w0.kg > 0 ? '+' : ''}${kg(w.kg - w0.kg)} kg` : '')
+    + (weights.length > 1 ? `<svg viewBox="0 0 30 10" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${pts.map(([x, y]) => `${x},${9 - (y - lo) / (hi - lo || 1) * 8}`).join(' ')}"/></svg>` : '');
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
@@ -264,6 +272,7 @@ $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.
 $('garminBtn').onclick = () => {
   $('sheet').classList.add('hidden'); $('garmin').classList.remove('hidden');
   api('/api/burn').then(({ days }) => { // controle: wat de iOS-opdracht heeft gestuurd
+    api('/api/weight').then(({ days: ws }) => { $('weights').innerHTML = ws.length ? ws.map((x) => `<li><div>${x.date}<small>ontvangen ${new Date(x.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${x.kg.toFixed(1).replace('.', ',')} kg</span></li>`).join('') : '<li class="empty">Nog niets ontvangen</li>'; });
     $('burns').innerHTML = days.length ? days.map((b) => `<li><div>${b.date}<small>actief ${b.active ?? '–'} · rust ${b.resting ?? '–'} · ontvangen ${new Date(b.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${b.kcal}</span></li>`).join('') : '<li class="empty">Nog niets ontvangen</li>';
   });
 };

@@ -29,7 +29,8 @@ export async function onRequestGet({ request, env, user }) {
     .bind(user.id, from, date, user.id).first();
   return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
     burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
-    week: await period(monday), month: await period(date.slice(0, 8) + '01') });
+    week: await period(monday), month: await period(date.slice(0, 8) + '01'),
+    weights: (await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date BETWEEN date(?, '-30 days') AND ? ORDER BY date`).bind(user.id, date, date).all()).results });
 }
 
 // Datum zoals iOS hem stuurt zonder opmaak: "2026-11-12", "12 Nov 2026 at 00:00", "Nov 12, 2026", "12 nov. 2026 om 00:00", "12-11-2026".
@@ -89,4 +90,24 @@ export async function burn({ request, env, user }) {
     .bind(user.id, date, active, resting, new Date().toISOString()).run();
   const r = await env.DB.prepare('SELECT kcal FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
   return Response.json({ ok: true, date, kcal: r.kcal });
+}
+
+// Fase 5: POST {date, kg} (body of headers) vanuit de iOS-opdracht (weegschaal -> Apple Health). Laatste weging van de dag wint.
+export async function weight({ request, env, user }) {
+  const b = await request.json().catch(() => ({}));
+  for (const k of ['date', 'kg']) if (b[k] == null && request.headers.get(k)) b[k] = request.headers.get(k);
+  if (b.date && !parseDate(b.date)) return Response.json({ error: `Datum niet herkend: ${b.date}` }, { status: 400 });
+  const parts = String(b.kg ?? '').match(/\d+(?:[.,]\d+)?/g) || []; // "82,4 kg" of "82.4"
+  const kg = parts.length === 1 ? Math.round(parseFloat(parts[0].replace(',', '.')) * 10) / 10 : NaN;
+  if (!(kg >= 20 && kg <= 400)) return Response.json({ error: `Onlogisch gewicht: ${b.kg}. Kies Repeat Item → Value.` }, { status: 400 });
+  const date = parseDate(b.date) || nlToday();
+  await env.DB.prepare(`INSERT INTO weight (user_id, date, kg, updated_at) VALUES (?1, ?2, ?3, ?4)
+    ON CONFLICT (user_id, date) DO UPDATE SET kg = ?3, updated_at = ?4`).bind(user.id, date, kg, new Date().toISOString()).run();
+  return Response.json({ ok: true, date, kg });
+}
+
+// GET -> laatste 30 wegingen (controle in het menu)
+export async function weightList({ env, user }) {
+  const { results } = await env.DB.prepare('SELECT date, kg, updated_at FROM weight WHERE user_id = ? ORDER BY date DESC LIMIT 30').bind(user.id).all();
+  return Response.json({ days: results });
 }

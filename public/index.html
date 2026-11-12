@@ -34,6 +34,8 @@
   #macros { display:flex; gap:8px; margin-top:12px; }
   .help { font-size:14px; line-height:1.45; padding-left:20px; margin:0 0 12px; } .help code { font-size:12px; word-break:break-all; }
   #burn { text-align:center; font-size:14px; color:var(--muted); margin-top:10px; }
+  #weight { text-align:center; font-size:14px; color:var(--muted); margin-top:8px; }
+  #weight svg { display:block; width:100%; height:40px; margin-top:4px; }
   #burn .neg { color:#2a9d5c; } #burn .pos { color:#d9822b; }
   #macros div { flex:1; text-align:center; background:var(--bg); border-radius:12px; padding:8px 0; }
   #macros b { display:block; font-size:18px; }
@@ -106,6 +108,7 @@
     <div id="total">0<small>kcal</small></div>
     <div id="macros"></div>
     <div id="burn"></div>
+    <div id="weight"></div>
   </section>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
   <h2>Gegeten</h2>
@@ -142,6 +145,16 @@
   <div class="row"><button id="syncKey" class="primary">Kopieer sleutel</button></div>
   <h2>Ontvangen (30 dagen)</h2>
   <ul id="burns"></ul>
+  <h2>Weegschaal</h2>
+  <ol class="help">
+    <li>App van de weegschaal → koppel met Apple Gezondheid, Gewicht aan.</li>
+    <li>Open de TRECK-opdracht en voeg onderaan toe: <b>Find Health Samples</b> → Type <i>Weight</i>, Start Date <i>is in the last 30 days</i>, Sort by <i>Start Date</i>, Order <i>Oldest First</i>.</li>
+    <li>Daaronder <b>Repeat with Each</b> (Health Samples), en daarin <b>Get Contents of URL</b>: <code>https://treck.nielsscholtes91.workers.dev/api/weight</code>, Method <i>POST</i>, Headers: <code>authorization</code> = je sleutel, <code>date</code> = Repeat Item → <i>Start Date</i>, <code>kg</code> = Repeat Item → <i>Value</i>.</li>
+    <li>Automation → +: <b>App</b> (app van de weegschaal) <i>Is Closed</i> → <i>Run Immediately</i> → TRECK-opdracht.</li>
+    <li>Druk één keer op ▶️ en controleer hieronder.</li>
+  </ol>
+  <h2>Ontvangen gewicht</h2>
+  <ul id="weights"></ul>
   <div class="row"><button id="burnClear" class="danger">Verbruik wissen</button><button id="closeGarmin">Sluiten</button></div>
 </div></div>
 <div id="editor" class="sheet hidden"><div class="card">

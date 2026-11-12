@@ -57,6 +57,8 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Verbruik per dag los: schatting alleen op voorbije dagen, vandaag = "tot nu" + tijd laatste update, toekomst leeg. Week (vanaf ma) en maand (vanaf 1e) t/m geopende dag = som(verbruik − inname) over dagen met echte inname én echt verbruik.
 - 2026-11-12 Burn: kolommen active/resting apart, verzoek met één van beide laat de ander staan. Opdracht stuurt per dag uit Apple Health (Group by Day, laatste 30 dagen) → elke run vult historie aan, geen gaten na een week offline.
 - 2026-11-12 Menu-knop "iOS & Garmin": uitleg koppelen, sleutel kopiëren, ontvangen verbruik (30 d) en wissen. Opdracht kan niet vanuit de app geëxporteerd worden (iOS vereist ondertekende .shortcut); later evt. iCloud-link van werkende opdracht met importvraag voor de sleutel.
+- 2026-11-12 Fase 5: tabel `weight` (user_id, date, kg); `POST /api/weight` (headers `date`, `kg`) via dezelfde iOS-opdracht: Find Health Samples Weight 30 d, oudste eerst → laatste weging van de dag wint. Geen Group by Day nodig.
+- 2026-11-12 Trend: dagkaart toont laatste weging t/m geopende dag, verschil en lijntje over 30 dagen. Uitleg + ontvangen gewicht in ⋯ → iOS & Garmin.
 
 ## Open vragen
 - Geen.
