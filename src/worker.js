@@ -6,6 +6,7 @@ import * as memory from './memory.js';
 import * as push from './push.js';
 import * as ai from './ai.js';
 import * as insights from './insights.js';
+import * as program from './program.js';
 
 export default {
   async fetch(request, env) {
@@ -25,6 +26,9 @@ export default {
     if (route === 'GET /api/ai') return ai.status(ctx);
     if (route === 'GET /api/stats') return insights.stats(ctx);
     if (route === 'POST /api/insight') return insights.summary(ctx);
+    if (route === 'GET /api/program') return program.show(ctx);
+    if (route === 'POST /api/program') return program.save(ctx);
+    if (route === 'POST /api/advice') return program.advice(ctx);
     if (route === 'POST /api/plan') return ai.plan(ctx);
     if (route === 'POST /api/transcribe') return ai.transcribe(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);

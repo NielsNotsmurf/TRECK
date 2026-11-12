@@ -149,7 +149,7 @@
   #a2hs button { border:0; background:none; color:var(--accent); font-weight:600; padding:6px; } #a2hsX { color:var(--muted) !important; }
   #list li.mate { opacity:.55; } /* rest van het gerecht tijdens slepen */
   /* Fase 12: Inzichten */
-  #insightsView h1 { font-size:34px; font-weight:700; margin:8px 0 10px; letter-spacing:.01em; }
+  #insightsView h1, #programView h1 { font-size:34px; font-weight:700; margin:8px 0 10px; letter-spacing:.01em; }
   .chart { display:block; width:100%; height:auto; overflow:visible; } .chart .ax { font-size:10px; fill:var(--muted); }
   .legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--muted); margin-top:8px; }
   .legend i { display:inline-block; width:8px; height:8px; border-radius:4px; margin-right:5px; } .legend i.dash { width:12px; height:0; border-top:1.5px dashed var(--muted); border-radius:0; vertical-align:middle; }
@@ -159,6 +159,18 @@
   .split { display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:16px; background:var(--fill); }
   .note { font-size:12px; color:var(--muted); margin:8px 0 0; text-align:center; } .aitxt { margin:0; line-height:1.4; }
   #insAi .btn { margin:0; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; } #insAi .btn .ic { width:18px; height:18px; }
+
+  /* Fase 13: Programma */
+  .kpihead { display:flex; justify-content:space-between; align-items:baseline; margin:22px 16px 7px; } .kpihead h2 { margin:0; }
+  .kpihead button { border:0; background:none; color:var(--accent); font-size:15px; padding:0; }
+  .kpis { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding:0 16px; margin:0 -16px; padding:0 16px 4px; scrollbar-width:none; } .kpis::-webkit-scrollbar { display:none; }
+  .kpi { flex:none; width:132px; scroll-snap-align:start; background:var(--card); border-radius:12px; padding:12px; }
+  .kpi span { display:block; font-size:13px; color:var(--muted); } .kpi b { display:block; font-size:22px; font-weight:700; margin:4px 0 2px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .kpi small { display:block; font-size:12px; color:var(--muted); line-height:1.25; } .kpi.off b { color:var(--muted); font-size:15px; font-weight:500; margin:8px 0 4px; }
+  .cell .add { border:0; background:var(--fill); color:var(--accent); border-radius:50%; width:30px; height:30px; display:grid; place-items:center; padding:0; flex:none; } .cell .add .ic { width:16px; height:16px; }
+  #prgAi ul { margin:0 0 10px; padding-left:18px; line-height:1.4; } #prgAi li { margin-bottom:6px; } #prgAi .day { font-size:15px; line-height:1.45; margin:0; white-space:pre-line; }
+  #prgAi .btn { margin:0; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; } #prgAi .btn .ic { width:18px; height:18px; }
+  #progSheet .cell input, #progSheet .cell select { width:auto; max-width:55%; flex:none; text-align:right; padding:6px 10px; border:0; border-radius:8px; background:var(--fill); font-size:17px; color:var(--fg); }
 
   /* Sheets met handgreep en navigatiekop */
   .sheet { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:flex-end; z-index:9; }
@@ -376,6 +388,7 @@
   <div id="insightsView" class="hidden"><h1>Inzichten</h1>
     <div class="seg" id="insSeg"><button data-d="7">7 dagen</button><button data-d="30" class="on">30 dagen</button><button data-d="90">90 dagen</button></div>
     <div id="insBody"></div></div>
+  <div id="programView" class="hidden"><h1>Programma</h1><div id="prgBody"></div></div>
   <div id="todayView">
   <div id="mini"></div>
   <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
@@ -413,7 +426,7 @@
   <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
   <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
   <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
-  <button class="soon" data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
+  <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
   <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
 </nav>
 <div id="sheet" class="sheet hidden"><div class="card">
@@ -481,6 +494,24 @@
     <div class="cell" style="flex-wrap:wrap"><div>Wegingen<small>Minstens 2, een week uit elkaar</small></div><span class="val" id="gW"></span><div class="aibar" style="flex-basis:100%;padding:0 0 12px"><span><i id="gWBar"></i></span></div></div>
   </div>
 </div></div>
+<div id="progSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button data-x>Annuleer</button><b>Mijn doel</b><button id="progSave">Bewaar</button></div>
+  <h2>Doel</h2><div class="group">
+    <label class="cell"><div>Focus</div><select id="pFocus"><option value="lose">Afvallen</option><option value="keep">Op gewicht</option><option value="muscle">Spieropbouw</option><option value="gain">Aankomen</option></select></label>
+    <label class="cell"><div>Streefgewicht</div><input id="pTkg" inputmode="decimal" placeholder="kg"></label>
+    <label class="cell"><div>Streefdatum</div><input id="pTdate" type="date"></label>
+  </div>
+  <h2>Over jou</h2><div class="group">
+    <label class="cell"><div>Lengte</div><input id="pH" inputmode="numeric" placeholder="cm"></label>
+    <label class="cell"><div>Leeftijd</div><input id="pAge" inputmode="numeric" placeholder="jaar"></label>
+    <label class="cell"><div>Geslacht</div><select id="pSex"><option value="">–</option><option value="m">Man</option><option value="v">Vrouw</option></select></label>
+  </div>
+  <p class="note">Streefgewicht en -datum bepalen je tempo; de focus je eiwitdoel. Lengte, leeftijd en geslacht zijn nodig voor BMI, vetpercentage en ruststofwisseling.</p>
+</div></div>
+<div id="kpiSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button data-x>Annuleer</button><b>Kerncijfers</b><button id="kpiSave">Bewaar</button></div>
+  <div id="kpiList"></div>
+</div></div>
 <div id="pushSheet" class="sheet hidden"><div class="card">
   <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Meldingen</b><button id="pushSave">Bewaar</button></div>
   <div class="help hidden" id="pushNote" style="padding-left:16px"></div>
@@ -503,5 +534,6 @@
 <div id="toast" class="hidden"></div>
 <script src="app.js"></script>
 <script src="insights.js"></script>
+<script src="program.js"></script>
 </body>
 </html>

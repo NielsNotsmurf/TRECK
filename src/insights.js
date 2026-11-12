@@ -5,7 +5,7 @@ import { tekst } from './ai.js';
 const nlToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
 const mondayOf = (date) => { const d = new Date(date + 'T12:00Z'); return new Date(d - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10); };
 
-async function collect(env, userId, n) {
+export async function collect(env, userId, n) {
   const to = nlToday(), from = new Date(Date.parse(to + 'T12:00Z') - (n - 1) * 864e5).toISOString().slice(0, 10);
   const q = (sql) => env.DB.prepare(sql).bind(userId, from, to).all().then((r) => r.results);
   const [days, burn, weights] = await Promise.all([

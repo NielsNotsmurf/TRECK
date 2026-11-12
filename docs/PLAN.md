@@ -81,6 +81,9 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 12: AI-samenvatting (POST /api/insight) = 30 dagtotalen als CSV + doel naar Gemini, max 4 zinnen, geen advies/programma; bewaard in config k=insight:<id> per NL-dag, telt mee in de limiet per gebruiker. Geen stappenteller-data, alleen calorieën (besluit gebruiker).
 - 2026-11-12 Gerecht (note meal:<id>, zelfde input_id) verhuist als geheel bij slepen/ander dagdeel/andere dag; wissen en aanpassen blijven per item.
 - 2026-11-12 Beginscherm-uitnodiging: iOS = banner met uitleg (Deel → Zet op beginscherm), elders installeerknop; "Niet nu" = nooit meer (localStorage). Verbruik-regel alleen zichtbaar als er ooit verbruik binnenkwam (Garmin/Apple Health is optioneel).
+- 2026-11-12 Fase 13: instellingen in config k=prog:<id> (geen migratie); streefgewicht+datum → users.goal/pace (0,1–1 kg/wk); focus bepaalt eiwit g/kg (afvallen 1,8, op gewicht 1,6, spier 2,2, aankomen 1,8) ook in het adaptieve doel.
+- 2026-11-12 Fase 13: KPI's rekenen in de client (BMI, Deurenberg-vet%, Mifflin-ruststofwisseling, trend, macro-aandelen, reeks e.d.); ontbrekende data = tegel 'Nog niet' met wat nodig is. Volgorde = volgorde van aanzetten.
+- 2026-11-12 Fase 13: AI-advies alleen op knop (niet automatisch, spaart limiet), max 1× per NL-dag, bewaard in k=advice:<id>; input = 14 dagtotalen + 20 meest gegeten producten + doel.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -92,7 +95,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 | 10 Usability & look | Instellingen (Meer) en emoji's vervangen door een rustige, consistente stijl (lijn-iconen); duidelijkere typebalk (placeholder, knoppen, focus); betere plaatsing/ordening van items op de dagkaart; automatisch een icoon (of afbeelding) per item op basis van het product | Gebruiker vindt menu, typebalk en itemlijst op iPhone duidelijk en mooi; elk item heeft een passend icoon zonder extra AI-verzoek |
 | 11 UX-polish (iOS) | De belangrijkste 3–5 optimalisaties per scherm, zie "Fase 11 details" | Gebruiker test elk scherm op iPhone en vindt het native en duidelijk; geen prompt-popups meer |
 | 12 Analytics (Inzichten) | Inzichten-tab: 7/30/90 d, gem. inname vs doel, dagen op doel, tekort/overschot met verwachte vs gemeten kg/week, grafiek inname/verbruik/doel, gewichtsgrafiek, macro's vs doel + energieverdeling. AI-samenvatting max 1/dag (bewaard), binnen de AI-limiet per gebruiker | Grafieken kloppen met gelogde data; 2e tik op samenvatting dezelfde dag = bewaard antwoord zonder AI-verzoek |
-| 13 Voedingsprogramma & advies | Gedetailleerder doel instellen in de Programma-tab; AI-advies wat te eten/aanpassen op basis van de statistieken uit fase 12. Geen stappenteller-data | Nog uitwerken na fase 12 |
+| 13 Voedingsprogramma & advies | Programma-tab: mijn doel (focus, streefgewicht/-datum, lengte/leeftijd/geslacht), kerncijfers-slider (28 KPI's, zelf te kiezen), voortgang, 'vandaag nog' uit favorieten, AI-advies (3 tips + voorbeelddag). Geen stappenteller-data | Doel instellen verandert tempo/dagdoel; KPI's kiezen blijft bewaard; advies werkt op iPhone |
 
 - Limiet (bronnen 23-10 en 2-9-2026): 3.1 Flash-Lite gratis = 15/min, 500/dag per Google-project; Google publiceert het niet meer officieel, eigen stand op aistudio.google.com/rate-limit. Gemini stuurt geen resterend-headers, alleen een 429 met QuotaFailure → balk = eigen teller (max via `AI_DAY_LIMIT`, standaard 500) + 429-signaal.
 - Gebruik nu ≈4–10/dag; doelen +1/week, analyse max +1/dag → ruim binnen 500, ook met een paar gebruikers.

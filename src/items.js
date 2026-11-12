@@ -1,4 +1,5 @@
 import { favs } from './memory.js';
+import { prog, PROT } from './program.js';
 const nlToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }); // dag in NL-tijd
 // GET ?date=JJJJ-MM-DD -> {items, total}
 export async function onRequestGet({ request, env, user }) {
@@ -47,16 +48,17 @@ export async function target(env, userId, monday) {
   const { results: ws } = await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date >= ${from} AND date < ? ORDER BY date`).bind(userId, monday).all();
   const span = ws.length > 1 ? (new Date(ws.at(-1).date) - new Date(ws[0].date)) / 864e5 : 0;
   const u = await env.DB.prepare('SELECT goal, pace FROM users WHERE id = ?').bind(userId).first();
+  const pf = PROT[(await prog(env, userId)).focus || u?.goal] || 1.8; // Fase 13: eiwit per kg volgt de focus
   if (days.length < 14 || span < 7) return { days: days.length, weighs: ws.length, goal: u?.goal || 'lose' };
   const xs = ws.map((w) => (new Date(w.date) - new Date(ws[0].date)) / 864e5), mx = xs.reduce((a, b) => a + b) / xs.length, my = ws.reduce((a, w) => a + w.kg, 0) / ws.length;
   const slope = xs.reduce((a, x, i) => a + (x - mx) * (ws[i].kg - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0); // kg per dag
   const intake = days.reduce((a, d) => a + d.k, 0) / days.length, tdee = Math.round((intake - slope * 7700) / 10) * 10;
   const [p0, txt] = PACE[u?.goal] || PACE.lose, pace = p0 && (u?.pace ? Math.sign(p0) * u.pace : p0);
   const delta = Math.round(pace * 1100), why = txt.replace('%s', String(Math.abs(pace)).replace('.', ',')), kcal = Math.max(1200, tdee + delta), kg = ws.at(-1).kg;
-  const protein_g = Math.round(kg * 1.8), fat_g = Math.round(kcal * 0.25 / 9), carbs_g = Math.max(0, Math.round((kcal - protein_g * 4 - fat_g * 9) / 4));
+  const protein_g = Math.round(kg * pf), fat_g = Math.round(kcal * 0.25 / 9), carbs_g = Math.max(0, Math.round((kcal - protein_g * 4 - fat_g * 9) / 4));
   const wk = (slope * 7).toFixed(2).replace('.', ',').replace(/^(\d)/, '+$1');
   return { kcal, tdee, protein_g, carbs_g, fat_g, goal: u?.goal || 'lose', days: days.length, weighs: ws.length,
-    why: `Je verbruik is ≈ ${tdee} kcal: ${days.length} dagen gem. ${Math.round(intake)} kcal gegeten bij ${wk} kg/week. Doel ${kcal} kcal ${why}, eiwit 1,8 g per kg.` };
+    why: `Je verbruik is ≈ ${tdee} kcal: ${days.length} dagen gem. ${Math.round(intake)} kcal gegeten bij ${wk} kg/week. Doel ${kcal} kcal ${why}, eiwit ${String(pf).replace('.', ',')} g per kg.` };
 }
 
 // POST {goal: lose|keep|gain, pace: kg/week} -> doel en tempo opslaan (Fase 11: eigen Doel-scherm)
