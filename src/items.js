@@ -32,13 +32,30 @@ export async function onRequestGet({ request, env, user }) {
     week: await period(monday), month: await period(date.slice(0, 8) + '01') });
 }
 
+// Datum zoals iOS hem stuurt zonder opmaak: "2026-11-12", "12 Nov 2026 at 00:00", "Nov 12, 2026", "12 nov. 2026 om 00:00", "12-11-2026".
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'ma', 'jun', 'jul', 'aug', 'sep', 'o', 'nov', 'dec'];
+function parseDate(v) {
+  const t = String(v || '').trim().toLowerCase();
+  if (!t) return null;
+  let m = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return fmt(m[1], m[2], m[3]);
+  m = t.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/); // dag-maand-jaar (NL)
+  if (m) return fmt(m[3], m[2], m[1]);
+  const y = t.match(/\b(\d{4})\b/), name = t.match(/\b(jan|feb|mrt|maa|mar|apr|mei|may|jun|jul|aug|sep|okt|oct|nov|dec)[a-z]*\.?/);
+  const day = t.replace(y?.[0] ?? '', '').match(/\b(\d{1,2})\b/);
+  if (!y || !name || !day) return null;
+  const n = { mrt: 2, maa: 2, mar: 2, mei: 4, may: 4, okt: 9, oct: 9 }[name[1]] ?? MONTHS.indexOf(name[1]);
+  return fmt(y[1], n + 1, day[1]);
+}
+const fmt = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
 // Fase 4: POST {date, active?, resting?} (body of headers) vanuit de iOS-opdracht (Garmin -> Apple Health).
 // Actief en rust apart bewaard; een verzoek met alleen één van beide laat de ander staan. Zo kan de opdracht per dag/per soort sturen.
 export async function burn({ request, env, user }) {
   const h = (k) => request.headers.get(k);
   const b = await request.json().catch(() => ({}));
   for (const k of ['date', 'kcal', 'active', 'resting']) if (b[k] == null && h(k)) b[k] = h(k);
-  const date = /^\d{4}-\d{2}-\d{2}/.test(b.date || '') ? b.date.slice(0, 10) : nlToday();
+  const date = parseDate(b.date) || nlToday();
   const num = (v) => { // iOS stuurt soms "1.812,4 kcal"; leeg = null
     if (v == null || v === '') return null;
     let t = String(v).replace(/[^\d.,]/g, '');
