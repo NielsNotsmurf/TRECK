@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 klaar 11-11; fase 4 klaar 12-11 (Garmin via Apple Health + iOS-opdracht). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 klaar 11-11; fase 4 klaar 12-11 (Garmin via Apple Health + iOS-opdracht). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX Fase 11 (UX-polish iOS, incl. 11b–h) klaar 12-11, push main.
 
 ## Fases
 | Fase | Doel | Klaar als |
@@ -109,6 +109,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 - Fase 11e (12-11): ring volgt je doelkeuze ook vóór het persoonlijke doel (verbruik of 2000 ± tempo×1100). Ringkleur: groen 90–105%, rood erboven (bij aankomen niet). Dunne buitenring = tekort/overschot t.o.v. wat je doel vraagt, groen = goede kant op.
 
+- Fase 11h (12-11): voedselemoji vervangen door 17 eigen lijn-iconen (zelfde stijl als de app), gekleurd tegeltje per categorie; onbekend = bestek.
 - Fase 11g (12-11): Vandaag-tab in het midden van de onderbalk, alleen icoon (oranje rondje).
 - Fase 11f (12-11): live AI-verzoek geeft na 12 s op → wachtrij (cron 60 s timeout). Uit de wachtrij verwerkte items krijgen `items.review = 1`, tellen nergens mee en verschijnen bij openen van de app in "Goedkeuren" (dagdeel, aanpassen, wissen) → `POST /api/review`. Tijdstip = moment van invoer.
 

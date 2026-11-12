@@ -18,17 +18,29 @@ const show = (id) => $(id).classList.remove('hidden'), hide = (id) => $(id).clas
 const MEALS = { ontbijt: 'Ontbijt', lunch: 'Lunch', diner: 'Avondeten', snack: 'Tussendoor' };
 const slotOf = (h) => (h >= 5 && h < 11 ? 'ontbijt' : h >= 11 && h < 15 ? 'lunch' : h >= 17 && h < 22 ? 'diner' : 'snack');
 const mealOf = (i) => i.meal || slotOf(new Date(i.created_at).getHours());
-// Fase 10: automatisch een icoon per item, op trefwoord in de productnaam (geen AI-verzoek).
-const FOOD = [['\u{1F963}', 'muesli|granola|cruesli|havermout|oat|ontbijtgran|cornflakes|pap\\b'], ['\u{1F373}', 'ei\\b|eieren|eitje|omelet|egg'], ['\u{1F95E}', 'pannenkoek|pancake|poffert'], ['\u{1F96A}', 'boterham|sandwich|tosti|broodje|wrap'], ['\u{1F950}', 'croissant|crois'], ['\u{1F35E}', 'brood|toast|beschuit|cracker|rijstwafel|knäck'],
-  ['\u{1F9C0}', 'kaas|cheese'], ['\u{1F95B}', 'melk|milk|karnemelk|chocomel'], ['\u{1F366}', 'ijs\\b|ijsje|softijs'], ['\u{1F944}', 'yoghurt|kwark|skyr|vla|pudding'], ['\u{1F35D}', 'pasta|spaghetti|macaroni|penne|lasagne|bolognese|tagliatelle'], ['\u{1F355}', 'pizza'],
-  ['\u{1F354}', 'burger'], ['\u{1F35F}', 'friet|patat|fries'], ['\u{1F363}', 'sushi'], ['\u{1F35C}', 'noodle|ramen|bami|mie\\b|pho'], ['\u{1F35A}', 'rijst|nasi|risotto|rice|couscous|quinoa'], ['\u{1F32E}', 'taco|burrito|nacho|quesad'],
-  ['\u{1F372}', 'soep|stoof|curry|chili|stamppot|soup|hutspot'], ['\u{1F957}', 'salade|salad|sla\\b|rauwkost'], ['\u{1F357}', 'kip|chicken|kalkoen|shoarma|kebab|gyros'], ['\u{1F969}', 'biefstuk|steak|vlees|gehakt|rund|varken|karbonade|worst|ham\\b|spek|bacon|frikandel|kroket|bitterbal'], ['\u{1F41F}', 'vis\\b|zalm|tonijn|kabeljauw|haring|makreel|garnal|fish|salmon|tuna'], ['\u{1F954}', 'aardappel|potato|puree'],
-  ['\u{1F966}', 'broccoli|groente|bloemkool|spinazie|boontje|sperzie|andijvie|courgette|paprika|wortel|bonen|erwt'], ['\u{1F345}', 'tomaat|tomato'], ['\u{1F951}', 'avocado|guacamole'], ['\u{1F34C}', 'banaan|banana'], ['\u{1F34E}', 'appel|apple'], ['\u{1F353}', 'aardbei|framboos|bes\\b|bessen|blauwe bes|fruit'],
-  ['\u{1F34A}', 'sinaasappel|mandarijn|orange'], ['\u{1F347}', 'druif|druiven|grape'], ['\u{1F95C}', 'noot|noten|nuts|pinda|amandel|cashew|walnoot'], ['\u{1F36B}', 'chocola|choco|snickers|mars|twix|hagelslag|nutella'], ['\u{1F36A}', 'koek|biscuit|cookie|stroopwafel|speculaas|ontbijtkoek'], ['\u{1F370}', 'taart|gebak|cake|tompouce|appeltaart|brownie|muffin|donut'],
-  ['\u{1F36C}', 'snoep|drop|candy|winegum'], ['\u{1F968}', 'chips|popcorn|zoutje|borrel|pretzel'], ['\u{2615}', 'koffie|coffee|cappuccino|latte|espresso|thee|tea'], ['\u{1F37A}', 'bier|beer|pils|radler'], ['\u{1F377}', 'wijn|wine|prosecco|cava'], ['\u{1F964}', 'cola|fanta|sprite|frisdrank|limonade|ranja|sap\\b|juice|smoothie|shake|ice ?tea|energy|red bull|monster'],
-  ['\u{1F4A7}', 'water'], ['\u{1F4AA}', 'eiwit|protein|whey']]
-  .map(([e, k]) => [e, new RegExp(k, 'i')]);
-const foodIcon = (name) => (FOOD.find(([, r]) => r.test(name || '')) || ['\u{1F37D}\u{FE0F}'])[0];
+// Fase 11h: per item een lijn-icoon in één stijl (geen emoji), gekleurd per categorie; op trefwoord, geen AI-verzoek.
+const FOOD = [
+  ['f-wine', '#af52de', 'bier|beer|pils|radler|wijn|wine|prosecco|cava'],
+  ['f-cup', '#a2845e', 'koffie|coffee|cappuccino|latte|espresso|thee|tea\\b'],
+  ['f-drink', '#5ac8fa', 'cola|fanta|sprite|frisdrank|limonade|ranja|sap\\b|juice|smoothie|shake|ice ?tea|energy|red bull|monster|water'],
+  ['f-glass', '#5ac8fa', 'melk|milk|karnemelk|chocomel|eiwit|protein|whey'],
+  ['f-bowl', '#ff9500', 'muesli|granola|cruesli|havermout|oat|ontbijtgran|cornflakes|pap\\b|yoghurt|kwark|skyr|vla|pudding|soep|stoof|curry|chili|stamppot|soup|hutspot|ijs\\b|ijsje'],
+  ['f-egg', '#ffcc00', 'ei\\b|eieren|eitje|omelet|egg'],
+  ['f-cheese', '#ffcc00', 'kaas|cheese'],
+  ['f-pizza', '#ff3b30', 'pizza'],
+  ['f-burger', '#a2845e', 'burger|friet|patat|fries|taco|burrito|nacho|quesad|kroket|frikandel|bitterbal|shoarma|kebab|gyros'],
+  ['f-bread', '#a2845e', 'boterham|sandwich|tosti|broodje|wrap|croissant|brood|toast|beschuit|cracker|rijstwafel|knäck|pannenkoek|pancake|poffert'],
+  ['f-noodle', '#ff9f0a', 'pasta|spaghetti|macaroni|penne|lasagne|bolognese|tagliatelle|noodle|ramen|bami|mie\\b|pho|rijst|nasi|risotto|rice|couscous|quinoa|sushi|aardappel|potato|puree'],
+  ['f-chicken', '#ff9500', 'kip|chicken|kalkoen'],
+  ['f-meat', '#ff3b30', 'biefstuk|steak|vlees|gehakt|rund|varken|karbonade|worst|ham\\b|spek|bacon'],
+  ['f-fish', '#007aff', 'vis\\b|zalm|tonijn|kabeljauw|haring|makreel|garnal|fish|salmon|tuna'],
+  ['f-leaf', '#34c759', 'salade|salad|sla\\b|rauwkost|broccoli|groente|bloemkool|spinazie|boontje|sperzie|andijvie|courgette|paprika|wortel|bonen|erwt|tomaat|tomato|avocado|guacamole'],
+  ['f-apple', '#ff2d55', 'banaan|banana|appel|apple|aardbei|framboos|bes\\b|bessen|fruit|sinaasappel|mandarijn|orange|druif|druiven|grape|peer|kiwi|mango|ananas'],
+  ['f-cookie', '#af52de', 'noot|noten|nuts|pinda|amandel|cashew|walnoot|chocola|choco|snickers|mars|twix|hagelslag|nutella|koek|biscuit|cookie|stroopwafel|speculaas|taart|gebak|cake|tompouce|brownie|muffin|donut|snoep|drop|candy|winegum|chips|popcorn|zoutje|borrel|pretzel'],
+].map(([i, c, k]) => [i, c, new RegExp(k, 'i')]);
+const foodOf = (name) => FOOD.find(([, , r]) => r.test(name || '')) || ['i-fork', '#8e8e93'];
+const foodIcon = (name) => { const [i, c] = foodOf(name); return `<svg class="ic" style="color:${c}"><use href="#${i}"/></svg>`; };
+const foodTile = (name) => `<span class="food" style="--c:${foodOf(name)[1]}">${foodIcon(name)}</span>`;
 let image = null, data = {}, yest = [], fresh = null;
 
 async function api(path, opts = {}) {
@@ -157,7 +169,7 @@ function openReview() {
     const ul = el('ul', 'group');
     for (const i of g) {
       const li = el('li');
-      li.innerHTML = `<span class="food">${foodIcon(i.product)}</span><div></div><select aria-label="Dagdeel">${Object.entries(MEALS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select><span class="kcal"></span><button class="act" aria-label="Wis">${svg('x')}</button>`;
+      li.innerHTML = `${foodTile(i.product)}<div></div><select aria-label="Dagdeel">${Object.entries(MEALS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select><span class="kcal"></span><button class="act" aria-label="Wis">${svg('x')}</button>`;
       li.querySelector('div').append(i.product, el('small', '', i.portion)); li.querySelector('.kcal').textContent = i.kcal;
       const sel = li.querySelector('select'); sel.value = mealOf(i);
       sel.onchange = async () => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: sel.value }) }); i.meal = sel.value; };
@@ -211,7 +223,7 @@ const closeSwipes = (except) => document.querySelectorAll('#list li.swiped').for
 function itemRow(i) {
   const li = el('li');
   li.innerHTML = `<div class="swrap"><div class="sw"><button style="background:#ff9500">${svg('star', i.fav ? 'fill' : '')}${i.fav ? 'Uit fav.' : 'Favoriet'}</button><button style="background:var(--red)">${svg('trash')}Wis</button></div>
-    <div class="row"><span class="food">${foodIcon(i.product)}</span><div></div><span class="kcal"></span>${i.fav ? `<span class="act on">${svg('star', 'fill')}</span>` : ''}</div></div>`;
+    <div class="row">${foodTile(i.product)}<div></div><span class="kcal"></span>${i.fav ? `<span class="act on">${svg('star', 'fill')}</span>` : ''}</div></div>`;
   const row = li.querySelector('.row'), txt = row.querySelector('div');
   txt.append(i.product, el('small', '', i.portion));
   row.querySelector('.kcal').textContent = i.kcal;
@@ -329,7 +341,7 @@ function renderQuick() {
   for (const { m, s } of list) {
     const kcal = m.items.reduce((t, i) => t + i.kcal, 0);
     const b = el('button', `chip${words.length && !s ? ' dim' : ''}`);
-    b.innerHTML = m.saved ? svg('star', 'fill') : `<span>${foodIcon(m.items[0]?.product)}</span>`;
+    b.innerHTML = m.saved ? svg('star', 'fill') : foodIcon(m.items[0]?.product);
     b.append(m.name, el('small', '', kcal));
     b.onclick = () => quickAdd(m.name, m.items, m.saved ? m.id : undefined);
     press(b, () => actions(m.name, m.saved ? [
@@ -342,7 +354,7 @@ function renderQuick() {
   // Fase 11d: tijdens typen passende favorieten direct boven de typebalk: tik = toevoegen zonder AI-verzoek.
   $('suggest').innerHTML = '';
   for (const { m } of words.length ? list.filter((x) => x.s > 0).slice(0, 3) : []) {
-    const b = el('button', 'chip'); b.innerHTML = m.saved ? svg('star', 'fill') : `<span>${foodIcon(m.items[0]?.product)}</span>`;
+    const b = el('button', 'chip'); b.innerHTML = m.saved ? svg('star', 'fill') : foodIcon(m.items[0]?.product);
     b.append(m.name, el('small', '', m.items.reduce((t, i) => t + i.kcal, 0)));
     b.onclick = () => quickAdd(m.name, m.items, m.saved ? m.id : undefined);
     $('suggest').append(b);
@@ -388,7 +400,7 @@ function edRow(i = {}) {
 const edState = () => JSON.stringify([...document.querySelectorAll('#editor input, #editor select')].map((x) => x.value));
 function hero() {
   const r = $('edRows').firstElementChild; if (!r) return;
-  $('edKcal').textContent = r.querySelector('[data-k=kcal]').value || 0; $('edIcon').textContent = foodIcon(r.querySelector('[data-k=product]').value);
+  $('edKcal').textContent = r.querySelector('[data-k=kcal]').value || 0; $('edIcon').innerHTML = foodIcon(r.querySelector('[data-k=product]').value); $('edIcon').style.setProperty('--c', foodOf(r.querySelector('[data-k=product]').value)[1]);
 }
 let edSave = null, edRemove = null, edSnap = '';
 $('edDel').onclick = () => actions(null, [{ label: 'Verwijder', danger: true, fn: async () => { await edRemove(); hide('editor'); } }]);
@@ -597,7 +609,7 @@ function renderMeals() {
   $('mealList').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Veeg een item naar links → Favoriet, of tik + bij Snel toevoegen.</li>';
   for (const m of meals) {
     const li = el('li');
-    li.innerHTML = `<span class="food">${foodIcon(m.items[0]?.product)}</span><div></div><span class="kcal">${m.items.reduce((t, i) => t + i.kcal, 0)}</span>`;
+    li.innerHTML = `${foodTile(m.items[0]?.product)}<div></div><span class="kcal">${m.items.reduce((t, i) => t + i.kcal, 0)}</span>`;
     li.querySelector('div').append(m.name, el('small', '', m.items.map((i) => i.product).join(', ')));
     li.onclick = () => { hide('meals'); mealEditor(m); };
     $('mealList').append(li);
