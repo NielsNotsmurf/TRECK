@@ -269,6 +269,10 @@ $('syncKey').onclick = async () => {
   try { await navigator.clipboard.writeText(k); alert('Sleutel gekopieerd. Plak hem in de iOS-opdracht bij "Bearer ".'); }
   catch { prompt('Kopieer deze sleutel voor de iOS-opdracht:', k); }
 };
+$('burnClear').onclick = async () => {
+  if (!confirm('Al het ontvangen verbruik wissen? De iOS-opdracht vult het daarna weer aan.')) return;
+  await api('/api/burn', { method: 'DELETE' }); $('burns').innerHTML = '<li class="empty">Nog niets ontvangen</li>'; load();
+};
 $('logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); bye(); };
 $('delAccount').onclick = async () => {
   if (!confirm('Account en al je gegevens definitief verwijderen?')) return;

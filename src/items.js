@@ -55,6 +55,12 @@ export async function burnList({ env, user }) {
   return Response.json({ days: results });
 }
 
+// DELETE -> al het verbruik van deze gebruiker wissen (opnieuw testen; de opdracht vult het weer aan)
+export async function burnClear({ env, user }) {
+  await env.DB.prepare('DELETE FROM burn WHERE user_id = ?').bind(user.id).run();
+  return new Response(null, { status: 204 });
+}
+
 // Fase 4: POST {date, active?, resting?} (body of headers) vanuit de iOS-opdracht (Garmin -> Apple Health).
 // Actief en rust apart bewaard; een verzoek met alleen één van beide laat de ander staan. Zo kan de opdracht per dag/per soort sturen.
 export async function burn({ request, env, user }) {
