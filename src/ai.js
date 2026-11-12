@@ -8,6 +8,7 @@ Bepaal uit de invoer (tekst, foto en/of spraak) elk gegeten product of gerecht.
 Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; "gisteravond", "zaterdag" e.d. omrekenen vanaf nu; standaard de geopende dag als die genoemd is, anders vandaag),
 product (kort, Nederlands), portion (bijv. "1 bord, ca. 350 g"), kcal, protein_g, carbs_g, fat_g (getallen, schatting),
 amount + unit: de hoeveelheid waar kcal bij hoort. unit "g" voor vast eten dat je weegt (pasta, kaas, vlees), "ml" voor dranken/vloeibaar, "stuk" voor telbare dingen (boterham, ei, appel, koek).
+meal: alleen als de invoer het dagdeel noemt of duidelijk maakt (ontbijt, lunch, avondeten/diner, tussendoor/snack/extraatje, of bijv. "gisteravond" = diner): ontbijt|lunch|diner|snack; anders weglaten.
 Gebruik je de foto, let dan op wat de tekst erbij zegt (bijv. "halve portie", "zonder saus").
 Geen eten herkend? Geef een lege lijst.`;
 
@@ -22,6 +23,7 @@ const SCHEMA = {
           date: { type: 'STRING' }, product: { type: 'STRING' }, portion: { type: 'STRING' },
           kcal: { type: 'NUMBER' }, protein_g: { type: 'NUMBER' }, carbs_g: { type: 'NUMBER' }, fat_g: { type: 'NUMBER' },
           amount: { type: 'NUMBER' }, unit: { type: 'STRING', enum: ['g', 'ml', 'stuk'] },
+          meal: { type: 'STRING', enum: ['ontbijt', 'lunch', 'diner', 'snack'] },
         },
         required: ['date', 'product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'amount', 'unit'],
       },

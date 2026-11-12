@@ -1,25 +1,30 @@
 import { analyseer, usage } from './ai.js';
 import { context } from './memory.js';
 
+// Dagdeel uit een woord in de tekst (zonder AI); gaat vóór het tijdstip. Eén dagdeel genoemd → geldt voor de hele invoer.
+const WORDS = { ontbijt: /ontbijt|ontbeten/, lunch: /lunch|middageten/, diner: /avondeten|diner|avondmaal|gedineerd/, snack: /tussendoor|snack|extraatje/ };
+export const mealWord = (t) => { const hit = Object.keys(WORDS).filter((k) => WORDS[k].test(String(t || '').toLowerCase())); return hit.length === 1 ? hit[0] : null; };
+
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
 // review = 1: later uit de wachtrij verwerkt, telt pas mee na goedkeuring in de app. at = moment van invoer.
 async function verwerk(input, userId, env, review = null, at = null) {
   const items = await analyseer({ ...input, fast: !review, memory: await context(env, userId) }, env, userId);
   const note = input.text || (input.audio ? '[spraak]' : '') || (input.image ? '[foto]' : '');
+  const word = mealWord(input.text);
   const inputId = crypto.randomUUID();
   const createdAt = at || new Date().toISOString();
   const stmt = env.DB.prepare(
-    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, review)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, review, meal)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   if (items.length) {
     await env.DB.batch(items.map((i) => stmt.bind(
       inputId, i.date, i.product, i.portion,
       Math.round(i.kcal), Math.round(i.protein_g), Math.round(i.carbs_g), Math.round(i.fat_g),
-      note, createdAt, userId, i.amount || null, i.unit || null, review,
+      note, createdAt, userId, i.amount || null, i.unit || null, review, word || i.meal || null,
     )));
   }
-  return items.map((i) => ({ ...i, input_id: inputId }));
+  return items.map((i) => ({ ...i, meal: word || i.meal || null, input_id: inputId }));
 }
 
 // POST {text?, image?:{mime,data}, audio?:{mime,data}, now} -> {items} of {queued: true}
