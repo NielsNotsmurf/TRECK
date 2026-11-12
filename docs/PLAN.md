@@ -52,6 +52,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Tabel `burn` (user_id, date, kcal); `POST /api/burn {date, active, resting}` overschrijft die dag. Sleutel = eigen sessie via menu "Sleutel iOS-opdracht" (blijft na uitloggen).
 - 2026-11-11 Dagkaart: "Verbruik X kcal · tekort/overschot Y" (verbruik − intake; bij schatting met ≈).
 - 2026-11-12 Dag zonder verbruik: ≈ gemiddelde verbruik van de 14 dagen ervoor (live, niet opgeslagen). Shortcut mag waarden ook als header sturen.
+- 2026-11-12 Verbruik zonder datum = vandaag in NL-tijd (Europe/Amsterdam). Opdracht draait vaak (bij sluiten Garmin Connect + vaste tijden, laatste 23:55); elke run overschrijft de dag met het nieuwste totaal.
 
 ## Open vragen
 - Geen.
