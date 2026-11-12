@@ -66,7 +66,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 7: food-thema (crème/tomaat/oranje/avocado), ring = inname t.o.v. verbruik, zonder verbruik t.o.v. 2000 kcal tot fase 9; korte motiverende tekst.
 - 2026-11-12 Fase 7: onderbalk Vandaag / Recepten / Inzichten / Programma / Meer. Alleen Vandaag en Meer werken; de rest toont "komt in een volgende fase". Menu = lijst met iconen.
 - 2026-11-12 Fase 8: teller in D1 `config` (k=ai, per Pacific-dag) telt elk geslaagd Gemini-verzoek; 429 met `PerDay` in quotaId = balk vol + wachtrij pauzeert tot reset, anders "even wachten". Balk bovenaan Instellingen in Meer, GET /api/ai.
-- 2026-11-12 Fase 8: balk toont 1/5 van de gratis limiet (100/dag i.p.v. 500), op verzoek gebruiker; alleen weergave, AI blijft werken boven 100.
+- 2026-11-12 Fase 8: limiet per gebruiker (config k=ai:<id>): gratis 10/dag, abonnement 100/dag; daarboven stopt de AI (429 met uitleg). Abonnement is nep: tik in Meer = direct aan/uit (kolom users.plan).
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -85,6 +85,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Geen.
 
 ## Later
+- Top-up (losse extra AI-verzoeken) en echte betaling voor het abonnement.
 - Onderbalk-tabs vullen: recepten/gerechten-suggesties, AI-analytics en progressie-inzichten (fase 10), voedingsprogramma's.
 - Barcodescanner via Open Food Facts (gratis, geen AI-verzoek).
 - Micronutriënten (vezels, suiker, zout) zoals Cronometer.

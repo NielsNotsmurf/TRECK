@@ -22,6 +22,7 @@ export default {
     if (!user) return new Response('Geen toegang', { status: 401 });
     const ctx = { request, env, user };
     if (route === 'GET /api/ai') return ai.status(ctx);
+    if (route === 'POST /api/plan') return ai.plan(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);
     if (route === 'PUT /api/items') return items.onRequestPut(ctx);

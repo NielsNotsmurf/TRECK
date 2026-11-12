@@ -321,14 +321,17 @@ $('menuBtn').onclick = () => {
     $('meals').append(li);
   }
   $('sheet').classList.remove('hidden');
-  api('/api/ai').then(({ used, limit, full, reset }) => { // Fase 8: AI-limietbalk
-    full ||= used >= limit;
-    $('aiBar').classList.toggle('full', full);
-    $('aiTxt').textContent = full ? `AI vandaag vol (${used}/${limit})` : `AI vandaag ${used}/${limit}`;
-    $('aiSub').textContent = `reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
-    $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
-  }).catch(() => {});
+  api('/api/ai').then(showAi).catch(() => {});
 };
+// Fase 8: AI-limietbalk + nep-abonnement (gratis 10/dag, abonnement 100/dag).
+function showAi({ used, limit, plan, full, reset }) {
+  $('aiBar').classList.toggle('full', full);
+  $('aiTxt').textContent = full ? `AI vandaag vol (${used}/${limit})` : `AI vandaag ${used}/${limit}`;
+  $('aiSub').textContent = `reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
+  $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
+  $('planSub').textContent = plan === 'pro' ? 'Actief (proef): 100 per dag · tik om op te zeggen' : 'Gratis: 10 per dag · tik voor 100 per dag';
+}
+$('planBtn').onclick = () => api('/api/plan', { method: 'POST' }).then(showAi);
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
 $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };
 $('garminBtn').onclick = () => {

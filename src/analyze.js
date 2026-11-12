@@ -3,7 +3,7 @@ import { context } from './memory.js';
 
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
 async function verwerk(input, userId, env) {
-  const items = await analyseer({ ...input, memory: await context(env, userId) }, env);
+  const items = await analyseer({ ...input, memory: await context(env, userId) }, env, userId);
   const note = input.text || (input.audio ? '[spraak]' : '') || (input.image ? '[foto]' : '');
   const inputId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -27,7 +27,7 @@ export async function onRequestPost({ request, env, user }) {
   try {
     return Response.json({ items: await verwerk(input, user.id, env) });
   } catch (e) {
-    if (e.retry === false) return Response.json({ error: e.message }, { status: 502 });
+    if (e.retry === false) return Response.json({ error: e.message }, { status: e.limit ? 429 : 502 });
     // Drukte of storing: bewaren en later opnieuw proberen. `now` blijft het moment van invoer.
     await env.DB.prepare('INSERT INTO queue (user_id, payload, attempts, created_at) VALUES (?, ?, 0, ?)')
       .bind(user.id, JSON.stringify(input), new Date().toISOString()).run();

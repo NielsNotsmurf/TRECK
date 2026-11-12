@@ -30,7 +30,9 @@ const SCHEMA = {
   required: ['items'],
 };
 
-export async function analyseer({ text, image, audio, now, memory }, env) {
+export async function analyseer({ text, image, audio, now, memory }, env, userId) {
+  const mine = userId ? await usage(env, userId) : null;
+  if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Neem een abonnement via Meer, of wacht tot de reset.`), { retry: false, limit: true });
   const parts = [{ text: PROMPT(now) }];
   if (memory) parts.push({ text: memory });
   if (text) parts.push({ text: `Invoer: ${text}` });
@@ -52,10 +54,10 @@ export async function analyseer({ text, image, audio, now, memory }, env) {
     // Fase 8: QuotaFailure.quotaId zegt of het de minuut- of daglimiet is.
     const body = await res.text();
     const day = /PerDay/i.test(body);
-    if (day) await saveUsage(env, { ...(await usage(env)), full: true });
+    if (day) await saveUsage(env, { ...(await usage(env)), full: true }, 'ai');
     throw Object.assign(new Error(`Gemini 429: ${body.slice(0, 300)}`), { retry: true, quota: day ? 'day' : 'minute' });
   }
-  if (res.ok) { const u = await usage(env); await saveUsage(env, { ...u, n: u.n + 1 }); }
+  if (res.ok) for (const k of ['ai', userId && `ai:${userId}`].filter(Boolean)) { const u = await usage(env, k === 'ai' ? null : userId); await saveUsage(env, { d: u.d, n: u.n + 1, full: u.full }, k); }
   if (!res.ok) {
     // retry = tijdelijk (drukte/storing): de invoer gaat dan in de wachtrij.
     throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { retry: res.status === 429 || res.status >= 500 });
@@ -65,20 +67,35 @@ export async function analyseer({ text, image, audio, now, memory }, env) {
   return JSON.parse(json).items;
 }
 
-// Fase 8: eigen teller per Pacific-dag (Gemini reset om middernacht Pacific; stuurt geen resterend-headers).
+// Fase 8: eigen teller per Pacific-dag (Gemini reset om middernacht Pacific). Totaal (k=ai, voor de echte 429) + per gebruiker (k=ai:<id>).
+// Per gebruiker: gratis 10/dag, abonnement (nu nep) 100/dag.
 const pacific = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-export async function usage(env) {
-  const row = await env.DB.prepare("SELECT v FROM config WHERE k = 'ai'").first();
+export async function usage(env, userId) {
+  const k = userId ? `ai:${userId}` : 'ai';
+  const row = await env.DB.prepare('SELECT v FROM config WHERE k = ?').bind(k).first();
   const u = row ? JSON.parse(row.v) : {};
-  return u.d === pacific() ? u : { d: pacific(), n: 0, full: false };
+  const out = u.d === pacific() ? u : { d: pacific(), n: 0, full: false };
+  if (userId) {
+    const p = await env.DB.prepare('SELECT plan FROM users WHERE id = ?').bind(userId).first();
+    out.plan = p?.plan || 'free'; out.limit = out.plan === 'pro' ? 100 : 10;
+  }
+  return out;
 }
-const saveUsage = (env, u) => env.DB.prepare("INSERT OR REPLACE INTO config (k, v) VALUES ('ai', ?)").bind(JSON.stringify(u)).run();
+const saveUsage = (env, u, k) => env.DB.prepare('INSERT OR REPLACE INTO config (k, v) VALUES (?, ?)').bind(k, JSON.stringify(u)).run();
 
-// GET /api/ai -> {used, limit, full, reset} ; reset = volgende middernacht Pacific (ISO).
-export async function status({ env }) {
-  const u = await usage(env);
+// GET /api/ai -> {used, limit, plan, full, reset}; reset = volgende middernacht Pacific (ISO).
+export async function status({ env, user }) {
+  const u = await usage(env, user.id);
+  const g = await usage(env);
   const now = new Date();
   const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
   const reset = new Date(now.getTime() + (new Date(la).setHours(24, 0, 0, 0) - la.getTime()));
-  return Response.json({ used: u.n, limit: Number(env.AI_DAY_LIMIT) || 100, full: !!u.full, reset: reset.toISOString() });
+  return Response.json({ used: u.n, limit: u.limit, plan: u.plan, full: u.n >= u.limit || !!g.full, reset: reset.toISOString() });
+}
+
+// POST /api/plan: abonnement aan/uit (nep, geen betaling).
+export async function plan({ env, user }) {
+  const u = await usage(env, user.id);
+  await env.DB.prepare('UPDATE users SET plan = ? WHERE id = ?').bind(u.plan === 'pro' ? 'free' : 'pro', user.id).run();
+  return status({ env, user });
 }

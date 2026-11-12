@@ -68,9 +68,9 @@ export async function save({ request, env, user }) {
 export async function parse({ request, env, user }) {
   const input = await request.json();
   try {
-    return Response.json({ items: await analyseer({ ...input, memory: await context(env, user.id) }, env) });
+    return Response.json({ items: await analyseer({ ...input, memory: await context(env, user.id) }, env, user.id) });
   } catch (e) {
-    return Response.json({ error: e.retry ? 'Gemini is druk, probeer het zo opnieuw of vul zelf in' : e.message }, { status: 502 });
+    return Response.json({ error: e.limit ? e.message : e.retry ? 'Gemini is druk, probeer het zo opnieuw of vul zelf in' : e.message }, { status: 502 });
   }
 }
 export async function remove({ request, env, user }) {
