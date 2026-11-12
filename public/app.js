@@ -28,13 +28,13 @@ async function load() {
   $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
     .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
-  const today = day === iso(new Date());
   const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
+  // Tijdstip van de laatste meting: tijdens die dag = "t/m HH:MM", daarna binnengekomen = hele dag.
   const at = burnAt ? new Date(burnAt) : null;
-  const when = at ? ` · bijgewerkt ${at.toDateString() === new Date().toDateString() ? '' : `${at.getDate()}-${at.getMonth() + 1} `}${pad(at.getHours())}:${pad(at.getMinutes())}` : '';
+  const upto = !at ? '' : iso(at) === day ? ` t/m ${pad(at.getHours())}:${pad(at.getMinutes())}` : iso(at) > day ? ' hele dag' : '';
   const sum = (p, label) => p.days ? `${label} ${bal(p.diff)} <small>(${p.days} d)</small>` : '';
   $('burn').innerHTML = day > iso(new Date()) ? '' : (burn == null ? 'Verbruik: nog niet binnen'
-    : `Verbruik${today ? ' tot nu' : ''} ${burnEst ? '≈ ' : ''}${burn} kcal · ${bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}${when}`)
+    : `Verbruik${upto} ${burnEst ? '≈ ' : ''}${burn} kcal · ${bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`)
     + `<br>${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).join(' · ')}`;
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
