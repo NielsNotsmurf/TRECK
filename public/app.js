@@ -199,7 +199,7 @@ function itemRow(i) {
 async function toggleFav(i) {
   if (i.fav) { await api(`/api/meals?id=${i.fav}`, { method: 'DELETE' }); say('Uit favorieten gehaald'); load(); loadQuick(); return; }
   ask({ title: 'Bewaar als favoriet', msg: 'Typ deze naam later, of tik hem aan bij Snel toevoegen.', value: i.product, placeholder: 'Bijv. Mijn ontbijt',
-    ok: async (name) => { if (!name) throw new Error('Geef een naam'); await api('/api/meals', { method: 'POST', body: JSON.stringify({ input_id: i.input_id, name }) }); toast(`"${name}" bewaard`); load(); loadQuick(); } });
+    ok: async (name) => { if (!name) throw new Error('Geef een naam'); await api('/api/meals', { method: 'POST', body: JSON.stringify({ item_id: i.id, name }) }); toast(`"${name}" bewaard`); load(); loadQuick(); } });
 }
 async function removeItem(i) {
   await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load();
@@ -291,6 +291,15 @@ function renderQuick() {
     $('quick').append(b);
   }
   $('quick').scrollLeft = 0;
+  // Fase 11d: tijdens typen passende favorieten direct boven de typebalk: tik = toevoegen zonder AI-verzoek.
+  $('suggest').innerHTML = '';
+  for (const { m } of words.length ? list.filter((x) => x.s > 0).slice(0, 3) : []) {
+    const b = el('button', 'chip'); b.innerHTML = m.saved ? svg('star', 'fill') : `<span>${foodIcon(m.items[0]?.product)}</span>`;
+    b.append(m.name, el('small', '', m.items.reduce((t, i) => t + i.kcal, 0)));
+    b.onclick = () => quickAdd(m.name, m.items, m.saved ? m.id : undefined);
+    $('suggest').append(b);
+  }
+  $('suggest').classList.toggle('hidden', !$('suggest').children.length);
 }
 $('text').addEventListener('input', renderQuick);
 const canSend = () => { $('send').disabled = !$('text').value.trim() && !image; };

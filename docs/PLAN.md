@@ -105,6 +105,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 - Fase 11c (12-11): dagdelen staan altijd op de dag (ook leeg); lang vasthouden + slepen = ander dagdeel (kolom `meal`), loslaten zonder slepen = menu. Zonder eigen keuze bepaalt de invoertijd het dagdeel.
 
+- Fase 11d (12-11): favoriet = één los item (`meals.source = item:<id>`), niet meer de hele invoer; oude favorieten per invoer blijven werken. Tijdens typen staan passende favorieten boven de typebalk (tik = toevoegen, geen AI).
+
 ## Open vragen
 - Geen.
 

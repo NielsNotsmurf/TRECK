@@ -50,15 +50,17 @@ export async function add({ request, env, user }) {
 
 // POST {name, items} of {name, input_id} (+ id bij aanpassen) -> bewaren als eigen gerecht. DELETE ?id= -> wissen.
 export async function save({ request, env, user }) {
-  const { id, input_id, name, items: given } = await request.json();
+  const { id, input_id, item_id, name, items: given } = await request.json();
   let items = given;
-  if (input_id) ({ results: items } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND input_id = ? ORDER BY id').bind(user.id, input_id).all());
+  // Fase 11d: één los item als favoriet (item_id), niet meer de hele invoer.
+  if (item_id) ({ results: items } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND id = ?').bind(user.id, item_id).all());
+  else if (input_id) ({ results: items } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND input_id = ? ORDER BY id').bind(user.id, input_id).all());
   items = (items || []).filter((i) => String(i.product || '').trim())
     .map((i) => ({ ...pick(i), ...Object.fromEntries(KEYS.slice(2).map((k) => [k, Math.round(i[k]) || 0])) }));
   if (!items.length || !String(name || '').trim()) return Response.json({ error: 'Geef een naam en minstens één product' }, { status: 400 });
   const at = new Date().toISOString();
   const old = id && await env.DB.prepare('SELECT source FROM meals WHERE id = ? AND user_id = ?').bind(id, user.id).first();
-  const source = input_id || old?.source || null;
+  const source = (item_id && `item:${item_id}`) || input_id || old?.source || null;
   await env.DB.batch([
     env.DB.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').bind(id || 0, user.id),
     env.DB.prepare('INSERT OR REPLACE INTO meals (user_id, name, items, created_at, source) VALUES (?, ?, ?, ?, ?)').bind(user.id, name.trim(), JSON.stringify(items), at, source),
@@ -84,5 +86,5 @@ export async function remove({ request, env, user }) {
 export async function favs(env, userId) {
   const { results } = await env.DB.prepare('SELECT id, source FROM meals WHERE user_id = ?').bind(userId).all();
   const ids = new Set(results.map((m) => m.id)), bySource = Object.fromEntries(results.map((m) => [m.source, m.id]));
-  return (i) => bySource[i.input_id] || (String(i.note).startsWith('meal:') && ids.has(+i.note.slice(5)) ? +i.note.slice(5) : null);
+  return (i) => bySource[`item:${i.id}`] || bySource[i.input_id] || (String(i.note).startsWith('meal:') && ids.has(+i.note.slice(5)) ? +i.note.slice(5) : null);
 }

@@ -277,6 +277,7 @@
   #list ul.lift { overflow:visible; } #list ul.drop { box-shadow:0 0 0 2px var(--accent); }
   .empty.slim { padding:11px 16px !important; font-size:15px; justify-content:flex-start; text-align:left; }
   #list li:not(.sliding) .sw { visibility:hidden; }
+  #suggest { display:flex; gap:8px; overflow-x:auto; padding:0 0 8px; scrollbar-width:none; } #suggest .chip { background:var(--soft); }
 </style>
 </head>
 <body>
@@ -341,6 +342,7 @@
 </main>
 <div id="compose" class="hidden"><div>
   <div id="bubble" class="hidden"></div>
+  <div id="suggest" class="hidden"></div>
   <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ er context bij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg"><svg class="ic"><use href="#i-x"/></svg></button></div>
   <div class="bar">
     <label id="photoBtn" aria-label="Foto"><svg class="ic"><use href="#i-camera"/></svg><input id="photo" type="file" accept="image/*" hidden></label>
