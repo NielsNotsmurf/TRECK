@@ -194,12 +194,20 @@ $('revOk').onclick = async () => {
   hide('review'); toast(`${R.length === 1 ? '1 item' : `${R.length} items`} toegevoegd`); load();
 };
 // Lang vasthouden: loslaten zonder bewegen = menu, slepen = naar ander dagdeel.
+// Gerecht (toegevoegd als groep, note meal:<id>) verhuist als geheel naar ander dagdeel/dag; wissen blijft per item.
+const groupOf = (i) => (i.note?.startsWith('meal:') ? (data.items || []).filter((x) => x.input_id === i.input_id) : [i]);
+async function move(i, patch) {
+  const g = groupOf(i);
+  await Promise.all(g.map((x) => api('/api/items', { method: 'PUT', body: JSON.stringify({ ...x, ...patch }) })));
+  return g.length > 1 ? `${i.product} + ${g.length - 1}` : i.product;
+}
 function dragPress(li, row, i, menu) {
   let t, x0, y0, sy0, state = null, target = null;
-  const clear = () => document.querySelectorAll('#list ul').forEach((u) => u.classList.remove('drop', 'lift'));
+  const clear = () => { document.querySelectorAll('#list ul').forEach((u) => u.classList.remove('drop', 'lift')); document.querySelectorAll('#list li.mate').forEach((x) => x.classList.remove('mate')); };
   row.addEventListener('touchstart', (e) => {
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; sy0 = scrollY; state = 'wait';
-    t = setTimeout(() => { state = 'held'; navigator.vibrate?.(10); li.classList.add('drag'); li.parentNode.classList.add('lift'); }, 450);
+    t = setTimeout(() => { state = 'held'; navigator.vibrate?.(10); li.classList.add('drag'); li.parentNode.classList.add('lift');
+      for (const x of groupOf(i)) if (x.id !== i.id) document.querySelector(`#list li[data-id="${x.id}"]`)?.classList.add('mate'); }, 450);
   }, { passive: true });
   row.addEventListener('touchmove', (e) => {
     const p = e.touches[0], dy = p.clientY - y0;
@@ -217,13 +225,13 @@ function dragPress(li, row, i, menu) {
     e.preventDefault(); li.classList.remove('drag'); li.style.transform = ''; clear();
     if (st === 'held') return menu();
     const m = target?.dataset.meal;
-    if (m && m !== mealOf(i)) { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: m }) }); toast(`${i.product} → ${MEALS[m]}`); load(); }
+    if (m && m !== mealOf(i)) { toast(`${await move(i, { meal: m })} → ${MEALS[m]}`); load(); }
   });
   row.addEventListener('contextmenu', (e) => { e.preventDefault(); menu(); });
 }
 const closeSwipes = (except) => document.querySelectorAll('#list li.swiped').forEach((x) => { if (x !== except) { x.classList.remove('swiped', 'sliding'); x.querySelector('.row').style.transform = ''; } });
 function itemRow(i) {
-  const li = el('li');
+  const li = el('li'); li.dataset.id = i.id;
   li.innerHTML = `<div class="swrap"><div class="sw"><button style="background:#ff9500">${svg('star', i.fav ? 'fill' : '')}${i.fav ? 'Uit fav.' : 'Favoriet'}</button><button style="background:var(--red)">${svg('trash')}Wis</button></div>
     <div class="row">${foodTile(i.product)}<div></div><span class="kcal"></span>${i.fav ? `<span class="act on">${svg('star', 'fill')}</span>` : ''}</div></div>`;
   const row = li.querySelector('.row'), txt = row.querySelector('div');
@@ -235,9 +243,9 @@ function itemRow(i) {
   dragPress(li, row, i, () => actions(i.product, [
     { label: 'Wijzig', fn: () => editItem(i) },
     { label: 'Naar andere dag', fn: () => ask({ title: 'Naar andere dag', type: 'date', value: i.date, okText: 'Verplaats',
-      ok: async (v) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, date: v }) }); toast(`Verplaatst naar ${dayName(v).toLowerCase()}`); load(); } }) },
+      ok: async (v) => { toast(`${await move(i, { date: v })} → ${dayName(v).toLowerCase()}`); load(); } }) },
     { label: 'Ander dagdeel', fn: () => actions('Verplaats naar', Object.entries(MEALS).filter(([k]) => k !== mealOf(i)).map(([k, l]) => ({ label: l,
-      fn: async () => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: k }) }); load(); } }))) },
+      fn: async () => { toast(`${await move(i, { meal: k })} → ${l}`); load(); } }))) },
     { label: 'Dupliceer', fn: () => quickAdd(`${i.product}`, [{ ...i, meal: mealOf(i) }]) },
     { label: i.fav ? 'Uit favorieten' : 'Bewaar als favoriet', fn: () => toggleFav(i) },
     { label: 'Verwijder', danger: true, fn: () => removeItem(i) },
