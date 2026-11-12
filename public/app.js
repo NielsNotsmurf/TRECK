@@ -235,6 +235,7 @@ function itemRow(i) {
   li.innerHTML = `<div class="swrap"><div class="sw"><button style="background:#ff9500">${svg('star', i.fav ? 'fill' : '')}${i.fav ? 'Uit fav.' : 'Favoriet'}</button><button style="background:var(--red)">${svg('trash')}Wis</button></div>
     <div class="row">${foodTile(i.product)}<div></div><span class="kcal"></span>${i.fav ? `<span class="act on">${svg('star', 'fill')}</span>` : ''}</div></div>`;
   const row = li.querySelector('.row'), txt = row.querySelector('div');
+  if (i.unit === 'stuk' && i.amount && i.amount !== 1) txt.append(el('b', 'cnt', `${String(i.amount).replace('.', ',')}×`)); // aantal opvallend
   txt.append(i.product, el('small', '', i.portion));
   row.querySelector('.kcal').textContent = i.kcal;
   const [favB, delB] = li.querySelectorAll('.sw button');
