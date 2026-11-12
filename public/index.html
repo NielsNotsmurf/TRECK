@@ -123,6 +123,10 @@
   #send { width:32px; height:32px; border-radius:16px; border:0; background:var(--accent); color:#fff; display:grid; place-items:center; padding:0; flex:none; transition:opacity .15s; }
   #send .ic { width:18px; height:18px; stroke-width:2.8; }
   #send:disabled { opacity:.3; }
+  /* AI-sterretje: deze knop doet een AI-verzoek */
+  .ai { position:relative; } .ai::after { content:'✦'; position:absolute; top:-4px; right:-4px; font-size:10px; line-height:1; color:#af52de; background:var(--bg); border-radius:50%; padding:1px; }
+  .revYou { margin:0 16px 6px; padding:10px 12px; background:var(--fill); border-radius:14px; } .revYou img { width:100%; max-height:220px; object-fit:cover; border-radius:10px; display:block; } .revYou p { margin:6px 0 0; white-space:pre-wrap; } .revYou img + p { margin-top:8px; } .revYou p:first-child { margin-top:0; }
+  .revAi { display:flex; align-items:center; gap:4px; margin:4px 16px; color:#af52de; } .revAi .ic { width:14px; height:14px; }
   #status { color:var(--muted); font-size:13px; text-align:center; padding:0 0 6px; }
   #status:empty { display:none; }
   #thumbWrap { display:flex; align-items:center; gap:10px; padding:0 0 8px; font-size:13px; color:var(--muted); }
@@ -426,9 +430,9 @@
   <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ er context bij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg"><svg class="ic"><use href="#i-x"/></svg></button></div>
   <div class="bar">
     <label id="photoBtn" aria-label="Foto"><svg class="ic"><use href="#i-camera"/></svg><input id="photo" type="file" accept="image/*" hidden></label>
-    <button id="micBtn" aria-label="Spreek in"><svg class="ic"><use href="#i-mic"/></svg></button>
+    <button id="micBtn" class="ai" aria-label="Spreek in (AI)"><svg class="ic"><use href="#i-mic"/></svg></button>
     <div class="pill"><textarea id="text" rows="1" placeholder="Wat heb je gegeten?" enterkeyhint="send"></textarea>
-      <button id="send" aria-label="Verstuur" disabled><svg class="ic"><use href="#i-up"/></svg></button></div>
+      <button id="send" class="ai" aria-label="Verstuur naar AI" disabled><svg class="ic"><use href="#i-up"/></svg></button></div>
   </div>
 </div></div>
 <nav id="tabs" class="hidden">

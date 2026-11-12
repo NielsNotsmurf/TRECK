@@ -146,7 +146,7 @@ export async function weight({ request, env, user }) {
 // Fase 11f: POST {ids} -> later verwerkte items goedkeuren (tellen daarna mee)
 export async function approve({ request, env, user }) {
   const { ids } = await request.json();
-  await env.DB.batch((ids || []).map((id) => env.DB.prepare('UPDATE items SET review = NULL WHERE id = ? AND user_id = ?').bind(id, user.id)));
+  await env.DB.batch((ids || []).map((id) => env.DB.prepare('UPDATE items SET review = NULL, photo = NULL WHERE id = ? AND user_id = ?').bind(id, user.id)));
   return new Response(null, { status: 204 });
 }
 

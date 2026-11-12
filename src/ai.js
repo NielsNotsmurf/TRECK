@@ -62,10 +62,10 @@ export async function transcribe({ request, env }) {
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
 export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, userId, true);
 
-// Backup: bij Gemini-drukte/storing (429, 5xx, time-out) Groq proberen als GROQ_API_KEY gezet is.
+// Volgorde live: Gemini (8 s) → Groq (10 s) → wachtrij, die alleen Gemini opnieuw probeert. Elke stap is precies één verzoek.
 async function ask(parts, cfg, env, userId, fast) {
   try { return await gemini(parts, cfg, env, userId, fast); } catch (e) {
-    if (e.retry === false || !env.GROQ_API_KEY || parts.some((p) => p.inline_data?.mime_type?.startsWith('audio'))) throw e;
+    if (!fast || e.retry === false || !env.GROQ_API_KEY || parts.some((p) => p.inline_data?.mime_type?.startsWith('audio'))) throw e;
     try { return await groq(parts, cfg, env, userId); } catch (g) { console.log('groq', g.message); throw e; }
   }
 }
@@ -75,7 +75,7 @@ async function groq(parts, cfg, env, userId) {
   const json = !!cfg.responseSchema;
   if (json) content.push({ type: 'text', text: `Antwoord alleen met JSON volgens dit schema: ${JSON.stringify(cfg.responseSchema)}` });
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', signal: AbortSignal.timeout(30000),
+    method: 'POST', signal: AbortSignal.timeout(10000),
     headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
     body: JSON.stringify({ model: env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content }], ...(json && { response_format: { type: 'json_object' } }) }),
   });
@@ -91,7 +91,7 @@ async function gemini(parts, generationConfig, env, userId, fast) {
     `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL || MODEL}:generateContent`,
     {
       method: 'POST',
-      signal: AbortSignal.timeout(fast ? 12000 : 60000), // Fase 11f: live snel opgeven → wachtrij
+      signal: AbortSignal.timeout(fast ? 8000 : 25000), // live snel opgeven → Groq → wachtrij; wachtrij < 1 min (cron)
       headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
       body: JSON.stringify({ contents: [{ parts }], generationConfig }),
     },

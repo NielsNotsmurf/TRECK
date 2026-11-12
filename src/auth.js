@@ -33,6 +33,7 @@ export async function ensureSchema(env) {
   const { results: it } = await env.DB.prepare('PRAGMA table_info(items)').all();
   if (!it.some((c) => c.name === 'meal')) await env.DB.prepare('ALTER TABLE items ADD COLUMN meal TEXT').run();
   if (!it.some((c) => c.name === 'review')) await env.DB.prepare('ALTER TABLE items ADD COLUMN review INTEGER').run();
+  if (!it.some((c) => c.name === 'photo')) await env.DB.prepare('ALTER TABLE items ADD COLUMN photo TEXT').run();
   const { results: pu } = await env.DB.prepare('PRAGMA table_info(push)').all();
   if (!pu.some((c) => c.name === 'weigh')) await env.DB.batch(['weigh', 'msg'].map((c) => env.DB.prepare(`ALTER TABLE push ADD COLUMN ${c} TEXT`)));
   await env.DB.prepare('DELETE FROM burn WHERE active > 15000 OR resting > 15000').run(); // foute invoer uit test opdracht

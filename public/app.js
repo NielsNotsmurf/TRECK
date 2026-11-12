@@ -167,7 +167,13 @@ function openReview() {
   const by = {}; for (const i of R) (by[i.input_id] ||= []).push(i);
   for (const g of Object.values(by)) {
     const at = new Date(g[0].created_at);
-    L.append(el('h2', '', `${dayName(g[0].date)} · "${(g[0].note || '').slice(0, 40)}" · ${pad(at.getHours())}:${pad(at.getMinutes())}`));
+    // Eerst wat je zelf invoerde (tekst en/of foto), daaronder wat de AI ervan maakte.
+    L.append(el('h2', '', `${dayName(g[0].date)} · ingevoerd ${pad(at.getHours())}:${pad(at.getMinutes())}`));
+    const you = el('div', 'revYou'), ph = g.find((i) => i.photo)?.photo;
+    if (ph) you.append(Object.assign(el('img'), { src: ph, alt: 'Jouw foto' }));
+    if (g[0].note && !/^\[(foto|spraak)\]$/.test(g[0].note)) you.append(el('p', '', g[0].note));
+    const ai = el('small', 'revAi'); ai.innerHTML = `${svg('spark')} AI maakte ervan:`;
+    L.append(you, ai);
     const ul = el('ul', 'group');
     for (const i of g) {
       const li = el('li');
@@ -373,7 +379,8 @@ function renderQuick() {
   $('suggest').classList.toggle('hidden', !$('suggest').children.length);
 }
 $('text').addEventListener('input', renderQuick);
-const canSend = () => { $('send').disabled = !$('text').value.trim() && !image; };
+let sending = false; // één AI-verzoek tegelijk vanuit de typebalk
+const canSend = () => { $('send').disabled = sending || (!$('text').value.trim() && !image); };
 $('text').addEventListener('input', canSend);
 $('text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('send').click(); } });
 function placeholder() {
@@ -434,13 +441,15 @@ const edCancel = () => (edState() === edSnap ? hide('editor')
 $('edCancel').onclick = edCancel;
 $('edAiBtn').onclick = async () => {
   const text = $('edAiText').value.trim(); if (!text) return;
-  $('edStatus').textContent = 'AI vult in…';
+  if ($('edAiBtn').disabled) return; // nooit twee AI-verzoeken tegelijk
+  $('edStatus').textContent = 'AI vult in…'; $('edAiBtn').disabled = true;
   try {
     const { items } = await api('/api/parse', { method: 'POST', body: JSON.stringify({ text, now: new Date().toString() }) });
     $('edRows').innerHTML = ''; items.forEach(edRow);
     if (!$('edName').value) $('edName').value = text;
     $('edStatus').textContent = 'Pas aan waar nodig en sla op.';
   } catch (e) { $('edStatus').textContent = e.message; }
+  $('edAiBtn').disabled = false;
 };
 $('edSave').onclick = async () => {
   const items = [...$('edRows').children].map((r) => Object.fromEntries([...r.querySelectorAll('input, select')]
@@ -497,7 +506,8 @@ function bubble(text, buttons = [], cls = '') {
   if (text && text !== 'dots' && cls !== 'err') bubble.t = setTimeout(() => hide('bubble'), 8000);
 }
 async function analyze(payload) {
-  bubble('dots'); $('send').disabled = true;
+  if (sending) return;
+  sending = true; bubble('dots'); $('send').disabled = true;
   try {
     const { items, queued, quota } = await api('/api/analyze', { method: 'POST', body: JSON.stringify(payload) });
     if (queued) bubble(quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk. Bewaard: zodra het verwerkt is vraag ik je om goed te keuren.');
@@ -512,7 +522,7 @@ async function analyze(payload) {
   } catch (e) {
     bubble(`Niet gelukt: ${e.message}`, [['Opnieuw', () => analyze(payload)]], 'err');
   }
-  canSend();
+  sending = false; canSend();
 }
 $('send').onclick = () => {
   const text = $('text').value.trim();

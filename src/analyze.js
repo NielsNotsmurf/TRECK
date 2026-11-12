@@ -24,14 +24,16 @@ async function verwerk(input, userId, env, review = null, at = null) {
   const inputId = crypto.randomUUID();
   const createdAt = at || new Date().toISOString();
   const stmt = env.DB.prepare(
-    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, review, meal)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, review, meal, photo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   if (items.length) {
-    await env.DB.batch(items.map((i) => stmt.bind(
+    // Goedkeuren toont je eigen foto: alleen bij wachtrij-invoer, op het eerste item; gewist bij goedkeuren.
+    const photo = review && input.image ? `data:${input.image.mime};base64,${input.image.data}` : null;
+    await env.DB.batch(items.map((i, k) => stmt.bind(
       inputId, i.date, i.product, i.portion,
       Math.round(i.kcal), Math.round(i.protein_g), Math.round(i.carbs_g), Math.round(i.fat_g),
-      note, createdAt, userId, i.amount || null, i.unit || null, review, word || i.meal || null,
+      note, createdAt, userId, i.amount || null, i.unit || null, review, word || i.meal || null, k ? null : photo,
     )));
   }
   return items.map((i) => ({ ...i, meal: word || i.meal || null, input_id: inputId }));
@@ -54,7 +56,14 @@ export async function onRequestPost({ request, env, user }) {
 // Cron: de oudste 5 wachtende invoeren opnieuw proberen.
 export async function retryQueue(env) {
   if ((await usage(env)).full) return; // daglimiet op: wachten tot de reset.
-  const { results } = await env.DB.prepare('SELECT * FROM queue WHERE attempts < 50 ORDER BY id LIMIT 5').all();
+  // Slot: een trage ronde mag niet overlappen met de volgende cron, anders wordt dezelfde invoer twee keer geanalyseerd.
+  const lock = await env.DB.prepare("SELECT v FROM config WHERE k = 'queuelock'").first();
+  if (lock && Date.now() - +lock.v < 5 * 60000) return;
+  await env.DB.prepare("INSERT OR REPLACE INTO config (k, v) VALUES ('queuelock', ?)").bind(String(Date.now())).run();
+  try { await retry(env); } finally { await env.DB.prepare("DELETE FROM config WHERE k = 'queuelock'").run(); }
+}
+async function retry(env) {
+  const { results } = await env.DB.prepare('SELECT * FROM queue WHERE attempts < 50 ORDER BY id LIMIT 2').all();
   for (const q of results) {
     try {
       await verwerk(JSON.parse(q.payload), q.user_id, env, 1, q.created_at);
