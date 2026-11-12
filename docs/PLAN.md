@@ -80,11 +80,25 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 | 8 AI-limietbalk | Dunne balk in het menu: "AI vandaag 12/500" + reset 09:00 NL (middernacht Pacific). Telt elk Gemini-verzoek in D1; bij 429 leest de Worker `quotaId` (per minuut = "even wachten", per dag = balk vol, invoer naar wachtrij) | Balk telt mee per verzoek en springt op vol bij een echte dag-429 |
 | 9 Doelen (adaptief) | Kcal-doel zoals MacroFactor: echt verbruik uit gewichtstrend + inname (rekenwerk, geen AI). AI 1× per week: doel + macro's (eiwit eerst) met één zin uitleg. Dagkaart: "nog X kcal" + macro-balkjes | Na ≥14 dagen data staat er een doel met uitleg; dagkaart toont resterend |
 | 10 Usability & look | Instellingen (Meer) en emoji's vervangen door een rustige, consistente stijl (lijn-iconen); duidelijkere typebalk (placeholder, knoppen, focus); betere plaatsing/ordening van items op de dagkaart; automatisch een icoon (of afbeelding) per item op basis van het product | Gebruiker vindt menu, typebalk en itemlijst op iPhone duidelijk en mooi; elk item heeft een passend icoon zonder extra AI-verzoek |
-| 11 AI-analyse | Knop "Inzicht": AI krijgt dagtotalen van 14–30 dagen (geen losse items, zuinig) en geeft 3 concrete tips. Max 1 per dag, antwoord bewaard in D1 | Inzicht verschijnt, 2e tik dezelfde dag toont het bewaarde antwoord zonder AI-verzoek |
+| 11 UX-polish (iOS) | De belangrijkste 3–5 optimalisaties per scherm, zie "Fase 11 details" | Gebruiker test elk scherm op iPhone en vindt het native en duidelijk; geen prompt-popups meer |
+| 12 AI-analyse | Knop "Inzicht": AI krijgt dagtotalen van 14–30 dagen (geen losse items, zuinig) en geeft 3 concrete tips. Max 1 per dag, antwoord bewaard in D1 | Inzicht verschijnt, 2e tik dezelfde dag toont het bewaarde antwoord zonder AI-verzoek |
 
 - Limiet (bronnen 23-10 en 2-9-2026): 3.1 Flash-Lite gratis = 15/min, 500/dag per Google-project; Google publiceert het niet meer officieel, eigen stand op aistudio.google.com/rate-limit. Gemini stuurt geen resterend-headers, alleen een 429 met QuotaFailure → balk = eigen teller (max via `AI_DAY_LIMIT`, standaard 500) + 429-signaal.
 - Gebruik nu ≈4–10/dag; doelen +1/week, analyse max +1/dag → ruim binnen 500, ook met een paar gebruikers.
 - Snelle winst zonder AI (veel gevraagd, klein): "kopieer gisteren" per maaltijd, streak-teller, weekgrafiek inname vs verbruik.
+
+### Fase 11 details (12-11, gekozen uit 110 ideeën)
+- Dagkaart: vegen tussen dagen; knop "Vandaag" op andere dagen; tik op titel = kalender; schattingsdag met streepjesring + label; grote titel krimpt bij scrollen.
+- Snel toevoegen: sorteren op tijdstip; lang drukken = aanpassen/verwijderen; "Ongedaan maken" na toevoegen; chip "Zelfde als gisteren".
+- Gegeten-lijst: groeperen per maaltijd met subtotaal; vegen = verwijderen/favoriet; slider/± pas na tik (uitklappen); nieuw AI-item even markeren; lang drukken = andere dag/dupliceren.
+- Typebalk: "denkt na"-bubbel tijdens analyse; resultaatkaartje "3 items op vrijdag · bekijk"; placeholder per tijdstip; balk netjes boven toetsenbord (visualViewport); fout als bubbel met "Opnieuw".
+- Item-editor: grote kcal + icoon bovenaan; portie-eenheid als picker (g/ml/stuks); dag en maaltijd kiezen; "Wijzigingen weggooien?" bij annuleren.
+- Meer: profielkop (naam, doel, gewicht); Mijn gerechten als subscherm; status rechts in rijen ("Aan · 4×", "Verbonden"); AI-balk oranje vanaf 80%.
+- Doel: eigen scherm met segmentkeuze + tempo-slider; live "≈ X kcal/dag"; voortgang "9/14 dagen" als balk.
+- Meldingen: eigen scherm i.p.v. prompts; iOS-tijdkiezer met +; schakelaar per melding; knop testmelding.
+- iOS & Garmin: status "laatst ontvangen" groen/rood bovenaan; stappen als checklist; ontbrekende dagen markeren; "Gekopieerd"-toast i.p.v. alert.
+- Inloggen: wachtwoord tonen (oog); fout onder het veld; laadspinner in de knop.
+- Onderbalk: lege tabs grijs met "Binnenkort"; opnieuw tikken op Vandaag = naar boven + vandaag; gevuld icoon bij actieve tab.
 
 ## Open vragen
 - Geen.
