@@ -145,16 +145,6 @@
   <div class="row"><button id="syncKey" class="primary">Kopieer sleutel</button></div>
   <h2>Ontvangen (30 dagen)</h2>
   <ul id="burns"></ul>
-  <h2>Weegschaal</h2>
-  <ol class="help">
-    <li>App van de weegschaal → koppel met Apple Gezondheid, Gewicht aan.</li>
-    <li>Open de TRECK-opdracht en voeg onderaan toe: <b>Find Health Samples</b> → Type <i>Weight</i>, Start Date <i>is in the last 30 days</i>, Sort by <i>Start Date</i>, Order <i>Oldest First</i>.</li>
-    <li>Daaronder <b>Repeat with Each</b> (Health Samples), en daarin <b>Get Contents of URL</b>: <code>https://treck.nielsscholtes91.workers.dev/api/weight</code>, Method <i>POST</i>, Headers: <code>authorization</code> = je sleutel, <code>date</code> = Repeat Item → <i>Start Date</i>, <code>kg</code> = Repeat Item → <i>Value</i>.</li>
-    <li>Automation → +: <b>App</b> (app van de weegschaal) <i>Is Closed</i> → <i>Run Immediately</i> → TRECK-opdracht.</li>
-    <li>Druk één keer op ▶️ en controleer hieronder.</li>
-  </ol>
-  <h2>Ontvangen gewicht</h2>
-  <ul id="weights"></ul>
   <div class="row"><button id="burnClear" class="danger">Verbruik wissen</button><button id="closeGarmin">Sluiten</button></div>
 </div></div>
 <div id="editor" class="sheet hidden"><div class="card">

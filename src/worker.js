@@ -30,7 +30,6 @@ export default {
     if (route === 'GET /api/burn') return items.burnList(ctx);
     if (route === 'DELETE /api/burn') return items.burnClear(ctx);
     if (route === 'POST /api/burn') return items.burn(ctx);
-    if (route === 'GET /api/weight') return items.weightList(ctx);
     if (route === 'POST /api/weight') return items.weight(ctx);
     if (route === 'POST /api/synckey') return auth.syncKey(ctx);
     if (route === 'POST /api/logout') return auth.logout(ctx);

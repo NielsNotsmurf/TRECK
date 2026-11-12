@@ -92,7 +92,7 @@ export async function burn({ request, env, user }) {
   return Response.json({ ok: true, date, kcal: r.kcal });
 }
 
-// Fase 5: POST {date, kg} (body of headers) vanuit de iOS-opdracht (weegschaal -> Apple Health). Laatste weging van de dag wint.
+// Fase 5: POST {date, kg} bij handmatig wegen in de app (headers mogen ook). Laatste weging van de dag wint.
 export async function weight({ request, env, user }) {
   const b = await request.json().catch(() => ({}));
   for (const k of ['date', 'kg']) if (b[k] == null && request.headers.get(k)) b[k] = request.headers.get(k);
@@ -106,8 +106,3 @@ export async function weight({ request, env, user }) {
   return Response.json({ ok: true, date, kg });
 }
 
-// GET -> laatste 30 wegingen (controle in het menu)
-export async function weightList({ env, user }) {
-  const { results } = await env.DB.prepare('SELECT date, kg, updated_at FROM weight WHERE user_id = ? ORDER BY date DESC LIMIT 30').bind(user.id).all();
-  return Response.json({ days: results });
-}
