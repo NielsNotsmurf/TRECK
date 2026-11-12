@@ -92,7 +92,7 @@ export async function google({ request, env }) {
 
 // Bearer-token -> goedgekeurde gebruiker of null
 export async function currentUser(request, env) {
-  const token = (request.headers.get('authorization') || '').replace('Bearer ', '');
+  const token = (request.headers.get('authorization') || '').trim().replace(/^bearer\s*/i, '').trim(); // iOS-opdracht: hoofdletters/spaties maken niet uit
   if (!token) return null;
   const u = await env.DB.prepare('SELECT u.id, u.name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ? AND u.approved = 1').bind(token).first();
   return u && { ...u, admin: u.name === ADMIN };
