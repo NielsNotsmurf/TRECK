@@ -1,6 +1,6 @@
 // Fase 6: herinneringen via Web Push (zonder payload; sw.js haalt de tekst op via /api/pushmsg). VAPID-sleutel wordt eenmalig gemaakt en server-side in D1 bewaard.
 const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const nlNow = () => new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 16); // "JJJJ-MM-DD UU:MM"
+const nlNow = (ms = Date.now()) => new Date(ms).toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 16); // "JJJJ-MM-DD UU:MM"
 
 async function vapid(env) {
   const row = await env.DB.prepare("SELECT v FROM config WHERE k = 'vapid'").first();
@@ -46,7 +46,7 @@ export async function save({ request, env, user }) {
   }
   const sub = { endpoint: b.sub.endpoint, origin: new URL(request.url).origin };
   await env.DB.prepare('INSERT OR REPLACE INTO push (user_id, endpoint, origin, times, sent, weigh, msg) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(user.id, sub.endpoint, sub.origin, times, nlNow(), weigh, 'Meldingen staan aan.').run();
+    .bind(user.id, sub.endpoint, sub.origin, times, nlNow(Date.now() - 60000), weigh, 'Meldingen staan aan.').run();
   await send(env, sub);
   return Response.json({ times, weigh });
 }
