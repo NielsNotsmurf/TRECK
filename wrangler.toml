@@ -1,6 +1,7 @@
 name = "treck"
 main = "src/worker.js"
 compatibility_date = "2026-11-01"
+keep_vars = true # variabelen uit het dashboard blijven staan bij deploy; sleutels als Secret
 
 [triggers]
 crons = ["* * * * *"]
