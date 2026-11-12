@@ -26,6 +26,7 @@ export default {
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);
     if (route === 'PUT /api/items') return items.onRequestPut(ctx);
+    if (route === 'POST /api/review') return items.approve(ctx);
     if (route === 'POST /api/parse') return memory.parse(ctx);
     if (route === 'DELETE /api/items') return items.onRequestDelete(ctx);
     if (route === 'GET /api/quick') return memory.quick(ctx);

@@ -2,20 +2,21 @@ import { analyseer, usage } from './ai.js';
 import { context } from './memory.js';
 
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
-async function verwerk(input, userId, env) {
-  const items = await analyseer({ ...input, memory: await context(env, userId) }, env, userId);
+// review = 1: later uit de wachtrij verwerkt, telt pas mee na goedkeuring in de app. at = moment van invoer.
+async function verwerk(input, userId, env, review = null, at = null) {
+  const items = await analyseer({ ...input, fast: !review, memory: await context(env, userId) }, env, userId);
   const note = input.text || (input.audio ? '[spraak]' : '') || (input.image ? '[foto]' : '');
   const inputId = crypto.randomUUID();
-  const createdAt = new Date().toISOString();
+  const createdAt = at || new Date().toISOString();
   const stmt = env.DB.prepare(
-    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit, review)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   if (items.length) {
     await env.DB.batch(items.map((i) => stmt.bind(
       inputId, i.date, i.product, i.portion,
       Math.round(i.kcal), Math.round(i.protein_g), Math.round(i.carbs_g), Math.round(i.fat_g),
-      note, createdAt, userId, i.amount || null, i.unit || null,
+      note, createdAt, userId, i.amount || null, i.unit || null, review,
     )));
   }
   return items.map((i) => ({ ...i, input_id: inputId }));
@@ -41,7 +42,7 @@ export async function retryQueue(env) {
   const { results } = await env.DB.prepare('SELECT * FROM queue WHERE attempts < 50 ORDER BY id LIMIT 5').all();
   for (const q of results) {
     try {
-      await verwerk(JSON.parse(q.payload), q.user_id, env);
+      await verwerk(JSON.parse(q.payload), q.user_id, env, 1, q.created_at);
       await env.DB.prepare('DELETE FROM queue WHERE id = ?').bind(q.id).run();
     } catch (e) {
       await env.DB.prepare('UPDATE queue SET attempts = attempts + 1 WHERE id = ?').bind(q.id).run();

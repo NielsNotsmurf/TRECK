@@ -3,14 +3,14 @@ const nlToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe
 // GET ?date=JJJJ-MM-DD -> {items, total}
 export async function onRequestGet({ request, env, user }) {
   const date = new URL(request.url).searchParams.get('date');
-  const { results } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND date = ? ORDER BY created_at, id').bind(user.id, date).all();
+  const { results } = await env.DB.prepare('SELECT * FROM items WHERE review IS NULL AND user_id = ? AND date = ? ORDER BY created_at, id').bind(user.id, date).all();
   const total = { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
   for (const r of results) for (const k in total) total[k] += r[k];
   // Fase 3: lege dag -> schatting uit gemiddelde van echte dagen in de 14 dagen ervoor; niet opgeslagen, dus telt nergens mee.
   let estimate = null;
   if (!results.length) {
     const { results: days } = await env.DB.prepare(`SELECT SUM(kcal) kcal, SUM(protein_g) protein_g, SUM(carbs_g) carbs_g, SUM(fat_g) fat_g
-      FROM items WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days') GROUP BY date`).bind(user.id, date, date).all();
+      FROM items WHERE review IS NULL AND user_id = ? AND date < ? AND date >= date(?, '-14 days') GROUP BY date`).bind(user.id, date, date).all();
     if (days.length) {
       estimate = { days: days.length };
       for (const k in total) estimate[k] = Math.round(days.reduce((t, d) => t + d[k], 0) / days.length);
@@ -25,10 +25,11 @@ export async function onRequestGet({ request, env, user }) {
   const d = new Date(date + 'T12:00Z');
   const monday = new Date(d - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10);
   const period = async (from) => env.DB.prepare(`SELECT COALESCE(SUM(b.kcal - i.k), 0) diff, COUNT(*) days FROM
-    (SELECT date, SUM(kcal) k FROM items WHERE user_id = ? AND date BETWEEN ? AND ? GROUP BY date) i JOIN burn b ON b.user_id = ? AND b.date = i.date`)
+    (SELECT date, SUM(kcal) k FROM items WHERE review IS NULL AND user_id = ? AND date BETWEEN ? AND ? GROUP BY date) i JOIN burn b ON b.user_id = ? AND b.date = i.date`)
     .bind(user.id, from, date, user.id).first();
   const me = await env.DB.prepare('SELECT name, pace FROM users WHERE id = ?').bind(user.id).first();
-  return Response.json({ me, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
+  const { results: review } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND review = 1 ORDER BY created_at, id').bind(user.id).all();
+  return Response.json({ me, review, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
     burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
     week: await period(monday), month: await period(date.slice(0, 8) + '01'),
     target: await target(env, user.id, monday),
@@ -41,7 +42,7 @@ export async function onRequestGet({ request, env, user }) {
 const PACE = { lose: [-0.5, 'voor −%s kg/week'], keep: [0, 'om op gewicht te blijven'], gain: [0.25, 'voor +%s kg/week'] };
 async function target(env, userId, monday) {
   const from = `date('${monday}', '-28 days')`;
-  const { results: days } = await env.DB.prepare(`SELECT date, SUM(kcal) k FROM items WHERE user_id = ? AND date >= ${from} AND date < ? GROUP BY date`).bind(userId, monday).all();
+  const { results: days } = await env.DB.prepare(`SELECT date, SUM(kcal) k FROM items WHERE review IS NULL AND user_id = ? AND date >= ${from} AND date < ? GROUP BY date`).bind(userId, monday).all();
   const { results: ws } = await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date >= ${from} AND date < ? ORDER BY date`).bind(userId, monday).all();
   const span = ws.length > 1 ? (new Date(ws.at(-1).date) - new Date(ws[0].date)) / 864e5 : 0;
   const u = await env.DB.prepare('SELECT goal, pace FROM users WHERE id = ?').bind(userId).first();
@@ -138,6 +139,13 @@ export async function weight({ request, env, user }) {
   return Response.json({ ok: true, date, kg });
 }
 
+
+// Fase 11f: POST {ids} -> later verwerkte items goedkeuren (tellen daarna mee)
+export async function approve({ request, env, user }) {
+  const { ids } = await request.json();
+  await env.DB.batch((ids || []).map((id) => env.DB.prepare('UPDATE items SET review = NULL WHERE id = ? AND user_id = ?').bind(id, user.id)));
+  return new Response(null, { status: 204 });
+}
 
 // DELETE ?id=123
 export async function onRequestDelete({ request, env, user }) {

@@ -281,6 +281,8 @@
   #ring circle.bal { stroke-width:4; } #balArc { stroke:var(--warn); transition:stroke-dashoffset .6s ease, stroke .3s; } #balArc.good { stroke:var(--ok); }
   #ring.ok #arc { stroke:var(--ok); } #ring.over #arc { stroke:var(--red); }
   #balTxt { font-size:11px; font-weight:600; margin-top:3px; text-align:center; max-width:120px; line-height:1.25; }
+  #revList li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; } #revList li > div { cursor:pointer; }
+  #revList select { border:0; background:var(--fill); border-radius:8px; padding:5px 6px; font-size:13px; max-width:104px; color:var(--fg); }
 </style>
 </head>
 <body>
@@ -436,6 +438,11 @@
   <div class="group"><div class="cell"><select id="wDay"><option value="ma">ma</option><option value="di">di</option><option value="wo">wo</option><option value="do">do</option><option value="vr">vr</option><option value="za">za</option><option value="zo">zo</option></select>
     <input id="wTime" type="time" value="08:00"><span style="flex:1"></span><input id="wOn" type="checkbox" class="tgl" aria-label="Wegen aan"></div></div>
   <div class="group"><button class="cell center" id="pushTest"><div>Stuur testmelding</div></button></div>
+</div></div>
+<div id="review" class="sheet hidden"><div class="card">
+  <div class="head"><button id="revLater">Later</button><b>Goedkeuren</b><button id="revOk">Voeg toe</button></div>
+  <p class="help" style="padding-left:16px">Gemini was druk, dit is later verwerkt. Check dagdeel en hoeveelheid; pas na <b>Voeg toe</b> telt het mee.</p>
+  <div id="revList"></div>
 </div></div>
 <div id="acts" class="sheet hidden"><div class="as"><div class="group" id="actsList"></div><div class="group"><button class="cell" id="actsX"><div>Annuleer</div></button></div></div></div>
 <div id="ask" class="sheet alert hidden"><div class="card"><b id="askT"></b><p id="askM"></p><input id="askIn"><div class="status" id="askS"></div>

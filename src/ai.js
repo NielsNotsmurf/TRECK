@@ -30,7 +30,7 @@ const SCHEMA = {
   required: ['items'],
 };
 
-export async function analyseer({ text, image, audio, now, memory }, env, userId) {
+export async function analyseer({ text, image, audio, now, memory, fast }, env, userId) {
   const mine = userId ? await usage(env, userId) : null;
   if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Neem een abonnement via Meer, of wacht tot de reset.`), { retry: false, limit: true });
   const parts = [{ text: PROMPT(now) }];
@@ -43,6 +43,7 @@ export async function analyseer({ text, image, audio, now, memory }, env, userId
     `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL || MODEL}:generateContent`,
     {
       method: 'POST',
+      signal: AbortSignal.timeout(fast ? 12000 : 60000), // Fase 11f: live snel opgeven → wachtrij
       headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{ parts }],

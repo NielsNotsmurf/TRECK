@@ -109,6 +109,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 - Fase 11e (12-11): ring volgt je doelkeuze ook vóór het persoonlijke doel (verbruik of 2000 ± tempo×1100). Ringkleur: groen 90–105%, rood erboven (bij aankomen niet). Dunne buitenring = tekort/overschot t.o.v. wat je doel vraagt, groen = goede kant op.
 
+- Fase 11f (12-11): live AI-verzoek geeft na 12 s op → wachtrij (cron 60 s timeout). Uit de wachtrij verwerkte items krijgen `items.review = 1`, tellen nergens mee en verschijnen bij openen van de app in "Goedkeuren" (dagdeel, aanpassen, wissen) → `POST /api/review`. Tijdstip = moment van invoer.
+
 ## Open vragen
 - Geen.
 

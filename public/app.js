@@ -125,6 +125,7 @@ async function load() {
     + (weights.length > 1 ? ` · 30 d ${w.kg - w0.kg > 0 ? '+' : ''}${kg(w.kg - w0.kg)} kg` : '') + '</small>'
     + (weights.length > 1 ? `<svg viewBox="0 0 30 10" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${pts.map(([x, y]) => `${x},${9 - (y - lo) / (hi - lo || 1) * 8}`).join(' ')}"/></svg>` : '') + `</div><span class="val">${kg(w.kg)} kg</span>`);
   renderList(items, est);
+  if (d.review?.length && !revLater && $('review').classList.contains('hidden') && $('editor').classList.contains('hidden')) openReview();
 }
 
 // Fase 11: gegeten-lijst per maaltijd met subtotaal; tik = uitklappen (hoeveelheid), vegen = favoriet/wissen, lang drukken = menu.
@@ -145,6 +146,39 @@ function renderList(items, est) {
   }
   fresh = null; first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
+// Fase 11f: later verwerkte invoer eerst goedkeuren (dagdeel, hoeveelheid, wissen) voordat het meetelt.
+function openReview() {
+  const R = data.review || [], L = $('revList'); L.innerHTML = '';
+  if (!R.length) return hide('review');
+  const by = {}; for (const i of R) (by[i.input_id] ||= []).push(i);
+  for (const g of Object.values(by)) {
+    const at = new Date(g[0].created_at);
+    L.append(el('h2', '', `${dayName(g[0].date)} · "${(g[0].note || '').slice(0, 40)}" · ${pad(at.getHours())}:${pad(at.getMinutes())}`));
+    const ul = el('ul', 'group');
+    for (const i of g) {
+      const li = el('li');
+      li.innerHTML = `<span class="food">${foodIcon(i.product)}</span><div></div><select aria-label="Dagdeel">${Object.entries(MEALS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select><span class="kcal"></span><button class="act" aria-label="Wis">${svg('x')}</button>`;
+      li.querySelector('div').append(i.product, el('small', '', i.portion)); li.querySelector('.kcal').textContent = i.kcal;
+      const sel = li.querySelector('select'); sel.value = mealOf(i);
+      sel.onchange = async () => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: sel.value }) }); i.meal = sel.value; };
+      li.querySelector('button').onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); data.review = data.review.filter((x) => x.id !== i.id); openReview(); };
+      li.querySelector('div').onclick = () => { hide('review'); editor({ title: 'Aanpassen', items: [i], single: true, meta: { date: i.date, meal: mealOf(i) },
+        save: async (_, [x], meta) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...x, ...meta, id: i.id }) }); await load(); openReview(); } }); };
+      ul.append(li);
+    }
+    L.append(ul);
+  }
+  show('review');
+}
+let revLater = false;
+$('revLater').onclick = () => { revLater = true; hide('review'); };
+// App weer geopend (iOS houdt hem vaak in het geheugen): verversen, en goedkeuren opnieuw vragen.
+document.addEventListener('visibilitychange', () => { if (!document.hidden && token) { revLater = false; if (day !== today() && !data.items?.length) day = today(); load(); } });
+$('revOk').onclick = async () => {
+  const R = data.review || [];
+  await api('/api/review', { method: 'POST', body: JSON.stringify({ ids: R.map((i) => i.id) }) });
+  hide('review'); toast(`${R.length === 1 ? '1 item' : `${R.length} items`} toegevoegd`); load();
+};
 // Lang vasthouden: loslaten zonder bewegen = menu, slepen = naar ander dagdeel.
 function dragPress(li, row, i, menu) {
   let t, x0, y0, sy0, state = null, target = null;
@@ -443,7 +477,7 @@ async function analyze(payload) {
   bubble('dots'); $('send').disabled = true;
   try {
     const { items, queued, quota } = await api('/api/analyze', { method: 'POST', body: JSON.stringify(payload) });
-    if (queued) bubble(quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk: bewaard, wordt later verwerkt.');
+    if (queued) bubble(quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk. Bewaard: zodra het verwerkt is vraag ik je om goed te keuren.');
     else if (!items.length) bubble('Geen eten herkend. Omschrijf het iets anders?', [], 'err');
     else {
       const d = items[0].date, k = items.reduce((t, i) => t + i.kcal, 0), n = items.length === 1 ? '1 item' : `${items.length} items`;
