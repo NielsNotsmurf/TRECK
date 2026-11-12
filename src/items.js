@@ -49,6 +49,12 @@ function parseDate(v) {
 }
 const fmt = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
+// GET -> laatste 30 dagen verbruik (controle in het menu)
+export async function burnList({ env, user }) {
+  const { results } = await env.DB.prepare('SELECT date, kcal, active, resting, updated_at FROM burn WHERE user_id = ? ORDER BY date DESC LIMIT 30').bind(user.id).all();
+  return Response.json({ days: results });
+}
+
 // Fase 4: POST {date, active?, resting?} (body of headers) vanuit de iOS-opdracht (Garmin -> Apple Health).
 // Actief en rust apart bewaard; een verzoek met alleen één van beide laat de ander staan. Zo kan de opdracht per dag/per soort sturen.
 export async function burn({ request, env, user }) {

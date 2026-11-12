@@ -258,6 +258,9 @@ $('menuBtn').onclick = () => {
     $('meals').append(li);
   }
   $('sheet').classList.remove('hidden');
+  api('/api/burn').then(({ days }) => { // controle: wat de iOS-opdracht heeft gestuurd
+    $('burns').innerHTML = days.length ? days.map((b) => `<li><div>${b.date}<small>actief ${b.active ?? '–'} · rust ${b.resting ?? '–'} · ontvangen ${new Date(b.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${b.kcal}</span></li>`).join('') : '<li class="empty">Nog niets ontvangen</li>';
+  });
 };
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
 $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };
