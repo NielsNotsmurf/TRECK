@@ -555,33 +555,66 @@ $('weight').onclick = () => ask({ title: 'Gewicht', msg: `Op ${dayName(day).toLo
   value: data.weights?.at(-1) ? kg(data.weights.at(-1).kg) : '',
   ok: async (v) => { await api('/api/weight', { method: 'POST', body: JSON.stringify({ date: day, kg: v }) }); load(); } });
 
-// iOS & Garmin: status bovenaan, stappen als checklist, ontbrekende dagen gemarkeerd.
-const STEPS = 'treck-steps';
-document.querySelectorAll('#steps li').forEach((li, n) => {
-  const d = el('div'); d.append(...li.childNodes); li.append(Object.assign(el('button', 'chk'), { innerHTML: svg('check'), ariaLabel: 'Gedaan' }), d);
-  li.firstChild.onclick = () => { const s = new Set(JSON.parse(localStorage.getItem(STEPS) || '[]')); s.has(n) ? s.delete(n) : s.add(n); localStorage.setItem(STEPS, JSON.stringify([...s])); li.classList.toggle('done', s.has(n)); };
-});
+// Verbruik koppelen (Fase 11b): bron kiezen, stappen met plaatjes die uitklappen, ontvangen dagen ingeklapt.
+const STEPS = 'treck-steps', SRC = 'treck-src';
+const mock = (title, rows) => `<div class="mock"><b>${title}</b>${rows.map(([l, r, hl]) => `<div class="mr${hl ? ' hl' : ''}">${l}${r === true || r === false ? `<i class="t${r ? ' on' : ''}"></i>` : `<span>${r ?? '›'}</span>`}</div>`).join('')}</div>`;
+const SHORTCUT = 'https://www.icloud.com/shortcuts/2525ede97e6b4983a72b4ef96c300ff8';
+function stepList(src) {
+  const health = {
+    garmin: ['Garmin koppelen aan Gezondheid', 'In de Garmin Connect-app', `<p>Open <b>Garmin Connect</b> → Meer → Instellingen → Verbonden apps → <b>Apple Gezondheid</b>. Zet deze twee aan:</p>${mock('Apple Gezondheid', [['Actieve energie', true, 1], ['Rustenergie', true, 1], ['Stappen', false]])}`],
+    watch: ['Apple Watch staat al goed', 'Niets te doen, alleen even checken', `<p>Je Apple Watch zet je verbruik vanzelf in Gezondheid. Check in <b>Gezondheid</b> → Activiteit dat er waarden staan:</p>${mock('Activiteit', [['Actieve energie', '520 kcal'], ['Rustenergie', '1.740 kcal']])}<p>Een andere app die naar Gezondheid schrijft (Polar, Fitbit, Strava) telt ook mee.</p>`],
+    iphone: ['iPhone meet je beweging', 'Alleen actieve energie', `<p>Zonder horloge maakt je iPhone van je stappen <b>actieve energie</b>. Check in <b>Gezondheid</b> → Activiteit:</p>${mock('Activiteit', [['Actieve energie', '310 kcal'], ['Rustenergie', 'geen data']])}<p>Rustenergie meet een iPhone niet. TRECK krijgt dan alleen je actieve verbruik; je doel rekent het later goed via je gewicht.</p>`],
+  }[src];
+  const auto = src === 'garmin'
+    ? [['App', 'Garmin Connect'], ['Is Closed', true], ['Run Immediately', true, 1]]
+    : [['Time of Day', '23:55'], ['Repeat', 'Daily'], ['Run Immediately', true, 1]];
+  return [
+    health,
+    ['Sleutel kopiëren', 'Je persoonlijke code voor de opdracht', '<p>De opdracht gebruikt deze sleutel om jouw verbruik naar jouw account te sturen.</p><button class="btn primary" data-key>Kopieer sleutel</button>'],
+    ['Opdracht installeren', 'TRECK in de app Opdrachten', `<a class="btn primary" href="${SHORTCUT}" target="_blank" rel="noopener">Installeer TRECK-opdracht</a><p style="margin-top:12px">Open daarna de opdracht. In beide blokken <b>Get contents of URL</b> plak je de sleutel achter <b>Bearer</b>:</p>${mock('Get contents of URL', [['Method', 'POST'], ['authorization', 'Bearer ••••', 1]])}`],
+    ['Automatisch laten draaien', src === 'garmin' ? 'Na elke Garmin-sync en om 23:55' : 'Elke avond om 23:55', `<p>Open <b>Opdrachten</b> → Automation → <b>+</b>${src === 'garmin' ? ' → App' : ' → Time of Day'}. Kies <b>Run Immediately</b> en daarna de TRECK-opdracht.</p>${mock('New Automation', auto)}${src === 'garmin' ? `<p>Maak er nog één met <b>Time of Day</b> 23:55, zodat de dag altijd compleet is.</p>` : ''}`],
+    ['Testen', 'Eén keer handmatig draaien', `<p>Tik in Opdrachten één keer op <b>TRECK</b>. Bovenaan dit scherm wordt de stip groen en zie je de tijd.</p>${mock('Opdrachten', [['▶︎ TRECK', 'tik'], ['Klaar', '✓']])}`],
+  ];
+}
+function renderSteps(ok) {
+  const src = localStorage.getItem(SRC) || 'garmin', done = new Set(JSON.parse(localStorage.getItem(`${STEPS}-${src}`) || '[]'));
+  if (ok) done.add(4);
+  document.querySelectorAll('#srcSeg button').forEach((b) => b.classList.toggle('on', b.dataset.s === src));
+  const list = stepList(src); $('steps').innerHTML = '';
+  $('stepsH').textContent = `Instellen · ${done.size} van ${list.length} klaar`;
+  const firstOpen = list.findIndex((_, n) => !done.has(n));
+  list.forEach(([t, sub_, more], n) => {
+    const li = el('li', `step${done.has(n) ? ' done' : ''}${n === firstOpen ? ' open' : ''}`);
+    li.innerHTML = `<div class="sh" role="button"><button class="num" aria-label="Gedaan">${done.has(n) ? svg('check') : n + 1}</button><div><b>${t}</b><small>${sub_}</small></div></div><div class="more">${more}</div>`;
+    li.querySelector('.sh').onclick = () => { const o = li.classList.contains('open'); document.querySelectorAll('#steps .open').forEach((x) => x.classList.remove('open')); li.classList.toggle('open', !o); };
+    li.querySelector('.num').onclick = (e) => { e.stopPropagation(); done.has(n) ? done.delete(n) : done.add(n); localStorage.setItem(`${STEPS}-${src}`, JSON.stringify([...done])); renderSteps(ok); };
+    li.querySelector('[data-key]')?.addEventListener('click', copyKey);
+    $('steps').append(li);
+  });
+  document.querySelectorAll('#steps .num .ic').forEach((i) => { i.style.width = i.style.height = '16px'; i.style.strokeWidth = 3; });
+}
+$('srcSeg').onclick = (e) => { const s = e.target.dataset.s; if (s) { localStorage.setItem(SRC, s); renderSteps($('gDot').classList.contains('ok')); } };
+$('burnsBtn').onclick = () => $('burnsWrap').classList.toggle('hidden');
 $('garminBtn').onclick = () => {
-  const done = JSON.parse(localStorage.getItem(STEPS) || '[]');
-  document.querySelectorAll('#steps li').forEach((li, n) => li.classList.toggle('done', done.includes(n)));
-  sub('garmin');
+  hide('burnsWrap'); renderSteps(false); sub('garmin');
   api('/api/burn').then(({ days }) => {
     const last = days[0] && new Date(days[0].updated_at), ok = last && Date.now() - last < 2 * 864e5;
-    $('gDot').classList.toggle('ok', !!ok);
-    $('gWhen').textContent = last ? last.toLocaleString('nl-NL', { weekday: 'long', hour: '2-digit', minute: '2-digit' }) + (ok ? '' : ' · controleer de automatisering') : 'Nog niets ontvangen';
+    $('gDot').classList.toggle('ok', !!ok); renderSteps(ok);
+    $('gWhen').textContent = last ? last.toLocaleString('nl-NL', { weekday: 'long', hour: '2-digit', minute: '2-digit' }) + (ok ? '' : ' · controleer de automatisering') : 'Nog niets ontvangen · volg de stappen hieronder';
     const by = Object.fromEntries(days.map((b) => [b.date, b])), oldest = days.at(-1)?.date;
-    const rows = [];
+    const rows = []; let got = 0;
     for (let n = 0; n < 14; n++) {
       const d = addDays(today(), -n); if (!oldest || d < oldest) break;
-      const b = by[d];
+      const b = by[d]; if (b) got++;
       rows.push(b ? `<li><div>${dayName(d)}<small>actief ${b.active ?? '–'} · rust ${b.resting ?? '–'} · ontvangen ${new Date(b.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${b.kcal}</span></li>`
         : `<li class="miss"><div>${dayName(d)}<small>Niets ontvangen</small></div><span class="kcal">Ontbreekt</span></li>`);
     }
+    $('burnsVal').textContent = rows.length ? `${got}/${rows.length}` : 'Geen';
     $('burns').innerHTML = rows.join('') || '<li class="empty">Nog niets ontvangen</li>';
   });
 };
 $('closeGarmin').onclick = () => hide('garmin');
-$('syncKey').onclick = async () => {
+async function copyKey() {
   const { token: k } = await api('/api/synckey', { method: 'POST' });
   try { await navigator.clipboard.writeText(k); toast('Sleutel gekopieerd'); }
   catch { ask({ title: 'Kopieer je sleutel', msg: 'Plak hem in de iOS-opdracht bij "Bearer ".', value: k, okText: 'Klaar', ok: () => {} }); }

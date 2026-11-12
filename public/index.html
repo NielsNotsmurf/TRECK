@@ -256,6 +256,23 @@
   #tabs button.soon { opacity:.45; } #tabs button.soon.act { opacity:1; color:var(--muted); }
   #tabs .act .ic { fill:currentColor; fill-opacity:.22; }
   .back { display:flex; align-items:center; margin-left:-8px; } .back .ic { width:22px; height:22px; stroke-width:2.4; }
+  /* Fase 11b: stapsgewijze koppeling met plaatjes */
+  .step { position:relative; } .step > .sh { display:flex; align-items:center; gap:12px; width:100%; border:0; background:none; text-align:left; padding:12px 16px; }
+  .step .sh > div { flex:1; } .step .sh small { display:block; color:var(--muted); font-size:13px; }
+  .step .num { width:28px; height:28px; border-radius:50%; background:var(--soft); color:var(--accent); font-weight:600; font-size:15px; display:grid; place-items:center; flex:none; border:0; padding:0; }
+  .step.done .num { background:var(--ok); color:#fff; } .step.done .sh b { color:var(--muted); font-weight:400; }
+  .step .sh::after { content:''; width:8px; height:8px; border:solid var(--muted); border-width:0 2px 2px 0; transform:rotate(45deg); opacity:.6; transition:transform .2s; margin-top:-4px; }
+  .step.open .sh::after { transform:rotate(-135deg); margin-top:4px; }
+  .step .more { display:none; padding:0 16px 16px 56px; font-size:15px; line-height:1.45; } .step.open .more { display:block; }
+  .step .more p { margin:0 0 10px; } .step .more a.btn, .step .more button.btn { margin:4px 0 0; text-decoration:none; text-align:center; font-size:15px; padding:11px; }
+  .mock { max-width:250px; margin:6px 0 12px; padding:10px; border-radius:22px; background:var(--bg); border:5px solid var(--fill); font-size:13px; }
+  .mock > b { display:block; text-align:center; font-size:13px; margin:2px 0 8px; }
+  .mock .mr { display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--card); padding:8px 10px; min-height:34px; }
+  .mock .mr:first-of-type { border-radius:10px 10px 0 0; } .mock .mr:last-child { border-radius:0 0 10px 10px; } .mock .mr:only-of-type { border-radius:10px; }
+  .mock .mr + .mr { border-top:.5px solid var(--line); } .mock .mr span { color:var(--muted); }
+  .mock .t { width:30px; height:18px; border-radius:9px; background:var(--fill); position:relative; flex:none; } .mock .t.on { background:var(--ok); }
+  .mock .t::after { content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; } .mock .t.on::after { left:14px; }
+  .mock .hl { outline:2px solid var(--accent); outline-offset:-2px; border-radius:8px; }
 </style>
 </head>
 <body>
@@ -347,7 +364,7 @@
   <h2>Koppelingen</h2>
   <div class="group has-tile">
     <button class="cell nav" id="pushBtn"><span class="tile" style="background:#ff3b30"><svg class="ic"><use href="#i-bell"/></svg></span><div>Meldingen</div><span class="val" id="pushSub"></span></button>
-    <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>iOS &amp; Garmin</div><span class="val" id="garminSub"></span></button>
+    <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>Verbruik koppelen<small>Garmin, Apple Watch of iPhone</small></div><span class="val" id="garminSub"></span></button>
     <button class="cell nav" id="mealsBtn"><span class="tile" style="background:#34c759"><svg class="ic"><use href="#i-book"/></svg></span><div>Mijn gerechten</div><span class="val" id="mealsSub"></span></button>
   </div>
   <div class="group" style="margin-top:28px">
@@ -356,20 +373,16 @@
   </div>
 </div></div>
 <div id="garmin" class="sheet hidden"><div class="card">
-  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>iOS &amp; Garmin</b><button id="closeGarmin">Klaar</button></div>
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Verbruik koppelen</b><button id="closeGarmin">Klaar</button></div>
   <div class="group"><div class="cell"><span class="dot" id="gDot"></span><div id="gStat">Laatst ontvangen<small id="gWhen"></small></div></div></div>
-  <h2>Instellen</h2>
-  <ul class="group steps" id="steps">
-    <li>Garmin Connect → Instellingen → Verbonden apps → Apple Gezondheid: Actieve en Rustenergie aan.</li>
-    <li>Tik hieronder op <b>Kopieer sleutel</b>.</li>
-    <li><a href="https://www.icloud.com/shortcuts/2525ede97e6b4983a72b4ef96c300ff8" target="_blank" rel="noopener"><b>Installeer de TRECK-opdracht</b></a>. Plak daarna in beide <b>Get contents of URL</b>-acties je sleutel bij <code>authorization</code>.</li>
-    <li>Opdrachten → Automation → +: <b>App</b> Garmin Connect <i>Is Closed</i>, en <b>Time of Day</b> 23:55 dagelijks. Beide <i>Run Immediately</i> → TRECK-opdracht.</li>
-    <li>Druk één keer op de afspeelknop en controleer hieronder of elke dag binnenkomt.</li>
-  </ul>
-  <div class="group"><button class="cell center" id="syncKey"><div>Kopieer sleutel</div></button></div>
-  <h2>Ontvangen (14 dagen)</h2>
-  <ul class="group" id="burns"></ul>
-  <div class="group"><button class="cell center danger" id="burnClear"><div>Verbruik wissen</div></button></div>
+  <h2>Wat meet je verbruik?</h2>
+  <div class="seg" id="srcSeg"><button data-s="garmin">Garmin</button><button data-s="watch">Apple Watch</button><button data-s="iphone">Alleen iPhone</button></div>
+  <h2 id="stepsH">Instellen</h2>
+  <ul class="group" id="steps"></ul>
+  <h2>Controle</h2>
+  <div class="group"><button class="cell nav" id="burnsBtn"><div>Ontvangen dagen<small>Laatste 14 dagen</small></div><span class="val" id="burnsVal"></span></button></div>
+  <div id="burnsWrap" class="hidden"><ul class="group" id="burns"></ul>
+    <div class="group"><button class="cell center danger" id="burnClear"><div>Verbruik wissen</div></button></div></div>
 </div></div>
 <div id="editor" class="sheet hidden"><div class="card">
   <div class="head"><button id="edCancel">Annuleer</button><b id="edTitle"></b><button id="edSave">Bewaar</button></div>
