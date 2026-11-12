@@ -23,7 +23,9 @@ export async function onRequestGet({ request, env, user }) {
 
 // Fase 4: POST {date, active, resting} (of {date, kcal}) vanuit de iOS-opdracht (Garmin -> Apple Health). Overschrijft die dag.
 export async function burn({ request, env, user }) {
-  const b = await request.json();
+  const h = (k) => request.headers.get(k);
+  const b = await request.json().catch(() => ({})); // waarden mogen ook als header (iOS-opdracht)
+  for (const k of ['date', 'kcal', 'active', 'resting']) if (b[k] == null && h(k)) b[k] = h(k);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : new Date().toISOString().slice(0, 10);
   const num = (v) => { // iOS stuurt soms "1.812,4 kcal"
     let t = String(v ?? '').replace(/[^\d.,]/g, '');
