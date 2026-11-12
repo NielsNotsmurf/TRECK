@@ -6,213 +6,298 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TRECK">
-<meta name="theme-color" content="#fff6ec" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#17110d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <title>TRECK</title>
 <style>
-  :root { color-scheme: light dark; --bg:#fff6ec; --card:#fff; --fg:#2b1d14; --muted:#9a8576; --line:#f2e4d6; --accent:#ef5a3c; --soft:#fde4d9;
-          --p:#ef5a3c; --c:#f4a63a; --f:#6fae45; --ok:#4f9d3a; --warn:#e07b24; --nav:56px; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#17110d; --card:#241b15; --fg:#f8ede3; --muted:#a38d7d; --line:#382a20; --soft:#47241a; } }
+  /* Fase 10: iOS-stijl (HIG): systeemkleuren, grouped inset lists, lijn-iconen, doorschijnende balken, safe areas. */
+  :root { color-scheme: light dark; --bg:#f2f2f7; --card:#fff; --fg:#000; --muted:rgba(60,60,67,.6); --line:rgba(60,60,67,.18); --fill:rgba(118,118,128,.12);
+          --accent:#f2542d; --soft:rgba(242,84,45,.12); --bar:rgba(249,249,249,.8);
+          --p:#f2542d; --c:#ff9f0a; --f:#34c759; --ok:#34c759; --warn:#ff9500; --red:#ff3b30; --nav:50px; --cmp:64px; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --card:#1c1c1e; --fg:#fff; --muted:rgba(235,235,245,.6); --line:rgba(84,84,88,.6);
+          --fill:rgba(118,118,128,.24); --soft:rgba(242,84,45,.2); --bar:rgba(22,22,22,.8); --accent:#ff6a3d; } }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { background:var(--bg); }
-  body { margin:0; color:var(--fg); font:16px/1.35 -apple-system, system-ui, sans-serif; max-width:560px; margin:0 auto;
-         padding: calc(env(safe-area-inset-top) + 8px) 16px calc(var(--nav) + env(safe-area-inset-bottom)); }
+  body { margin:0 auto; color:var(--fg); font:17px/1.3 -apple-system, system-ui, sans-serif; max-width:560px; -webkit-font-smoothing:antialiased;
+         padding: calc(env(safe-area-inset-top) + 6px) 16px calc(var(--nav) + var(--cmp) + env(safe-area-inset-bottom) + 16px); }
   button, label, input, textarea { font:inherit; color:inherit; }
   button { cursor:pointer; }
-  .card { background:var(--card); border-radius:22px; padding:16px; margin-bottom:12px; box-shadow:0 2px 14px rgba(120,60,20,.07); }
-  .top { display:flex; align-items:center; justify-content:space-between; height:44px; }
-  .brand { font-weight:800; letter-spacing:.12em; font-size:15px; }
-  .brand b { color:var(--accent); }
-  .icon { background:none; border:0; font-size:22px; width:44px; height:44px; border-radius:22px; }
-  .icon:active { background:var(--line); }
-  #nav { display:flex; align-items:center; justify-content:space-between; }
-  #day { font-weight:600; text-transform:capitalize; }
-  #ring { position:relative; width:210px; height:210px; margin:4px auto 0; }
+  .ic { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .ic.fill { fill:currentColor; }
+  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:12px; }
+  .hidden { display:none !important; }
+
+  /* Kop: grote titel + dagnavigatie */
+  #nav { display:flex; align-items:flex-end; justify-content:space-between; margin:8px 0 12px; }
+  #nav small { display:block; font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; }
+  #day { font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1.1; text-transform:capitalize; }
+  #nav .btns { display:flex; gap:8px; padding-bottom:4px; }
+  .round { border:0; background:var(--fill); color:var(--accent); width:34px; height:34px; border-radius:17px; display:grid; place-items:center; padding:0; }
+  .round .ic { width:20px; height:20px; stroke-width:2.4; }
+  .round:active, .cell:active { opacity:.55; }
+
+  /* Dagkaart */
+  #ring { position:relative; width:196px; height:196px; margin:0 auto; }
   #ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-  #ring circle { fill:none; stroke-width:11; stroke-linecap:round; }
-  #ring .trk { stroke:var(--line); }
+  #ring circle { fill:none; stroke-width:12; stroke-linecap:round; }
+  #ring .trk { stroke:var(--fill); }
   #arc { stroke:url(#grad); transition:stroke-dashoffset .6s ease; }
   #ring.over #arc { stroke:var(--warn); }
   #ringIn { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  #total { font-size:46px; font-weight:800; letter-spacing:-.02em; line-height:1; }
-  #total small { display:block; text-align:center; font-size:14px; font-weight:600; color:var(--muted); margin-top:4px; }
-  #goal { font-size:12px; color:var(--muted); margin-top:6px; text-align:center; }
-  #motto { text-align:center; font-weight:600; margin:6px 0 2px; }
+  #total { font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; }
+  #total small { display:block; text-align:center; font-size:13px; font-weight:600; color:var(--muted); margin-top:4px; letter-spacing:0; }
+  #goal { font-size:12px; color:var(--muted); margin-top:4px; text-align:center; }
+  #motto { text-align:center; font-weight:600; font-size:15px; margin:8px 0 2px; }
   #total.est, #total.est + #macros b { color:var(--muted); font-style:italic; }
-  #macros { display:flex; gap:8px; margin-top:12px; }
-  .help { font-size:14px; line-height:1.45; padding-left:20px; margin:0 0 12px; } .help code { font-size:12px; word-break:break-all; }
-  #burn { text-align:center; font-size:14px; color:var(--muted); margin-top:10px; }
-  #weight { cursor:pointer; text-align:center; font-size:14px; color:var(--muted); margin-top:8px; }
-  #weight svg { display:block; width:100%; height:40px; margin-top:4px; }
-  #burn .neg { color:#2a9d5c; } #burn .pos { color:#d9822b; }
-  #macros div { flex:1; text-align:center; background:var(--bg); border-radius:14px; padding:8px 0 10px; border-bottom:4px solid var(--m); }
+  #macros { display:flex; gap:16px; margin-top:14px; }
+  #macros div { flex:1; font-size:13px; }
   #macros div:nth-child(1) { --m:var(--p); } #macros div:nth-child(2) { --m:var(--c); } #macros div:nth-child(3) { --m:var(--f); }
-  #macros b { display:block; font-size:18px; }
-  #macros div[style] { background:linear-gradient(to right, color-mix(in srgb, var(--m) 22%, var(--bg)) var(--w), var(--bg) var(--w)); }
-  #macros b small { font-size:12px; color:var(--muted); font-weight:400; }
-  #why { font-size:12px; color:var(--muted); margin-top:8px; text-align:center; }
-  #macros span { font-size:12px; color:var(--muted); }
-  h2 { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 4px 8px; }
-  #quick { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-  #quick::-webkit-scrollbar { display:none; }
-  .chip { flex:none; border:0; background:var(--card); border-radius:999px; padding:9px 14px; white-space:nowrap; max-width:240px; overflow:hidden; text-overflow:ellipsis; }
-  .chip.saved { background:var(--soft); color:var(--accent); font-weight:600; }
+  #macros b { display:block; font-size:17px; font-variant-numeric:tabular-nums; }
+  #macros b small { font-size:13px; color:var(--muted); font-weight:400; }
+  #macros span { color:var(--muted); }
+  #macros div::after { content:''; display:block; height:4px; border-radius:2px; margin-top:6px;
+    background:linear-gradient(to right, var(--m) var(--w, 100%), var(--fill) var(--w, 100%)); }
+  #why { font-size:12px; color:var(--muted); margin-top:12px; text-align:center; }
+
+  /* Grouped inset list (iOS) */
+  h2 { font-size:13px; font-weight:400; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; margin:22px 16px 7px; }
+  .group { background:var(--card); border-radius:12px; overflow:hidden; margin:0 0 12px; list-style:none; padding:0; }
+  .cell { display:flex; align-items:center; gap:12px; min-height:44px; padding:0 16px; width:100%; border:0; background:none; text-align:left; position:relative; }
+  .cell + .cell::before, .group > li + li::before { content:''; position:absolute; top:0; right:0; left:var(--inset, 16px); border-top:.5px solid var(--line); }
+  .cell > div { flex:1; min-width:0; padding:11px 0; }
+  .cell small, li small { display:block; color:var(--muted); font-size:13px; margin-top:1px; }
+  .cell .val { color:var(--muted); font-size:15px; text-align:right; white-space:nowrap; }
+  .cell.nav::after { content:''; width:8px; height:8px; border:solid var(--muted); border-width:2px 2px 0 0; transform:rotate(45deg); margin:0 2px 0 -2px; opacity:.6; flex:none; }
+  .tile { width:29px; height:29px; border-radius:7px; display:grid; place-items:center; color:#fff; flex:none; }
+  .tile .ic { width:18px; height:18px; stroke-width:2.1; }
+  .has-tile { --inset:57px; }
+  .cell.center { justify-content:center; color:var(--accent); } .cell.center > div { flex:none; }
+  .danger, .cell.danger { color:var(--red) !important; }
+  .neg { color:var(--ok); } .pos { color:var(--warn); }
+  #weight svg { display:block; width:100%; height:28px; margin-top:4px; color:var(--accent); }
+
+  /* Items */
   ul { list-style:none; padding:0; margin:0; }
-  #list li, #pending li, #meals li { display:flex; gap:8px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
-  #list li:first-child, #meals li:first-child, #pending li:first-child { border-top:0; }
-  li div { flex:1; min-width:0; }
-  li small { color:var(--muted); display:block; font-size:13px; }
-  li .kcal { font-weight:700; font-variant-numeric:tabular-nums; color:var(--accent); }
+  #list li, #pending li, #meals li, #burns li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; }
+  #list { --inset:66px; }
   #list li { flex-wrap:wrap; }
-  .adj { flex-basis:100%; display:flex; align-items:center; gap:10px; }
+  .food { width:40px; height:40px; border-radius:10px; background:var(--fill); display:grid; place-items:center; font-size:23px; flex:none; }
+  li div { flex:1; min-width:0; }
+  li .kcal { font-weight:600; font-variant-numeric:tabular-nums; } li .kcal::after { content:' kcal'; font-weight:400; font-size:13px; color:var(--muted); }
+  li .act { background:none; border:0; color:var(--muted); width:32px; height:32px; border-radius:16px; display:grid; place-items:center; padding:0; flex:none; }
+  li .act .ic { width:20px; height:20px; } li .act.on { color:var(--accent); }
+  li .act:active { background:var(--fill); }
+  .adj { flex-basis:100%; display:flex; align-items:center; gap:12px; padding-left:52px; }
   .adj input[type=range] { flex:1; accent-color:var(--accent); height:28px; }
-  .adj b { min-width:64px; text-align:center; font-size:14px; font-variant-numeric:tabular-nums; }
-  #list .adj button { background:var(--soft); color:var(--accent); font-size:20px; font-weight:700; width:34px; height:34px; }
-  li button { background:none; border:0; color:var(--muted); font-size:18px; width:36px; height:36px; border-radius:18px; flex:none; }
-  li button:active { background:var(--line); }
-  .empty { color:var(--muted); text-align:center; padding:12px 0; }
-  #compose { position:sticky; bottom:calc(var(--nav) + env(safe-area-inset-bottom)); padding:10px 0; background:linear-gradient(transparent, var(--bg) 18px); }
-  #compose .card { margin:0; padding:10px; box-shadow:0 6px 24px rgba(0,0,0,.08); }
-  textarea { width:100%; min-height:48px; max-height:140px; padding:8px; border:0; resize:none; background:none; outline:none; font-size:16px; }
-  .row { display:flex; gap:8px; margin-top:6px; }
-  .row > * { flex:1; padding:12px 0; font-weight:600; border-radius:12px; border:0; background:var(--bg); text-align:center; }
-  .primary, #send, #loginBtn { background:var(--accent) !important; color:#fff !important; }
-  .on { background:var(--soft) !important; color:var(--accent) !important; }
-  #status, .status { color:var(--muted); font-size:14px; text-align:center; min-height:1.3em; margin-top:6px; }
+  .adj b { min-width:56px; text-align:center; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .adj .round { width:30px; height:30px; }
+  .empty { color:var(--muted); text-align:center; padding:16px !important; justify-content:center; font-size:15px; }
+  #list li > div, #meals li > div { cursor:pointer; }
+
+  /* Snel toevoegen */
+  #quick { display:flex; gap:8px; overflow-x:auto; padding:0 0 4px; margin:0 -16px; padding-inline:16px; scrollbar-width:none; }
+  #quick::-webkit-scrollbar { display:none; }
+  .chip { flex:none; display:flex; align-items:center; gap:6px; border:0; background:var(--card); border-radius:999px; padding:8px 14px; font-size:15px; white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .chip small { color:var(--muted); font-size:13px; }
+  .chip .ic { width:16px; height:16px; color:var(--accent); }
+  .chip.add { background:var(--soft); color:var(--accent); padding:8px 10px; } .chip.add .ic { width:20px; height:20px; stroke-width:2.4; }
+  .chip.dim { opacity:.4; }
+
+  /* Typebalk (iMessage-achtig): camera links, invoerveld als pil, verstuurpijl rechts */
+  #compose { position:fixed; left:0; right:0; bottom:calc(var(--nav) + env(safe-area-inset-bottom)); z-index:6; background:var(--bar);
+             -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); border-top:.5px solid var(--line); }
+  #compose > div { max-width:560px; margin:0 auto; padding:8px 12px; }
+  .bar { display:flex; align-items:flex-end; gap:8px; }
+  #photoBtn { width:36px; height:36px; border-radius:18px; background:var(--fill); color:var(--accent); display:grid; place-items:center; flex:none; margin-bottom:1px; }
+  #photoBtn.on { background:var(--accent); color:#fff; }
+  .pill { flex:1; display:flex; align-items:flex-end; background:var(--card); border:.5px solid var(--line); border-radius:19px; padding:2px 3px 2px 14px; min-height:38px; }
+  .pill:focus-within { border-color:var(--accent); }
+  textarea { flex:1; min-height:32px; max-height:120px; padding:6px 0; border:0; resize:none; background:none; outline:none; font-size:17px; line-height:20px; }
+  textarea::placeholder { color:var(--muted); }
+  #send { width:32px; height:32px; border-radius:16px; border:0; background:var(--accent); color:#fff; display:grid; place-items:center; padding:0; flex:none; transition:opacity .15s; }
+  #send .ic { width:18px; height:18px; stroke-width:2.8; }
+  #send:disabled { opacity:.3; }
+  #status { color:var(--muted); font-size:13px; text-align:center; padding:0 0 6px; }
   #status:empty { display:none; }
-  input[type=file] { display:none; }
+  #thumbWrap { display:flex; align-items:center; gap:10px; padding:0 0 8px; font-size:13px; color:var(--muted); }
+  #thumb { width:48px; height:48px; object-fit:cover; border-radius:10px; }
+  #thumbX { border:0; background:var(--fill); color:var(--muted); border-radius:14px; width:28px; height:28px; margin-left:auto; flex:none; display:grid; place-items:center; padding:0; }
+  #thumbX .ic { width:16px; height:16px; }
+
+  /* Onderbalk */
+  #tabs { position:fixed; left:0; right:0; bottom:0; z-index:7; display:flex; justify-content:space-around; background:var(--bar);
+          -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px);
+          border-top:.5px solid var(--line); padding:2px 4px env(safe-area-inset-bottom); height:calc(var(--nav) + env(safe-area-inset-bottom)); }
+  #tabs button { flex:1; border:0; background:none; font-size:10px; font-weight:500; color:#999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  #tabs button.act { color:var(--accent); }
+  #tabs .ic { width:26px; height:26px; stroke-width:1.7; }
+  body.tab-other #compose { display:none; }
+  #soon { text-align:center; padding:40px 20px; margin-top:20px; } #soon .ic { width:52px; height:52px; color:var(--accent); stroke-width:1.4; }
+  #soon h3 { margin:12px 0 4px; } #soon p { color:var(--muted); margin:0; }
+
+  /* Sheets met handgreep en navigatiekop */
+  .sheet { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:flex-end; z-index:9; }
+  .sheet > .card { width:100%; max-width:560px; margin:0 auto; border-radius:12px 12px 0 0; background:var(--bg); padding:0 16px calc(env(safe-area-inset-bottom) + 20px);
+                   max-height:94vh; overflow-y:auto; animation:up .25s cubic-bezier(.2,.8,.2,1); }
+  @keyframes up { from { transform:translateY(100%); } }
+  .head { position:sticky; top:0; z-index:1; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; height:56px; margin:0 -16px; padding:6px 16px 0; background:var(--bg); }
+  .head::before { content:''; position:absolute; top:6px; left:50%; width:36px; height:5px; margin-left:-18px; border-radius:3px; background:var(--line); }
+  .head b { font-size:17px; font-weight:600; text-align:center; }
+  .head button { border:0; background:none; color:var(--accent); font-size:17px; padding:8px 0; justify-self:start; }
+  .head button:last-child { justify-self:end; font-weight:600; }
+  .sheet h2:first-of-type { margin-top:8px; }
+  .help { font-size:15px; line-height:1.45; padding:14px 16px 14px 34px; margin:0 0 12px; background:var(--card); border-radius:12px; }
+  .help code { font-size:12px; word-break:break-all; } .help a { color:var(--accent); }
+  .aibar { padding:0 16px 12px; } .aibar span { display:block; height:4px; border-radius:2px; background:var(--fill); overflow:hidden; }
+  .aibar i { display:block; height:100%; width:0; background:var(--accent); } .aibar.full i { background:var(--red); }
+  .sheet input { width:100%; padding:11px 16px; border:0; background:var(--card); font-size:17px; min-width:0; outline:none; }
+  .fields { background:var(--card); border-radius:12px; overflow:hidden; margin-top:8px; }
+  .fields > * + * { border-top:.5px solid var(--line); }
+  .airow { display:flex; align-items:center; padding-right:8px; }
+  .airow button { flex:none; border:0; border-radius:14px; padding:5px 12px; font-size:15px; font-weight:600; background:var(--soft); color:var(--accent); display:flex; gap:4px; align-items:center; }
+  .airow .ic { width:16px; height:16px; }
+  .edrow { position:relative; background:var(--card); border-radius:12px; margin-top:12px; overflow:hidden; }
+  .edrow > input { border-bottom:.5px solid var(--line); padding-right:48px; }
+  .edrow .nums { display:grid; grid-template-columns:repeat(4, 1fr); }
+  .edrow label { font-size:11px; color:var(--muted); text-align:center; padding-top:6px; } .edrow label + label { border-left:.5px solid var(--line); }
+  .edrow label input { text-align:center; padding:4px 4px 10px; font-variant-numeric:tabular-nums; }
+  .edrow > button { position:absolute; top:6px; right:6px; border:0; background:none; color:var(--red); width:32px; height:32px; display:grid; place-items:center; padding:0; }
+  .single .edrow > button { display:none; }
+  .link { display:flex; align-items:center; gap:6px; background:none; border:0; color:var(--accent); font-size:17px; padding:12px 4px; }
+  .link .ic { width:20px; height:20px; }
+  .status { color:var(--muted); font-size:13px; text-align:center; min-height:1.3em; margin-top:6px; }
+
+  /* Inloggen */
   #login { padding-top:12vh; }
   #login h1 { text-align:center; font-size:40px; letter-spacing:.14em; margin:0; }
-  #login h1 b { color:var(--accent); }
+  #login h1 b, .brand b { color:var(--accent); }
   #login p { text-align:center; color:var(--muted); margin:6px 0 24px; }
-  #login input { width:100%; padding:14px; margin-top:8px; border:0; border-radius:12px; background:var(--card); font-size:16px; }
-  #pending li button { color:var(--accent); font-weight:600; width:auto; font-size:15px; padding:0 8px; }
-  .sheet { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-end; z-index:9; }
-  .sheet .card { width:100%; max-width:560px; margin:0 auto; border-radius:20px 20px 0 0; padding-bottom:calc(env(safe-area-inset-bottom) + 16px); max-height:92vh; overflow-y:auto; }
-  #sheet .row { flex-direction:column; }
-  .chip.add { background:var(--accent); color:#fff; font-weight:700; padding:9px 16px; }
-  .chip.dim { opacity:.4; }
-  #list li div, #meals li div { cursor:pointer; }
-  .sheet input { width:100%; padding:11px 12px; border:0; border-radius:10px; background:var(--bg); font-size:16px; min-width:0; }
-  .airow { display:flex; gap:8px; margin:8px 0; }
-  .airow button { flex:none; border:0; border-radius:10px; padding:0 16px; font-weight:600; }
-  .edrow { border-top:1px solid var(--line); padding:10px 0; display:grid; grid-template-columns:1fr 1fr 36px; gap:6px; }
-  .edrow .nums { grid-column:1 / 3; display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
-  .edrow label { font-size:11px; color:var(--muted); text-align:center; }
-  .edrow label input { text-align:center; margin-top:2px; padding:9px 4px; }
-  .edrow > button { background:none; border:0; color:var(--muted); font-size:20px; }
-  .single .edrow > button { visibility:hidden; }
-  .link { background:none; border:0; color:var(--accent); font-weight:600; padding:10px 0; }
-  .danger { color:#d33 !important; }
-  #thumbWrap { display:flex; align-items:center; gap:10px; padding:4px 4px 0; font-size:13px; color:var(--muted); }
-  #thumb { width:52px; height:52px; object-fit:cover; border-radius:12px; }
-  #thumbX { border:0; background:var(--bg); border-radius:14px; width:28px; height:28px; margin-left:auto; flex:none; }
-  #tabs { position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; justify-content:space-around; background:var(--card);
-          border-top:1px solid var(--line); padding:4px 4px env(safe-area-inset-bottom); height:calc(var(--nav) + env(safe-area-inset-bottom)); }
-  #tabs button { flex:1; border:0; background:none; font-size:10px; font-weight:600; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:1px; }
-  #tabs button span { font-size:22px; filter:grayscale(1); opacity:.6; }
-  #tabs button.act { color:var(--accent); } #tabs button.act span { filter:none; opacity:1; }
-  #soon { text-align:center; padding:36px 20px; } #soon div { font-size:48px; } #soon p { color:var(--muted); }
-  .sheet .card { animation:up .22s ease-out; } @keyframes up { from { transform:translateY(40%); opacity:0; } }
-  .aibar div { display:flex; justify-content:space-between; font-size:13px; } .aibar small { color:var(--muted); }
-  .aibar span { display:block; height:6px; border-radius:3px; background:var(--soft); margin-top:6px; overflow:hidden; }
-  .aibar i { display:block; height:100%; width:0; background:var(--accent); border-radius:3px; } .aibar.full i { background:#d44; }
-  .menu { display:flex; flex-direction:column; gap:2px; margin-top:6px; }
-  .menu button { display:flex; align-items:center; gap:12px; text-align:left; border:0; background:none; padding:12px 4px; border-radius:12px; font-weight:600; }
-  .menu button:active { background:var(--bg); }
-  .menu button i { font-style:normal; font-size:20px; width:38px; height:38px; border-radius:12px; background:var(--soft); display:grid; place-items:center; flex:none; }
-  .menu button small { display:block; font-weight:400; color:var(--muted); font-size:13px; }
-  .menu button::after { content:'›'; margin-left:auto; color:var(--muted); font-size:22px; }
-  .hidden { display:none !important; }
+  #login .fields input { width:100%; padding:13px 16px; border:0; background:var(--card); font-size:17px; outline:none; }
+  .btn { display:block; width:100%; margin-top:12px; padding:14px; border:0; border-radius:12px; font-weight:600; font-size:17px; background:var(--fill); color:var(--accent); }
+  .btn.primary { background:var(--accent); color:#fff; }
+  #pending li button { border:0; background:none; color:var(--accent); font-weight:600; font-size:15px; padding:0 4px; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-fork" viewBox="0 0 24 24"><path d="M5 3v5a3 3 0 0 0 6 0V3M8 3v18M18 21V3c-2.5 1.4-3.5 4-3.5 8v3H18"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-14A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5 2.5 2.5 0 0 1 6.5 16H20"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 21h18M6 17v-5M11 17V7M16 17v-8M21 17V4"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16" cy="12" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13M10 11v5.5M14 11v5.5"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15zM10 21h4"/></symbol>
+  <symbol id="i-watch" viewBox="0 0 24 24"><rect x="6.5" y="6" width="11" height="12" rx="3"/><path d="M9 6l.6-3h4.8l.6 3M9 18l.6 3h4.8l.6-3M12 9.5V12l1.5 1"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m11 3 1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9zM18.5 15l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21a6 6 0 0 0 6-6c0-4.5-3.5-6.5-4.5-11-2 2-3.5 4.5-3.5 7-1-.7-1.6-1.8-1.8-3C6.8 9.8 6 12.3 6 15a6 6 0 0 0 6 6z"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8 10a5 5 0 0 1 8 0M12 10l1.3-1.8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></symbol>
+</svg>
 <form id="login" class="hidden">
   <h1>TR<b>E</b>CK</h1>
   <p>Trek bijhouden, zonder gedoe.</p>
-  <input id="name" autocomplete="username" placeholder="Naam" autocapitalize="none">
-  <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
-  <div class="row"><button type="submit" id="loginBtn">Inloggen</button></div>
-  <div class="row"><button type="button" id="registerBtn">Account aanvragen</button></div>
+  <div class="fields">
+    <input id="name" autocomplete="username" placeholder="Naam" autocapitalize="none">
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Wachtwoord (min. 8 tekens)">
+  </div>
+  <button type="submit" id="loginBtn" class="btn primary">Inloggen</button>
+  <button type="button" id="registerBtn" class="btn">Account aanvragen</button>
   <div id="gbtn" style="margin-top:16px;display:flex;justify-content:center"></div>
   <div id="loginStatus" class="status"></div>
 </form>
 <main id="app" class="hidden">
-  <div class="top"><span class="brand">TR<b>E</b>CK</span></div>
-  <section class="card hidden" id="soon"><div id="soonI"></div><h3 id="soonT"></h3><p>Komt in een volgende fase.</p></section>
+  <section class="card hidden" id="soon"><svg class="ic"><use id="soonI" href="#i-book"/></svg><h3 id="soonT"></h3><p>Komt in een volgende fase.</p></section>
   <div id="todayView">
+  <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div></div>
+    <div class="btns"><button class="round" id="prev" aria-label="Vorige dag"><svg class="ic"><use href="#i-left"/></svg></button><button class="round" id="next" aria-label="Volgende dag"><svg class="ic"><use href="#i-right"/></svg></button></div></div>
   <section class="card">
-    <div id="nav"><button class="icon" id="prev" aria-label="Vorige dag">‹</button><span id="day"></span><button class="icon" id="next" aria-label="Volgende dag">›</button></div>
-    <div id="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="grad"><stop offset="0" stop-color="#f4a63a"/><stop offset="1" stop-color="#ef5a3c"/></linearGradient></defs>
+    <div id="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="grad"><stop offset="0" stop-color="#ff9f0a"/><stop offset="1" stop-color="#f2542d"/></linearGradient></defs>
       <circle class="trk" cx="60" cy="60" r="52"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
       <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div></div></div>
     <div id="motto"></div>
     <div id="macros"></div>
     <div id="why"></div>
-    <div id="burn"></div>
-    <div id="weight"></div>
   </section>
+  <div class="group has-tile">
+    <div class="cell" id="burnCell"><span class="tile" style="background:#ff9500"><svg class="ic"><use href="#i-flame"/></svg></span><div id="burn"></div><span class="val" id="burnVal"></span></div>
+    <button class="cell" id="weight"></button>
+  </div>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
   <h2>Gegeten</h2>
-  <section class="card"><ul id="list"></ul></section>
-  <section class="card hidden" id="pendingCard"><h2 style="margin-top:0">Wacht op goedkeuring</h2><ul id="pending"></ul></section>
-  <div id="compose"><div class="card">
-    <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ context erbij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg">×</button></div>
-    <textarea id="text" rows="1" placeholder="Wat heb je gegeten? Bijv. 'mijn ontbijt' of 'gisteravond pasta'"></textarea>
-    <div class="row">
-      <label id="photoBtn">📷 Foto<input id="photo" type="file" accept="image/*"></label>
-      <button id="send">Verstuur</button>
-    </div>
-    <div id="status"></div>
-  </div></div>
+  <ul class="group" id="list"></ul>
+  <section class="hidden" id="pendingCard"><h2>Wacht op goedkeuring</h2><ul class="group" id="pending"></ul></section>
   </div>
 </main>
+<div id="compose" class="hidden"><div>
+  <div id="status"></div>
+  <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ er context bij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div class="bar">
+    <label id="photoBtn" aria-label="Foto"><svg class="ic"><use href="#i-camera"/></svg><input id="photo" type="file" accept="image/*" hidden></label>
+    <div class="pill"><textarea id="text" rows="1" placeholder="Wat heb je gegeten?" enterkeyhint="send"></textarea>
+      <button id="send" aria-label="Verstuur" disabled><svg class="ic"><use href="#i-up"/></svg></button></div>
+  </div>
+</div></div>
 <nav id="tabs" class="hidden">
-  <button data-tab="today" class="act"><span>🍽️</span>Vandaag</button>
-  <button data-tab="recipes"><span>🥗</span>Recepten</button>
-  <button data-tab="insights"><span>📈</span>Inzichten</button>
-  <button data-tab="plan"><span>🎯</span>Programma</button>
-  <button id="menuBtn"><span>⚙️</span>Meer</button>
+  <button data-tab="today" class="act"><svg class="ic"><use href="#i-fork"/></svg>Vandaag</button>
+  <button data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
+  <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
+  <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
+  <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
 </nav>
 <div id="sheet" class="sheet hidden"><div class="card">
-  <h2 style="margin-top:0">Mijn gerechten</h2>
-  <ul id="meals"></ul>
-  <h2>Instellingen</h2>
-  <div id="aiBar" class="aibar"><div><b id="aiTxt">AI vandaag …</b><small id="aiSub"></small></div><span><i id="aiFill"></i></span></div>
-  <div class="menu"><button id="goalBtn"><i>🎯</i><div>Doel<small id="goalSub">Afvallen (−0,5 kg/week)</small></div></button></div>
-  <div class="menu"><button id="planBtn"><i>⭐</i><div>Abonnement<small id="planSub">Gratis: 10 AI-verzoeken per dag</small></div></button></div>
-  <div class="menu">
-    <button id="pushBtn"><i>🔔</i><div>Meldingen<small id="pushSub">Herinneringen om te loggen</small></div></button>
-    <button id="garminBtn"><i>⌚</i><div>iOS &amp; Garmin<small>Verbruik via Apple Health</small></div></button>
-    <button id="logout"><i>👋</i><div>Uitloggen</div></button>
-    <button id="delAccount" class="danger"><i>🗑️</i><div>Account verwijderen</div></button>
+  <div class="head"><span></span><b>Meer</b><button id="closeSheet">Klaar</button></div>
+  <h2>Doel en AI</h2>
+  <div class="group has-tile">
+    <button class="cell nav" id="goalBtn"><span class="tile" style="background:#f2542d"><svg class="ic"><use href="#i-target"/></svg></span><div>Doel<small id="goalSub">Afvallen (−0,5 kg/week)</small></div></button>
+    <button class="cell nav" id="planBtn"><span class="tile" style="background:#ffcc00"><svg class="ic fill"><use href="#i-star"/></svg></span><div>Abonnement<small id="planSub">Gratis: 10 AI-verzoeken per dag</small></div></button>
+    <div class="cell" style="flex-wrap:wrap"><span class="tile" style="background:#af52de"><svg class="ic"><use href="#i-spark"/></svg></span><div>AI vandaag<small id="aiSub"></small></div><span class="val" id="aiTxt">…</span>
+      <div id="aiBar" class="aibar" style="flex-basis:100%;padding:0 0 12px 41px"><span><i id="aiFill"></i></span></div></div>
   </div>
-  <div class="row"><button id="closeSheet">Sluiten</button></div>
+  <h2>Koppelingen</h2>
+  <div class="group has-tile">
+    <button class="cell nav" id="pushBtn"><span class="tile" style="background:#ff3b30"><svg class="ic"><use href="#i-bell"/></svg></span><div>Meldingen<small id="pushSub">Herinneringen om te loggen</small></div></button>
+    <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>iOS &amp; Garmin<small>Verbruik via Apple Health</small></div></button>
+  </div>
+  <h2>Mijn gerechten</h2>
+  <ul class="group" id="meals"></ul>
+  <div class="group" style="margin-top:28px">
+    <button class="cell center" id="logout"><div>Uitloggen</div></button>
+    <button class="cell center danger" id="delAccount"><div>Account verwijderen</div></button>
+  </div>
 </div></div>
 <div id="garmin" class="sheet hidden"><div class="card">
-  <h2 style="margin-top:0">iOS &amp; Garmin koppelen</h2>
+  <div class="head"><span></span><b>iOS &amp; Garmin</b><button id="closeGarmin">Klaar</button></div>
   <ol class="help">
     <li>Garmin Connect → Instellingen → Verbonden apps → Apple Gezondheid: Actieve en Rustenergie aan.</li>
     <li>Tik hieronder op <b>Kopieer sleutel</b>.</li>
     <li><a href="https://www.icloud.com/shortcuts/2525ede97e6b4983a72b4ef96c300ff8" target="_blank" rel="noopener"><b>Installeer de TRECK-opdracht</b></a>. Plak daarna in beide <b>Get contents of URL</b>-acties je sleutel bij <code>authorization</code>.</li>
     <li>Opdrachten → Automation → +: <b>App</b> Garmin Connect <i>Is Closed</i>, en <b>Time of Day</b> 23:55 dagelijks. Beide <i>Run Immediately</i> → TRECK-opdracht.</li>
-    <li>Druk één keer op ▶️ en controleer hieronder of elke dag binnenkomt.</li>
+    <li>Druk één keer op de afspeelknop en controleer hieronder of elke dag binnenkomt.</li>
   </ol>
-  <div class="row"><button id="syncKey" class="primary">Kopieer sleutel</button></div>
+  <div class="group"><button class="cell center" id="syncKey"><div>Kopieer sleutel</div></button></div>
   <h2>Ontvangen (30 dagen)</h2>
-  <ul id="burns"></ul>
-  <div class="row"><button id="burnClear" class="danger">Verbruik wissen</button><button id="closeGarmin">Sluiten</button></div>
+  <ul class="group" id="burns"></ul>
+  <div class="group"><button class="cell center danger" id="burnClear"><div>Verbruik wissen</div></button></div>
 </div></div>
 <div id="editor" class="sheet hidden"><div class="card">
-  <h2 id="edTitle" style="margin-top:0"></h2>
-  <input id="edName" placeholder="Naam, bijv. Mijn ontbijt">
-  <div class="airow" id="edAi"><input id="edAiText" placeholder="Of beschrijf het, bijv. 2 boterhammen kaas"><button id="edAiBtn" class="primary">AI</button></div>
+  <div class="head"><button id="edCancel">Annuleer</button><b id="edTitle"></b><button id="edSave">Bewaar</button></div>
+  <div class="fields" id="edTop">
+    <input id="edName" placeholder="Naam, bijv. Mijn ontbijt">
+    <div class="airow" id="edAi"><input id="edAiText" placeholder="Of beschrijf het, bijv. 2 boterhammen kaas"><button id="edAiBtn"><svg class="ic"><use href="#i-spark"/></svg>AI</button></div>
+  </div>
   <div id="edRows"></div>
-  <button class="link" id="edAdd">+ product</button>
-  <button class="link danger hidden" id="edDel" style="float:right">Verwijder favoriet</button>
-  <div class="row"><button id="edCancel">Annuleer</button><button id="edSave" class="primary">Opslaan</button></div>
+  <button class="link" id="edAdd"><svg class="ic"><use href="#i-plus"/></svg>Product toevoegen</button>
+  <div class="group hidden" id="edDelWrap"><button class="cell center danger" id="edDel"><div>Verwijder</div></button></div>
   <div id="edStatus" class="status"></div>
 </div></div>
 <script src="app.js"></script>

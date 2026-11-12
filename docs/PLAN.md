@@ -69,6 +69,8 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 8: limiet per gebruiker (config k=ai:<id>): gratis 10/dag, abonnement 100/dag; daarboven stopt de AI (429 met uitleg). Abonnement is nep: tik in Meer = direct aan/uit (kolom users.plan).
 - 2026-11-12 Fase 9: doel zonder AI (ook geen wekelijkse AI-call): verbruik = gem. inname gelogde dagen − gewichtstrend (regressie) × 7700, venster 28 d vóór de maandag (doel staat een week vast). Pas bij ≥14 gelogde dagen en wegingen ≥7 d uit elkaar.
 - 2026-11-12 Fase 9: tempo in Meer → Doel (tik wisselt): afvallen −550 (standaard), op gewicht 0, aankomen +275 kcal; min. 1200. Macro's: eiwit 1,8 g/kg, vet 25%, rest koolh. Uitleg = vaste zin met de cijfers.
+- Fase 10: iOS-stijl (HIG): systeemkleuren, grouped inset lists met gekleurde icoontegels in Meer, eigen SVG-lijniconen i.p.v. emoji in de UI, iMessage-achtige typebalk (camera · pil · verstuurpijl, Enter = versturen), sheets met handgreep en Annuleer/Bewaar-kop.
+- Fase 10: item-icoon = Apple-voedselemoji in een tegel, gekozen op trefwoord in de productnaam (client, geen AI); verwijderen zit in het item-scherm i.p.v. op elke regel.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).

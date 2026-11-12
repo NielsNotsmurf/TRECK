@@ -7,6 +7,19 @@ let token = localStorage.getItem('treck-token');
 let admin = localStorage.getItem('treck-admin') === '1';
 
 let day = iso(new Date());
+const svg = (i, c = '') => `<svg class="ic ${c}"><use href="#i-${i}"/></svg>`;
+const say = (t) => { $('status').textContent = t; clearTimeout(say.t); say.t = setTimeout(() => { $('status').textContent = ''; }, 5000); };
+// Fase 10: automatisch een icoon per item, op trefwoord in de productnaam (geen AI-verzoek).
+const FOOD = [['\u{1F963}', 'muesli|granola|cruesli|havermout|oat|ontbijtgran|cornflakes|pap\\b'], ['\u{1F373}', 'ei\\b|eieren|eitje|omelet|egg'], ['\u{1F95E}', 'pannenkoek|pancake|poffert'], ['\u{1F96A}', 'boterham|sandwich|tosti|broodje|wrap'], ['\u{1F950}', 'croissant|crois'], ['\u{1F35E}', 'brood|toast|beschuit|cracker|rijstwafel|knäck'],
+  ['\u{1F9C0}', 'kaas|cheese'], ['\u{1F95B}', 'melk|milk|karnemelk|chocomel'], ['\u{1F366}', 'ijs\\b|ijsje|softijs'], ['\u{1F944}', 'yoghurt|kwark|skyr|vla|pudding'], ['\u{1F35D}', 'pasta|spaghetti|macaroni|penne|lasagne|bolognese|tagliatelle'], ['\u{1F355}', 'pizza'],
+  ['\u{1F354}', 'burger'], ['\u{1F35F}', 'friet|patat|fries'], ['\u{1F363}', 'sushi'], ['\u{1F35C}', 'noodle|ramen|bami|mie\\b|pho'], ['\u{1F35A}', 'rijst|nasi|risotto|rice|couscous|quinoa'], ['\u{1F32E}', 'taco|burrito|nacho|quesad'],
+  ['\u{1F372}', 'soep|stoof|curry|chili|stamppot|soup|hutspot'], ['\u{1F957}', 'salade|salad|sla\\b|rauwkost'], ['\u{1F357}', 'kip|chicken|kalkoen|shoarma|kebab|gyros'], ['\u{1F969}', 'biefstuk|steak|vlees|gehakt|rund|varken|karbonade|worst|ham\\b|spek|bacon|frikandel|kroket|bitterbal'], ['\u{1F41F}', 'vis\\b|zalm|tonijn|kabeljauw|haring|makreel|garnal|fish|salmon|tuna'], ['\u{1F954}', 'aardappel|potato|puree'],
+  ['\u{1F966}', 'broccoli|groente|bloemkool|spinazie|boontje|sperzie|andijvie|courgette|paprika|wortel|bonen|erwt'], ['\u{1F345}', 'tomaat|tomato'], ['\u{1F951}', 'avocado|guacamole'], ['\u{1F34C}', 'banaan|banana'], ['\u{1F34E}', 'appel|apple'], ['\u{1F353}', 'aardbei|framboos|bes\\b|bessen|blauwe bes|fruit'],
+  ['\u{1F34A}', 'sinaasappel|mandarijn|orange'], ['\u{1F347}', 'druif|druiven|grape'], ['\u{1F95C}', 'noot|noten|nuts|pinda|amandel|cashew|walnoot'], ['\u{1F36B}', 'chocola|choco|snickers|mars|twix|hagelslag|nutella'], ['\u{1F36A}', 'koek|biscuit|cookie|stroopwafel|speculaas|ontbijtkoek'], ['\u{1F370}', 'taart|gebak|cake|tompouce|appeltaart|brownie|muffin|donut'],
+  ['\u{1F36C}', 'snoep|drop|candy|winegum'], ['\u{1F968}', 'chips|popcorn|zoutje|borrel|pretzel'], ['\u{2615}', 'koffie|coffee|cappuccino|latte|espresso|thee|tea'], ['\u{1F37A}', 'bier|beer|pils|radler'], ['\u{1F377}', 'wijn|wine|prosecco|cava'], ['\u{1F964}', 'cola|fanta|sprite|frisdrank|limonade|ranja|sap\\b|juice|smoothie|shake|ice ?tea|energy|red bull|monster'],
+  ['\u{1F4A7}', 'water'], ['\u{1F4AA}', 'eiwit|protein|whey']]
+  .map(([e, k]) => [e, new RegExp(k, 'i')]);
+const foodIcon = (name) => (FOOD.find(([, r]) => r.test(name || '')) || ['\u{1F37D}\u{FE0F}'])[0];
 let image = null;
 
 async function api(path, opts = {}) {
@@ -20,7 +33,7 @@ async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
   const { items, total, estimate, queued, burn, burnEst, burnAt, week, month, weights, target } = await api(`/api/items?date=${day}`);
-  if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
+  if (queued) say(`${queued} invoer wacht op verwerking (Gemini druk)`);
   const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
   const t = est || total;
   $('total').classList.toggle('est', !!est);
@@ -32,8 +45,8 @@ async function load() {
   $('ring').classList.toggle('over', f > 1.05);
   $('goal').textContent = T ? `van ${T.kcal} doel` : burn ? `van ${burn} verbruik` : 'van 2000 kcal';
   $('why').textContent = T ? T.why : `Doel volgt na 14 gelogde dagen en 2 wegingen (week uit elkaar) · nu ${target?.days ?? 0} d, ${target?.weighs ?? 0} wegingen`;
-  $('motto').textContent = est ? 'Geschat op je gemiddelde 📊' : !t.kcal ? (day === iso(new Date()) ? 'Klaar voor een goede dag? 🍳' : 'Niets gelogd op deze dag')
-    : f < 0.5 ? `Lekker bezig 🥗 nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg 💪 nog ${left} kcal` : f <= 1.05 ? 'Precies op koers 🎯' : `${-left} kcal boven je ${T ? 'doel' : 'verbruik'}, morgen weer een dag 🌱`;
+  $('motto').textContent = est ? 'Geschat op je gemiddelde' : !t.kcal ? (day === iso(new Date()) ? 'Klaar voor een goede dag?' : 'Niets gelogd op deze dag')
+    : f < 0.5 ? `Lekker bezig, nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg, nog ${left} kcal` : f <= 1.05 ? 'Precies op koers' : `${-left} kcal boven je ${T ? 'doel' : 'verbruik'}, morgen weer een dag`;
   $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']]
     .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? ` · nog ${T[m] - t[m]}` : ''}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
@@ -42,41 +55,43 @@ async function load() {
   const at = burnAt ? new Date(burnAt) : null;
   const upto = !at ? '' : iso(at) === day ? ` t/m ${pad(at.getHours())}:${pad(at.getMinutes())}` : iso(at) > day ? ' hele dag' : '';
   const sum = (p, label) => p.days ? `${label} ${bal(p.diff)} <small>(${p.days} d)</small>` : '';
-  $('burn').innerHTML = day > iso(new Date()) ? '' : (burn == null ? 'Verbruik: nog niet binnen'
-    : `Verbruik${upto} ${burnEst ? '≈ ' : ''}${burn} kcal · ${bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`)
-    + `<br>${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).join(' · ')}`;
+  $('burnCell').parentNode.classList.toggle('hidden', day > iso(new Date()));
+  $('burnVal').textContent = burn == null ? '' : `${burnEst ? '≈ ' : ''}${burn} kcal`;
+  $('burn').innerHTML = `Verbruik${upto}<small>${burn == null ? 'Nog niet binnen' : 'Vandaag ' + bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`
+    + `${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).map((x) => `<br>${x}`).join('')}</small>`;
   // Fase 5: gewicht (weegschaal via Apple Health), laatste weging t/m deze dag + lijn van 30 dagen.
   const kg = (x) => x.toFixed(1).replace('.', ',');
   const w = weights.at(-1), w0 = weights[0];
   const pts = weights.map((x) => [(new Date(x.date) - new Date(day)) / 864e5 + 30, x.kg]);
   const lo = Math.min(...pts.map((p) => p[1])), hi = Math.max(...pts.map((p) => p[1])) || 1;
-  $('weight').innerHTML = !w ? (day > iso(new Date()) ? '' : '+ gewicht') : `Gewicht ${kg(w.kg)} kg${w.date === day ? '' : ` <small>(${+w.date.slice(8)}-${+w.date.slice(5, 7)})</small>`}`
-    + (weights.length > 1 ? ` · 30 d ${w.kg - w0.kg > 0 ? '+' : ''}${kg(w.kg - w0.kg)} kg` : '')
-    + (weights.length > 1 ? `<svg viewBox="0 0 30 10" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${pts.map(([x, y]) => `${x},${9 - (y - lo) / (hi - lo || 1) * 8}`).join(' ')}"/></svg>` : '');
+  $('weight').innerHTML = `<span class="tile" style="background:#34c759">${svg('scale')}</span><div>Gewicht`
+    + (!w ? '<small>Tik om te wegen</small></div><span class="val">Voeg toe</span>' : `<small>${w.date === day ? 'Vandaag' : `${+w.date.slice(8)}-${+w.date.slice(5, 7)}`}`
+    + (weights.length > 1 ? ` · 30 d ${w.kg - w0.kg > 0 ? '+' : ''}${kg(w.kg - w0.kg)} kg` : '') + '</small>'
+    + (weights.length > 1 ? `<svg viewBox="0 0 30 10" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${pts.map(([x, y]) => `${x},${9 - (y - lo) / (hi - lo || 1) * 8}`).join(' ')}"/></svg>` : '') + `</div><span class="val">${kg(w.kg)} kg</span>`);
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
-    li.innerHTML = `<div></div><span class="kcal"></span><button aria-label="Bewaar als gerecht">☆</button><button aria-label="Wis">×</button>`;
+    li.innerHTML = `<span class="food">${foodIcon(i.product)}</span><div></div><span class="kcal"></span><button class="act" aria-label="Bewaar als gerecht">${svg('star')}</button>`;
     li.querySelector('div').textContent = i.product;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: i.portion }));
-    li.querySelector('span').textContent = `${i.kcal}`;
+    li.querySelector('.kcal').textContent = `${i.kcal}`;
     li.querySelector('div').onclick = () => editor({ title: 'Aanpassen', items: [i], single: true,
-      save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ amount: i.amount, unit: i.unit, ...x, id: i.id }) }); load(); } });
-    const [star, del] = li.querySelectorAll('button');
-    if (i.fav) { star.textContent = '★'; star.style.color = 'var(--accent)'; star.ariaLabel = 'Uit favorieten'; }
+      save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ amount: i.amount, unit: i.unit, ...x, id: i.id }) }); load(); },
+      remove: async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); } });
+    const star = li.querySelector('button');
+    if (i.fav) { star.innerHTML = svg('star', 'fill'); star.classList.add('on'); star.ariaLabel = 'Uit favorieten'; }
     star.onclick = async () => {
       if (i.fav) {
         await api(`/api/meals?id=${i.fav}`, { method: 'DELETE' });
-        $('status').textContent = 'Uit favorieten gehaald';
+        say('Uit favorieten gehaald');
       } else {
         const name = prompt('Bewaar deze maaltijd als favoriet, bijv. "Mijn ontbijt":', i.product);
         if (!name) return;
         await api('/api/meals', { method: 'POST', body: JSON.stringify({ input_id: i.input_id, name }) });
-        $('status').textContent = `"${name}" bewaard. Typ die naam, of tik hem hierboven aan.`;
+        say(`"${name}" bewaard. Typ die naam, of tik hem hierboven aan.`);
       }
       load(); loadQuick();
     };
-    del.onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); };
     li.append(adjust(i, li.querySelector('.kcal')));
     $('list').append(li);
   }
@@ -105,7 +120,7 @@ function adjust(i, kcalEl) {
     r.oninput = () => { cur = +r.value; el.querySelector('b').textContent = label(cur); kcalEl.textContent = Math.round(i.kcal * cur / base); };
     r.onchange = () => set(+r.value);
   } else {
-    el.innerHTML = '<button aria-label="Minder">−</button><b></b><button aria-label="Meer">+</button>';
+    el.innerHTML = `<button class="round" aria-label="Minder">${svg('minus')}</button><b></b><button class="round" aria-label="Meer">${svg('plus')}</button>`;
     const [minus, plus] = el.querySelectorAll('button');
     minus.onclick = () => cur > 0.5 && set(cur - (cur > 1 ? 1 : 0.5));
     plus.onclick = () => set(cur < 1 ? cur + 0.5 : cur + 1);
@@ -132,21 +147,26 @@ function renderQuick() {
   const words = $('text').value.toLowerCase().split(/\W+/).filter((w) => w.length > 1);
   const list = chips.map((m, n) => ({ m, n, s: score(m, words) })).sort((a, b) => b.s - a.s || a.n - b.n);
   $('quick').innerHTML = '';
-  const plus = Object.assign(document.createElement('button'), { className: 'chip add', textContent: '+', ariaLabel: 'Nieuwe preset' });
-  plus.onclick = () => editor({ title: 'Nieuwe preset', name: '', items: [], save: saveMeal() });
+  const plus = Object.assign(document.createElement('button'), { className: 'chip add', innerHTML: svg('plus'), ariaLabel: 'Nieuw gerecht' });
+  plus.onclick = () => editor({ title: 'Nieuw gerecht', name: '', items: [], save: saveMeal() });
   $('quick').append(plus);
   for (const { m, s } of list) {
     const kcal = m.items.reduce((t, i) => t + i.kcal, 0);
-    const b = Object.assign(document.createElement('button'), { className: `chip${m.saved ? ' saved' : ''}${words.length && !s ? ' dim' : ''}`, textContent: `${m.saved ? '★ ' : ''}${m.name} · ${kcal}` });
+    const b = Object.assign(document.createElement('button'), { className: `chip${words.length && !s ? ' dim' : ''}` });
+    b.innerHTML = m.saved ? svg('star', 'fill') : `<span>${foodIcon(m.items[0]?.product)}</span>`;
+    b.append(m.name, Object.assign(document.createElement('small'), { textContent: kcal }));
     b.onclick = async () => {
       await api('/api/quick', { method: 'POST', body: JSON.stringify({ items: m.items, date: day, meal_id: m.saved ? m.id : undefined }) });
-      $('status').textContent = `${m.name} toegevoegd`; $('text').value = ''; renderQuick(); load();
+      say(`${m.name} toegevoegd`); $('text').value = ''; renderQuick(); load();
     };
     $('quick').append(b);
   }
   $('quick').scrollLeft = 0;
 }
 $('text').addEventListener('input', renderQuick);
+const canSend = () => { $('send').disabled = !$('text').value.trim() && !image; };
+$('text').addEventListener('input', canSend);
+$('text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('send').click(); } });
 
 const saveMeal = (id) => async (name, items) => {
   await api('/api/meals', { method: 'POST', body: JSON.stringify({ id, name, items }) });
@@ -158,7 +178,7 @@ const NUMS = [['kcal', 'kcal'], ['protein_g', 'Eiwit'], ['carbs_g', 'Koolh.'], [
 function edRow(i = {}) {
   const r = document.createElement('div');
   r.className = 'edrow';
-  r.innerHTML = `<input data-k="product" placeholder="Product"><input data-k="portion" placeholder="Portie"><button aria-label="Wis">×</button>
+  r.innerHTML = `<input data-k="product" placeholder="Product"><input data-k="portion" placeholder="Portie"><button aria-label="Wis">${svg('trash')}</button>
     <div class="nums">${NUMS.map(([k, l]) => `<label>${l}<input data-k="${k}" type="number" inputmode="decimal"></label>`).join('')}</div>`;
   r.querySelectorAll('input').forEach((el) => { el.value = i[el.dataset.k] ?? ''; });
   r.querySelector('button').onclick = () => r.remove();
@@ -167,10 +187,9 @@ function edRow(i = {}) {
 let edSave = null, edRemove = null;
 $('edDel').onclick = async () => { await edRemove(); $('editor').classList.add('hidden'); };
 function editor({ title, name, items, single, save, remove }) {
-  $('edDel').classList.toggle('hidden', !remove); edRemove = remove;
+  $('edDelWrap').classList.toggle('hidden', !remove); edRemove = remove;
   $('edTitle').textContent = title;
-  $('edName').classList.toggle('hidden', !!single); $('edName').value = name || '';
-  $('edAi').classList.toggle('hidden', !!single); $('edAiText').value = '';
+  $('edTop').classList.toggle('hidden', !!single); $('edName').value = name || ''; $('edAiText').value = '';
   $('edAdd').classList.toggle('hidden', !!single);
   $('edRows').innerHTML = ''; (items.length ? items : [{}]).forEach(edRow);
   $('edRows').classList.toggle('single', !!single);
@@ -215,11 +234,11 @@ $('photo').onchange = async (e) => {
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.8));
   image = { mime: 'image/jpeg', data: await b64(blob) };
-  $('photoBtn').classList.add('on');
+  $('photoBtn').classList.add('on'); canSend();
   $('thumb').src = URL.createObjectURL(blob); $('thumbWrap').classList.remove('hidden'); $('text').focus();
 };
 const clearPhoto = () => {
-  image = null; $('photo').value = ''; $('photoBtn').classList.remove('on'); $('thumbWrap').classList.add('hidden');
+  image = null; $('photo').value = ''; $('photoBtn').classList.remove('on'); $('thumbWrap').classList.add('hidden'); canSend();
 };
 
 $('send').onclick = async () => {
@@ -231,14 +250,14 @@ $('send').onclick = async () => {
   $('status').textContent = 'Analyseren…'; $('send').disabled = true;
   try {
     const { items, queued, quota } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });
-    $('status').textContent = queued ? (quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk: bewaard, wordt automatisch later verwerkt.') : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
+    say(queued ? (quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk: bewaard, wordt automatisch later verwerkt.') : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend');
     if (items?.length) day = items[0].date;
-    $('text').value = ''; clearPhoto();
+    $('text').value = ''; $('text').style.height = ''; clearPhoto();
     load(); loadQuick();
   } catch (e) {
-    $('status').textContent = `Fout: ${e.message}`;
+    say(`Fout: ${e.message}`);
   }
-  $('send').disabled = false;
+  canSend();
 };
 
 
@@ -249,7 +268,7 @@ for (const b of document.querySelectorAll('#tabs [data-tab]')) b.onclick = () =>
   document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('act', x === b));
   const today = b.dataset.tab === 'today';
   $('todayView').classList.toggle('hidden', !today); $('soon').classList.toggle('hidden', today);
-  $('soonI').textContent = b.querySelector('span').textContent;
+  document.body.classList.toggle('tab-other', !today); if (!today) $('soonI').setAttribute('href', `#${b.dataset.i}`);
   $('soonT').textContent = { recipes: 'Recepten en gerechten op maat', insights: 'AI-analyse en voortgang', plan: 'Voedingsprogramma\'s' }[b.dataset.tab] || '';
   scrollTo(0, 0);
 };
@@ -311,13 +330,13 @@ async function loadPending() {
 // Menu: gerechten beheren, uitloggen, account verwijderen.
 const bye = () => { localStorage.removeItem('treck-token'); localStorage.removeItem('treck-admin'); location.reload(); };
 $('menuBtn').onclick = () => {
-  $('meals').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Tik ☆ bij een item of + bij Snel toevoegen.</li>';
+  $('meals').innerHTML = meals.length ? '' : '<li class="empty">Nog geen gerechten. Tik de ster bij een item, of + bij Snel toevoegen.</li>';
   for (const m of meals) {
     const li = document.createElement('li');
-    li.innerHTML = '<div></div><button aria-label="Wis gerecht">×</button>';
+    li.innerHTML = `<span class="food">${foodIcon(m.items[0]?.product)}</span><div></div><button class="act" aria-label="Wis gerecht">${svg('trash')}</button>`;
     li.querySelector('div').textContent = m.name;
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: m.items.map((i) => i.product).join(', ') }));
-    li.querySelector('div').onclick = () => { $('sheet').classList.add('hidden'); editor({ title: 'Preset aanpassen', name: m.name, items: m.items, save: saveMeal(m.id),
+    li.querySelector('div').onclick = () => { $('sheet').classList.add('hidden'); editor({ title: 'Gerecht', name: m.name, items: m.items, save: saveMeal(m.id),
       remove: async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); load(); } }); };
     li.querySelector('button').onclick = async () => { await api(`/api/meals?id=${m.id}`, { method: 'DELETE' }); await loadQuick(); load(); li.remove(); };
     $('meals').append(li);
@@ -328,13 +347,13 @@ $('menuBtn').onclick = () => {
 // Fase 8: AI-limietbalk + nep-abonnement (gratis 10/dag, abonnement 100/dag).
 function showAi({ used, limit, plan, full, reset }) {
   $('aiBar').classList.toggle('full', full);
-  $('aiTxt').textContent = full ? `AI vandaag vol (${used}/${limit})` : `AI vandaag ${used}/${limit}`;
-  $('aiSub').textContent = `reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
+  $('aiTxt').textContent = full ? `vol · ${used}/${limit}` : `${used}/${limit}`;
+  $('aiSub').textContent = `Verzoeken vandaag · reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
   $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
   $('planSub').textContent = plan === 'pro' ? 'Actief (proef): 100 per dag · tik om op te zeggen' : 'Gratis: 10 per dag · tik voor 100 per dag';
 }
 const GOALS = { lose: 'Afvallen (−0,5 kg/week)', keep: 'Op gewicht blijven', gain: 'Aankomen (+0,25 kg/week)' };
-function showGoal(g) { $('goalSub').textContent = `${GOALS[g] || GOALS.lose} · tik om te wisselen`; }
+function showGoal(g) { $('goalSub').textContent = GOALS[g] || GOALS.lose; }
 $('goalBtn').onclick = () => api('/api/goal', { method: 'POST' }).then(({ goal }) => { showGoal(goal); load(); });
 $('planBtn').onclick = () => api('/api/plan', { method: 'POST' }).then(showAi);
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
@@ -389,6 +408,6 @@ $('delAccount').onclick = async () => {
   await api('/api/account', { method: 'DELETE' }); bye();
 };
 
-if (token) { $('app').classList.remove('hidden'); $('tabs').classList.remove('hidden'); load(); loadQuick(); if (admin) loadPending(); }
+if (token) { ['app', 'tabs', 'compose'].forEach((x) => $(x).classList.remove('hidden')); load(); loadQuick(); if (admin) loadPending(); }
 else { $('login').classList.remove('hidden'); setupGoogle(); }
 $('text').oninput = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };
