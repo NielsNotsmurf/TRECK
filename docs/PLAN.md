@@ -1,6 +1,6 @@
 # TRECK – plan
 
-Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 klaar 11-11; fase 4 gebouwd 11-11 (test door gebruiker). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
+Status: fase 1 klaar (getest op iPhone 11-11); fase 2 klaar 11-11; fase 3 klaar 11-11; fase 4 klaar 12-11 (Garmin via Apple Health + iOS-opdracht). Extra: inloggen met goedkeuring + wachtrij bij drukte. Volledig onderzoek: https://claude.ai/artifact/Qo8zJdyTyCgYJ1LwTnaXxX
 
 ## Fases
 | Fase | Doel | Klaar als |
