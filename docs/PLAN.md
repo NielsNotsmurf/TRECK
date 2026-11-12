@@ -67,6 +67,8 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 7: onderbalk Vandaag / Recepten / Inzichten / Programma / Meer. Alleen Vandaag en Meer werken; de rest toont "komt in een volgende fase". Menu = lijst met iconen.
 - 2026-11-12 Fase 8: teller in D1 `config` (k=ai, per Pacific-dag) telt elk geslaagd Gemini-verzoek; 429 met `PerDay` in quotaId = balk vol + wachtrij pauzeert tot reset, anders "even wachten". Balk bovenaan Instellingen in Meer, GET /api/ai.
 - 2026-11-12 Fase 8: limiet per gebruiker (config k=ai:<id>): gratis 10/dag, abonnement 100/dag; daarboven stopt de AI (429 met uitleg). Abonnement is nep: tik in Meer = direct aan/uit (kolom users.plan).
+- 2026-11-12 Fase 9: doel zonder AI (ook geen wekelijkse AI-call): verbruik = gem. inname gelogde dagen − gewichtstrend (regressie) × 7700, venster 28 d vóór de maandag (doel staat een week vast). Pas bij ≥14 gelogde dagen en wegingen ≥7 d uit elkaar.
+- 2026-11-12 Fase 9: tempo in Meer → Doel (tik wisselt): afvallen −550 (standaard), op gewicht 0, aankomen +275 kcal; min. 1200. Macro's: eiwit 1,8 g/kg, vet 25%, rest koolh. Uitleg = vaste zin met de cijfers.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).

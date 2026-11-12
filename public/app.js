@@ -19,21 +19,23 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total, estimate, queued, burn, burnEst, burnAt, week, month, weights } = await api(`/api/items?date=${day}`);
+  const { items, total, estimate, queued, burn, burnEst, burnAt, week, month, weights, target } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
   const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
   const t = est || total;
   $('total').classList.toggle('est', !!est);
   $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
-  // Fase 7: ring = inname t.o.v. verbruik (of 2000 kcal zolang er geen verbruik is; doelen komen in fase 9).
-  const goal = burn || 2000, left = goal - t.kcal, f = t.kcal / goal;
+  // Fase 9: ring = inname t.o.v. adaptief doel; zonder doel (nog < 14 dagen) t.o.v. verbruik of 2000 kcal.
+  const T = target?.kcal ? target : null; showGoal(target?.goal);
+  const goal = T?.kcal || burn || 2000, left = goal - t.kcal, f = t.kcal / goal;
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
   $('ring').classList.toggle('over', f > 1.05);
-  $('goal').textContent = burn ? `van ${burn} verbruik` : 'van 2000 kcal';
+  $('goal').textContent = T ? `van ${T.kcal} doel` : burn ? `van ${burn} verbruik` : 'van 2000 kcal';
+  $('why').textContent = T ? T.why : `Doel volgt na 14 gelogde dagen en 2 wegingen (week uit elkaar) · nu ${target?.days ?? 0} d, ${target?.weighs ?? 0} wegingen`;
   $('motto').textContent = est ? 'Geschat op je gemiddelde 📊' : !t.kcal ? (day === iso(new Date()) ? 'Klaar voor een goede dag? 🍳' : 'Niets gelogd op deze dag')
-    : f < 0.5 ? `Lekker bezig 🥗 nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg 💪 nog ${left} kcal` : f <= 1.05 ? 'Precies op koers 🎯' : `${-left} kcal boven je verbruik, morgen weer een dag 🌱`;
-  $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
-    .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
+    : f < 0.5 ? `Lekker bezig 🥗 nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg 💪 nog ${left} kcal` : f <= 1.05 ? 'Precies op koers 🎯' : `${-left} kcal boven je ${T ? 'doel' : 'verbruik'}, morgen weer een dag 🌱`;
+  $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']]
+    .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? ` · nog ${T[m] - t[m]}` : ''}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
   const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
   // Tijdstip van de laatste meting: tijdens die dag = "t/m HH:MM", daarna binnengekomen = hele dag.
@@ -331,6 +333,9 @@ function showAi({ used, limit, plan, full, reset }) {
   $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
   $('planSub').textContent = plan === 'pro' ? 'Actief (proef): 100 per dag · tik om op te zeggen' : 'Gratis: 10 per dag · tik voor 100 per dag';
 }
+const GOALS = { lose: 'Afvallen (−0,5 kg/week)', keep: 'Op gewicht blijven', gain: 'Aankomen (+0,25 kg/week)' };
+function showGoal(g) { $('goalSub').textContent = `${GOALS[g] || GOALS.lose} · tik om te wisselen`; }
+$('goalBtn').onclick = () => api('/api/goal', { method: 'POST' }).then(({ goal }) => { showGoal(goal); load(); });
 $('planBtn').onclick = () => api('/api/plan', { method: 'POST' }).then(showAi);
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
 $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };

@@ -30,7 +30,36 @@ export async function onRequestGet({ request, env, user }) {
   return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
     burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
     week: await period(monday), month: await period(date.slice(0, 8) + '01'),
+    target: await target(env, user.id, monday),
     weights: (await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date BETWEEN date(?, '-30 days') AND ? ORDER BY date`).bind(user.id, date, date).all()).results });
+}
+
+// Fase 9: adaptief doel zonder AI. Venster = 28 dagen vóór de maandag van de geopende week (doel blijft een week staan).
+// Verbruik = gem. inname op gelogde dagen − gewichtstrend (kg/dag, lineaire regressie) × 7700. Doel = verbruik + tempo.
+const PACE = { lose: [-550, 'voor −0,5 kg/week'], keep: [0, 'om op gewicht te blijven'], gain: [275, 'voor +0,25 kg/week'] };
+async function target(env, userId, monday) {
+  const from = `date('${monday}', '-28 days')`;
+  const { results: days } = await env.DB.prepare(`SELECT date, SUM(kcal) k FROM items WHERE user_id = ? AND date >= ${from} AND date < ? GROUP BY date`).bind(userId, monday).all();
+  const { results: ws } = await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date >= ${from} AND date < ? ORDER BY date`).bind(userId, monday).all();
+  const span = ws.length > 1 ? (new Date(ws.at(-1).date) - new Date(ws[0].date)) / 864e5 : 0;
+  const u = await env.DB.prepare('SELECT goal FROM users WHERE id = ?').bind(userId).first();
+  if (days.length < 14 || span < 7) return { days: days.length, weighs: ws.length, goal: u?.goal || 'lose' };
+  const xs = ws.map((w) => (new Date(w.date) - new Date(ws[0].date)) / 864e5), mx = xs.reduce((a, b) => a + b) / xs.length, my = ws.reduce((a, w) => a + w.kg, 0) / ws.length;
+  const slope = xs.reduce((a, x, i) => a + (x - mx) * (ws[i].kg - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0); // kg per dag
+  const intake = days.reduce((a, d) => a + d.k, 0) / days.length, tdee = Math.round((intake - slope * 7700) / 10) * 10;
+  const [delta, why] = PACE[u?.goal] || PACE.lose, kcal = Math.max(1200, tdee + delta), kg = ws.at(-1).kg;
+  const protein_g = Math.round(kg * 1.8), fat_g = Math.round(kcal * 0.25 / 9), carbs_g = Math.max(0, Math.round((kcal - protein_g * 4 - fat_g * 9) / 4));
+  const wk = (slope * 7).toFixed(2).replace('.', ',').replace(/^(\d)/, '+$1');
+  return { kcal, protein_g, carbs_g, fat_g, goal: u?.goal || 'lose',
+    why: `Je verbruik is ≈ ${tdee} kcal: ${days.length} dagen gem. ${Math.round(intake)} kcal gegeten bij ${wk} kg/week. Doel ${kcal} kcal ${why}, eiwit 1,8 g per kg.` };
+}
+
+// POST /api/goal -> wissel afvallen / op gewicht / aankomen
+export async function goal({ env, user }) {
+  const u = await env.DB.prepare('SELECT goal FROM users WHERE id = ?').bind(user.id).first();
+  const order = ['lose', 'keep', 'gain'], next = order[(order.indexOf(u?.goal || 'lose') + 1) % 3];
+  await env.DB.prepare('UPDATE users SET goal = ? WHERE id = ?').bind(next, user.id).run();
+  return Response.json({ goal: next });
 }
 
 // Datum zoals iOS hem stuurt zonder opmaak: "2026-11-12", "12 Nov 2026 at 00:00", "Nov 12, 2026", "12 nov. 2026 om 00:00", "12-11-2026".
