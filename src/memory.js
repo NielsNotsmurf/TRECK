@@ -1,6 +1,6 @@
 import { analyseer } from './ai.js';
 // Fase 2 Geheugen: eigen gerechten op naam, vaste porties en snelle combinaties.
-const KEYS = ['product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g'];
+const KEYS = ['product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'amount', 'unit'];
 const pick = (i) => Object.fromEntries(KEYS.map((k) => [k, i[k]]));
 
 // Context voor de AI: eigen gerechten + meest gegeten producten met vaste portie.
@@ -39,10 +39,10 @@ export async function quick({ env, user }) {
 export async function add({ request, env, user }) {
   const { items, date, meal_id } = await request.json();
   const inputId = crypto.randomUUID(), at = new Date().toISOString();
-  const stmt = env.DB.prepare(`INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const stmt = env.DB.prepare(`INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const note = meal_id ? `meal:${meal_id}` : '[snel]';
-  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, note, at, user.id)));
+  await env.DB.batch(items.map((i) => stmt.bind(inputId, date, i.product, i.portion, i.kcal, i.protein_g, i.carbs_g, i.fat_g, note, at, user.id, i.amount || null, i.unit || null)));
   return new Response(null, { status: 204 });
 }
 

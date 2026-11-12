@@ -106,3 +106,19 @@ export async function weight({ request, env, user }) {
   return Response.json({ ok: true, date, kg });
 }
 
+
+// DELETE ?id=123
+export async function onRequestDelete({ request, env, user }) {
+  const id = new URL(request.url).searchParams.get('id');
+  await env.DB.prepare('DELETE FROM items WHERE id = ? AND user_id = ?').bind(id, user.id).run();
+  return new Response(null, { status: 204 });
+}
+
+// PUT {id, product, portion, kcal, protein_g, carbs_g, fat_g, amount?, unit?} -> aanpassen (editor, +/− en slider)
+export async function onRequestPut({ request, env, user }) {
+  const i = await request.json();
+  await env.DB.prepare('UPDATE items SET product = ?, portion = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ?, amount = ?, unit = ? WHERE id = ? AND user_id = ?')
+    .bind(i.product, i.portion, Math.round(i.kcal) || 0, Math.round(i.protein_g) || 0, Math.round(i.carbs_g) || 0, Math.round(i.fat_g) || 0,
+      +i.amount || null, i.unit || null, i.id, user.id).run();
+  return new Response(null, { status: 204 });
+}

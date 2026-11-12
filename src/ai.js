@@ -1,12 +1,14 @@
 // De enige plek die de AI-provider kent. Wisselen = alleen dit bestand aanpassen.
-// analyseer({text, image, audio, now, memory}, env) -> [{date, product, portion, kcal, protein_g, carbs_g, fat_g}]
+// analyseer({text, image, audio, now, memory}, env) -> [{date, product, portion, kcal, protein_g, carbs_g, fat_g, amount, unit}]
 
 const MODEL = 'gemini-3.1-flash-lite';
 
 const PROMPT = (now) => `Je bent een voedingsassistent. Nu is het: ${now}.
 Bepaal uit de invoer (tekst, foto en/of spraak) elk gegeten product of gerecht.
 Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; "gisteravond", "zaterdag" e.d. omrekenen vanaf nu; standaard de geopende dag als die genoemd is, anders vandaag),
-product (kort, Nederlands), portion (bijv. "1 bord, ca. 350 g"), kcal, protein_g, carbs_g, fat_g (getallen, schatting).
+product (kort, Nederlands), portion (bijv. "1 bord, ca. 350 g"), kcal, protein_g, carbs_g, fat_g (getallen, schatting),
+amount + unit: de hoeveelheid waar kcal bij hoort. unit "g" voor vast eten dat je weegt (pasta, kaas, vlees), "ml" voor dranken/vloeibaar, "stuk" voor telbare dingen (boterham, ei, appel, koek).
+Gebruik je de foto, let dan op wat de tekst erbij zegt (bijv. "halve portie", "zonder saus").
 Geen eten herkend? Geef een lege lijst.`;
 
 const SCHEMA = {
@@ -19,8 +21,9 @@ const SCHEMA = {
         properties: {
           date: { type: 'STRING' }, product: { type: 'STRING' }, portion: { type: 'STRING' },
           kcal: { type: 'NUMBER' }, protein_g: { type: 'NUMBER' }, carbs_g: { type: 'NUMBER' }, fat_g: { type: 'NUMBER' },
+          amount: { type: 'NUMBER' }, unit: { type: 'STRING', enum: ['g', 'ml', 'stuk'] },
         },
-        required: ['date', 'product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g'],
+        required: ['date', 'product', 'portion', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'amount', 'unit'],
       },
     },
   },

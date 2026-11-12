@@ -6,21 +6,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TRECK">
-<meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e0e0e" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fff6ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17110d" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <title>TRECK</title>
 <style>
-  :root { color-scheme: light dark; --bg:#f4f4f2; --card:#fff; --fg:#151515; --muted:#8a8a8a; --line:#e7e7e4; --accent:#e4572e; --soft:#fbe9e3; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0e0e0e; --card:#1b1b1b; --fg:#f2f2f2; --muted:#8d8d8d; --line:#2a2a2a; --soft:#3a1f17; } }
+  :root { color-scheme: light dark; --bg:#fff6ec; --card:#fff; --fg:#2b1d14; --muted:#9a8576; --line:#f2e4d6; --accent:#ef5a3c; --soft:#fde4d9;
+          --p:#ef5a3c; --c:#f4a63a; --f:#6fae45; --ok:#4f9d3a; --warn:#e07b24; --nav:56px; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#17110d; --card:#241b15; --fg:#f8ede3; --muted:#a38d7d; --line:#382a20; --soft:#47241a; } }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { background:var(--bg); }
   body { margin:0; color:var(--fg); font:16px/1.35 -apple-system, system-ui, sans-serif; max-width:560px; margin:0 auto;
-         padding: calc(env(safe-area-inset-top) + 8px) 16px 0; }
+         padding: calc(env(safe-area-inset-top) + 8px) 16px calc(var(--nav) + env(safe-area-inset-bottom)); }
   button, label, input, textarea { font:inherit; color:inherit; }
   button { cursor:pointer; }
-  .card { background:var(--card); border-radius:18px; padding:16px; margin-bottom:12px; }
+  .card { background:var(--card); border-radius:22px; padding:16px; margin-bottom:12px; box-shadow:0 2px 14px rgba(120,60,20,.07); }
   .top { display:flex; align-items:center; justify-content:space-between; height:44px; }
   .brand { font-weight:800; letter-spacing:.12em; font-size:15px; }
   .brand b { color:var(--accent); }
@@ -28,8 +29,17 @@
   .icon:active { background:var(--line); }
   #nav { display:flex; align-items:center; justify-content:space-between; }
   #day { font-weight:600; text-transform:capitalize; }
-  #total { font-size:44px; font-weight:800; text-align:center; letter-spacing:-.02em; margin-top:4px; }
-  #total small { font-size:16px; font-weight:600; color:var(--muted); margin-left:4px; }
+  #ring { position:relative; width:210px; height:210px; margin:4px auto 0; }
+  #ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  #ring circle { fill:none; stroke-width:11; stroke-linecap:round; }
+  #ring .trk { stroke:var(--line); }
+  #arc { stroke:url(#grad); transition:stroke-dashoffset .6s ease; }
+  #ring.over #arc { stroke:var(--warn); }
+  #ringIn { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #total { font-size:46px; font-weight:800; letter-spacing:-.02em; line-height:1; }
+  #total small { display:block; text-align:center; font-size:14px; font-weight:600; color:var(--muted); margin-top:4px; }
+  #goal { font-size:12px; color:var(--muted); margin-top:6px; text-align:center; }
+  #motto { text-align:center; font-weight:600; margin:6px 0 2px; }
   #total.est, #total.est + #macros b { color:var(--muted); font-style:italic; }
   #macros { display:flex; gap:8px; margin-top:12px; }
   .help { font-size:14px; line-height:1.45; padding-left:20px; margin:0 0 12px; } .help code { font-size:12px; word-break:break-all; }
@@ -37,7 +47,8 @@
   #weight { cursor:pointer; text-align:center; font-size:14px; color:var(--muted); margin-top:8px; }
   #weight svg { display:block; width:100%; height:40px; margin-top:4px; }
   #burn .neg { color:#2a9d5c; } #burn .pos { color:#d9822b; }
-  #macros div { flex:1; text-align:center; background:var(--bg); border-radius:12px; padding:8px 0; }
+  #macros div { flex:1; text-align:center; background:var(--bg); border-radius:14px; padding:8px 0 10px; border-bottom:4px solid var(--m); }
+  #macros div:nth-child(1) { --m:var(--p); } #macros div:nth-child(2) { --m:var(--c); } #macros div:nth-child(3) { --m:var(--f); }
   #macros b { display:block; font-size:18px; }
   #macros span { font-size:12px; color:var(--muted); }
   h2 { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 4px 8px; }
@@ -50,11 +61,16 @@
   #list li:first-child, #meals li:first-child, #pending li:first-child { border-top:0; }
   li div { flex:1; min-width:0; }
   li small { color:var(--muted); display:block; font-size:13px; }
-  li .kcal { font-weight:600; font-variant-numeric:tabular-nums; }
+  li .kcal { font-weight:700; font-variant-numeric:tabular-nums; color:var(--accent); }
+  #list li { flex-wrap:wrap; }
+  .adj { flex-basis:100%; display:flex; align-items:center; gap:10px; }
+  .adj input[type=range] { flex:1; accent-color:var(--accent); height:28px; }
+  .adj b { min-width:64px; text-align:center; font-size:14px; font-variant-numeric:tabular-nums; }
+  #list .adj button { background:var(--soft); color:var(--accent); font-size:20px; font-weight:700; width:34px; height:34px; }
   li button { background:none; border:0; color:var(--muted); font-size:18px; width:36px; height:36px; border-radius:18px; flex:none; }
   li button:active { background:var(--line); }
   .empty { color:var(--muted); text-align:center; padding:12px 0; }
-  #compose { position:sticky; bottom:0; padding:10px 0 calc(env(safe-area-inset-bottom) + 10px); background:linear-gradient(transparent, var(--bg) 18px); }
+  #compose { position:sticky; bottom:calc(var(--nav) + env(safe-area-inset-bottom)); padding:10px 0; background:linear-gradient(transparent, var(--bg) 18px); }
   #compose .card { margin:0; padding:10px; box-shadow:0 6px 24px rgba(0,0,0,.08); }
   textarea { width:100%; min-height:48px; max-height:140px; padding:8px; border:0; resize:none; background:none; outline:none; font-size:16px; }
   .row { display:flex; gap:8px; margin-top:6px; }
@@ -87,6 +103,22 @@
   .single .edrow > button { visibility:hidden; }
   .link { background:none; border:0; color:var(--accent); font-weight:600; padding:10px 0; }
   .danger { color:#d33 !important; }
+  #thumbWrap { display:flex; align-items:center; gap:10px; padding:4px 4px 0; font-size:13px; color:var(--muted); }
+  #thumb { width:52px; height:52px; object-fit:cover; border-radius:12px; }
+  #thumbX { border:0; background:var(--bg); border-radius:14px; width:28px; height:28px; margin-left:auto; flex:none; }
+  #tabs { position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; justify-content:space-around; background:var(--card);
+          border-top:1px solid var(--line); padding:4px 4px env(safe-area-inset-bottom); height:calc(var(--nav) + env(safe-area-inset-bottom)); }
+  #tabs button { flex:1; border:0; background:none; font-size:10px; font-weight:600; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:1px; }
+  #tabs button span { font-size:22px; filter:grayscale(1); opacity:.6; }
+  #tabs button.act { color:var(--accent); } #tabs button.act span { filter:none; opacity:1; }
+  #soon { text-align:center; padding:36px 20px; } #soon div { font-size:48px; } #soon p { color:var(--muted); }
+  .sheet .card { animation:up .22s ease-out; } @keyframes up { from { transform:translateY(40%); opacity:0; } }
+  .menu { display:flex; flex-direction:column; gap:2px; margin-top:6px; }
+  .menu button { display:flex; align-items:center; gap:12px; text-align:left; border:0; background:none; padding:12px 4px; border-radius:12px; font-weight:600; }
+  .menu button:active { background:var(--bg); }
+  .menu button i { font-style:normal; font-size:20px; width:38px; height:38px; border-radius:12px; background:var(--soft); display:grid; place-items:center; flex:none; }
+  .menu button small { display:block; font-weight:400; color:var(--muted); font-size:13px; }
+  .menu button::after { content:'›'; margin-left:auto; color:var(--muted); font-size:22px; }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -102,10 +134,15 @@
   <div id="loginStatus" class="status"></div>
 </form>
 <main id="app" class="hidden">
-  <div class="top"><span class="brand">TR<b>E</b>CK</span><button class="icon" id="menuBtn" aria-label="Menu">⋯</button></div>
+  <div class="top"><span class="brand">TR<b>E</b>CK</span></div>
+  <section class="card hidden" id="soon"><div id="soonI"></div><h3 id="soonT"></h3><p>Komt in een volgende fase.</p></section>
+  <div id="todayView">
   <section class="card">
     <div id="nav"><button class="icon" id="prev" aria-label="Vorige dag">‹</button><span id="day"></span><button class="icon" id="next" aria-label="Volgende dag">›</button></div>
-    <div id="total">0<small>kcal</small></div>
+    <div id="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="grad"><stop offset="0" stop-color="#f4a63a"/><stop offset="1" stop-color="#ef5a3c"/></linearGradient></defs>
+      <circle class="trk" cx="60" cy="60" r="52"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
+      <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div></div></div>
+    <div id="motto"></div>
     <div id="macros"></div>
     <div id="burn"></div>
     <div id="weight"></div>
@@ -115,6 +152,7 @@
   <section class="card"><ul id="list"></ul></section>
   <section class="card hidden" id="pendingCard"><h2 style="margin-top:0">Wacht op goedkeuring</h2><ul id="pending"></ul></section>
   <div id="compose"><div class="card">
+    <div id="thumbWrap" class="hidden"><img id="thumb" alt=""><span>Typ context erbij, bijv. "halve portie" of "zonder saus"</span><button id="thumbX" aria-label="Foto weg">×</button></div>
     <textarea id="text" rows="1" placeholder="Wat heb je gegeten? Bijv. 'mijn ontbijt' of 'gisteravond pasta'"></textarea>
     <div class="row">
       <label id="photoBtn">📷 Foto<input id="photo" type="file" accept="image/*"></label>
@@ -122,17 +160,26 @@
     </div>
     <div id="status"></div>
   </div></div>
+  </div>
 </main>
+<nav id="tabs" class="hidden">
+  <button data-tab="today" class="act"><span>🍽️</span>Vandaag</button>
+  <button data-tab="recipes"><span>🥗</span>Recepten</button>
+  <button data-tab="insights"><span>📈</span>Inzichten</button>
+  <button data-tab="plan"><span>🎯</span>Programma</button>
+  <button id="menuBtn"><span>⚙️</span>Meer</button>
+</nav>
 <div id="sheet" class="sheet hidden"><div class="card">
   <h2 style="margin-top:0">Mijn gerechten</h2>
   <ul id="meals"></ul>
-  <div class="row">
-    <button id="pushBtn">Meldingen</button>
-    <button id="garminBtn">iOS &amp; Garmin</button>
-    <button id="logout">Uitloggen</button>
-    <button id="delAccount" class="danger">Account verwijderen</button>
-    <button id="closeSheet">Sluiten</button>
+  <h2>Instellingen</h2>
+  <div class="menu">
+    <button id="pushBtn"><i>🔔</i><div>Meldingen<small id="pushSub">Herinneringen om te loggen</small></div></button>
+    <button id="garminBtn"><i>⌚</i><div>iOS &amp; Garmin<small>Verbruik via Apple Health</small></div></button>
+    <button id="logout"><i>👋</i><div>Uitloggen</div></button>
+    <button id="delAccount" class="danger"><i>🗑️</i><div>Account verwijderen</div></button>
   </div>
+  <div class="row"><button id="closeSheet">Sluiten</button></div>
 </div></div>
 <div id="garmin" class="sheet hidden"><div class="card">
   <h2 style="margin-top:0">iOS &amp; Garmin koppelen</h2>

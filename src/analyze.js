@@ -8,14 +8,14 @@ async function verwerk(input, userId, env) {
   const inputId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
   const stmt = env.DB.prepare(
-    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO items (input_id, date, product, portion, kcal, protein_g, carbs_g, fat_g, note, created_at, user_id, amount, unit)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   if (items.length) {
     await env.DB.batch(items.map((i) => stmt.bind(
       inputId, i.date, i.product, i.portion,
       Math.round(i.kcal), Math.round(i.protein_g), Math.round(i.carbs_g), Math.round(i.fat_g),
-      note, createdAt, userId,
+      note, createdAt, userId, i.amount || null, i.unit || null,
     )));
   }
   return items;

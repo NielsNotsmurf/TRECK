@@ -25,6 +25,13 @@ async function load() {
   const t = est || total;
   $('total').classList.toggle('est', !!est);
   $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
+  // Fase 7: ring = inname t.o.v. verbruik (of 2000 kcal zolang er geen verbruik is; doelen komen in fase 9).
+  const goal = burn || 2000, left = goal - t.kcal, f = t.kcal / goal;
+  $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
+  $('ring').classList.toggle('over', f > 1.05);
+  $('goal').textContent = burn ? `van ${burn} verbruik` : 'van 2000 kcal';
+  $('motto').textContent = est ? 'Geschat op je gemiddelde 📊' : !t.kcal ? (day === iso(new Date()) ? 'Klaar voor een goede dag? 🍳' : 'Niets gelogd op deze dag')
+    : f < 0.5 ? `Lekker bezig 🥗 nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg 💪 nog ${left} kcal` : f <= 1.05 ? 'Precies op koers 🎯' : `${-left} kcal boven je verbruik, morgen weer een dag 🌱`;
   $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
     .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
@@ -52,7 +59,7 @@ async function load() {
     li.querySelector('div').append(Object.assign(document.createElement('small'), { textContent: i.portion }));
     li.querySelector('span').textContent = `${i.kcal}`;
     li.querySelector('div').onclick = () => editor({ title: 'Aanpassen', items: [i], single: true,
-      save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...x, id: i.id }) }); load(); } });
+      save: async (_, [x]) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ amount: i.amount, unit: i.unit, ...x, id: i.id }) }); load(); } });
     const [star, del] = li.querySelectorAll('button');
     if (i.fav) { star.textContent = '★'; star.style.color = 'var(--accent)'; star.ariaLabel = 'Uit favorieten'; }
     star.onclick = async () => {
@@ -68,8 +75,41 @@ async function load() {
       load(); loadQuick();
     };
     del.onclick = async () => { await api(`/api/items?id=${i.id}`, { method: 'DELETE' }); load(); };
+    li.append(adjust(i, li.querySelector('.kcal')));
     $('list').append(li);
   }
+}
+
+// Fase 7: hoeveelheid aanpassen zonder AI. g/ml = slider, stuks/porties = +/−; kcal en macro's schalen mee.
+function adjust(i, kcalEl) {
+  const base = i.amount || 1, unit = i.unit || 'stuk', grams = unit !== 'stuk';
+  const label = (a) => grams ? `${a} ${unit}` : `${String(a).replace('.', ',')}×`;
+  const el = document.createElement('div'); el.className = 'adj';
+  let cur = base, timer;
+  const set = (a) => {
+    cur = a; el.querySelector('b').textContent = label(a); kcalEl.textContent = Math.round(i.kcal * a / base);
+    clearTimeout(timer); timer = setTimeout(async () => {
+      if (cur === base) return;
+      const k = cur / base, n = String(cur).replace('.', ','), p = i.portion || '';
+      const x = { ...i, amount: cur, unit, portion: grams ? `${cur} ${unit}` : /^\d/.test(p) ? p.replace(/^\d+(?:[.,]\d+)?/, n) : `${n}× ${p}` };
+      for (const m of ['kcal', 'protein_g', 'carbs_g', 'fat_g']) x[m] = Math.round(i[m] * k);
+      await api('/api/items', { method: 'PUT', body: JSON.stringify(x) }); load();
+    }, grams ? 0 : 700);
+  };
+  if (grams) {
+    const max = Math.max(100, Math.ceil(base * 2.5 / 50) * 50), step = max > 500 ? 10 : 5;
+    el.innerHTML = `<input type="range" min="${step}" max="${max}" step="${step}" value="${base}" aria-label="Hoeveelheid"><b></b>`;
+    const r = el.querySelector('input');
+    r.oninput = () => { cur = +r.value; el.querySelector('b').textContent = label(cur); kcalEl.textContent = Math.round(i.kcal * cur / base); };
+    r.onchange = () => set(+r.value);
+  } else {
+    el.innerHTML = '<button aria-label="Minder">−</button><b></b><button aria-label="Meer">+</button>';
+    const [minus, plus] = el.querySelectorAll('button');
+    minus.onclick = () => cur > 0.5 && set(cur - (cur > 1 ? 1 : 0.5));
+    plus.onclick = () => set(cur < 1 ? cur + 0.5 : cur + 1);
+  }
+  el.querySelector('b').textContent = label(base);
+  return el;
 }
 
 // Fase 2: eigen gerechten en vaak gegeten combinaties met één tik toevoegen.
@@ -174,6 +214,10 @@ $('photo').onchange = async (e) => {
   const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.8));
   image = { mime: 'image/jpeg', data: await b64(blob) };
   $('photoBtn').classList.add('on');
+  $('thumb').src = URL.createObjectURL(blob); $('thumbWrap').classList.remove('hidden'); $('text').focus();
+};
+const clearPhoto = () => {
+  image = null; $('photo').value = ''; $('photoBtn').classList.remove('on'); $('thumbWrap').classList.add('hidden');
 };
 
 $('send').onclick = async () => {
@@ -187,8 +231,7 @@ $('send').onclick = async () => {
     const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });
     $('status').textContent = queued ? 'Gemini is druk: bewaard, wordt automatisch later verwerkt.' : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
     if (items?.length) day = items[0].date;
-    $('text').value = ''; image = null; $('photo').value = '';
-    $('photoBtn').classList.remove('on');
+    $('text').value = ''; clearPhoto();
     load(); loadQuick();
   } catch (e) {
     $('status').textContent = `Fout: ${e.message}`;
@@ -196,6 +239,18 @@ $('send').onclick = async () => {
   $('send').disabled = false;
 };
 
+
+$('thumbX').onclick = clearPhoto;
+
+// Fase 7: onderbalk. Alleen Vandaag werkt; de rest zijn plekken voor latere fases.
+for (const b of document.querySelectorAll('#tabs [data-tab]')) b.onclick = () => {
+  document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('act', x === b));
+  const today = b.dataset.tab === 'today';
+  $('todayView').classList.toggle('hidden', !today); $('soon').classList.toggle('hidden', today);
+  $('soonI').textContent = b.querySelector('span').textContent;
+  $('soonT').textContent = { recipes: 'Recepten en gerechten op maat', insights: 'AI-analyse en voortgang', plan: 'Voedingsprogramma\'s' }[b.dataset.tab] || '';
+  scrollTo(0, 0);
+};
 
 // Inloggen / account aanvragen
 const creds = () => JSON.stringify({ name: $('name').value, pw: $('pw').value });
@@ -319,6 +374,6 @@ $('delAccount').onclick = async () => {
   await api('/api/account', { method: 'DELETE' }); bye();
 };
 
-if (token) { $('app').classList.remove('hidden'); load(); loadQuick(); if (admin) loadPending(); }
+if (token) { $('app').classList.remove('hidden'); $('tabs').classList.remove('hidden'); load(); loadQuick(); if (admin) loadPending(); }
 else { $('login').classList.remove('hidden'); setupGoogle(); }
 $('text').oninput = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };

@@ -61,6 +61,10 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Trend: dagkaart toont laatste weging t/m geopende dag, verschil en lijntje over 30 dagen.
 - 2026-11-12 Gewicht ook handmatig: tik op de gewichtregel (of '+ gewicht') → invoer voor de geopende dag, zelfde /api/weight.
 - 2026-11-12 Fase 6: alleen kanaal Web Push (iOS 16.4+, beginscherm-app). Menu → Meldingen → tijden typen (voorstel 10:00, 14:00, 20:00, 22:00; leeg = uit), direct testmelding. Push zonder payload, sw.js toont vaste tekst. VAPID-sleutel maakt de Worker zelf en bewaart hem in D1 `config` (geen handmatig secret). Cron elke minuut (wachtrij-retry blijft elke 10 min) stuurt per tijd één melding binnen 30 min, NL-tijd. Wekelijks wegen: aparte dag+tijd (bv. 'ma 08:00'); tekst per melding haalt sw.js op via /api/pushmsg?e=endpoint (geen login, endpoint is geheim genoeg). Tabel `push` (user_id, endpoint, origin, times, sent); 404/410 = abonnement weg.
+- 2026-11-12 Fase 7: AI geeft per item `amount` + `unit` (g/ml/stuk), opgeslagen in items (auto-migratie). g/ml = slider (bereik 2,5× AI-hoeveelheid), stuk/oude items = +/− (stap 1, onder 1 stap ½); kcal/macro's schalen lineair, geen AI-verzoek.
+- 2026-11-12 Fase 7: foto toont miniatuur met hint "typ context erbij"; tekst + foto gaan in één analyse. Wissen/aanpassen van items hersteld (PUT/DELETE waren per ongeluk weggevallen).
+- 2026-11-12 Fase 7: food-thema (crème/tomaat/oranje/avocado), ring = inname t.o.v. verbruik, zonder verbruik t.o.v. 2000 kcal tot fase 9; korte motiverende tekst.
+- 2026-11-12 Fase 7: onderbalk Vandaag / Recepten / Inzichten / Programma / Meer. Alleen Vandaag en Meer werken; de rest toont "komt in een volgende fase". Menu = lijst met iconen.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -79,6 +83,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Geen.
 
 ## Later
+- Onderbalk-tabs vullen: recepten/gerechten-suggesties, AI-analytics en progressie-inzichten (fase 10), voedingsprogramma's.
 - Barcodescanner via Open Food Facts (gratis, geen AI-verzoek).
 - Micronutriënten (vezels, suiker, zout) zoals Cronometer.
 - Water bijhouden.
