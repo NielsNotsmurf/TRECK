@@ -322,6 +322,7 @@ $('menuBtn').onclick = () => {
   }
   $('sheet').classList.remove('hidden');
   api('/api/ai').then(({ used, limit, full, reset }) => { // Fase 8: AI-limietbalk
+    full ||= used >= limit;
     $('aiBar').classList.toggle('full', full);
     $('aiTxt').textContent = full ? `AI vandaag vol (${used}/${limit})` : `AI vandaag ${used}/${limit}`;
     $('aiSub').textContent = `reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
