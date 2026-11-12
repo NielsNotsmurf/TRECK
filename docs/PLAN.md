@@ -61,10 +61,25 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Trend: dagkaart toont laatste weging t/m geopende dag, verschil en lijntje over 30 dagen.
 - 2026-11-12 Gewicht ook handmatig: tik op de gewichtregel (of '+ gewicht') → invoer voor de geopende dag, zelfde /api/weight.
 
+## Voorstel verbeteringen (12-11, wacht op akkoord)
+Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
+| Fase | Doel | Klaar als |
+| --- | --- | --- |
+| 7 AI-limietbalk | Dunne balk in het menu: "AI vandaag 12/500" + reset 09:00 NL (middernacht Pacific). Telt elk Gemini-verzoek in D1; bij 429 leest de Worker `quotaId` (per minuut = "even wachten", per dag = balk vol, invoer naar wachtrij) | Balk telt mee per verzoek en springt op vol bij een echte dag-429 |
+| 8 Doelen (adaptief) | Kcal-doel zoals MacroFactor: echt verbruik uit gewichtstrend + inname (rekenwerk, geen AI). AI 1× per week: doel + macro's (eiwit eerst) met één zin uitleg. Dagkaart: "nog X kcal" + macro-balkjes | Na ≥14 dagen data staat er een doel met uitleg; dagkaart toont resterend |
+| 9 AI-analyse | Knop "Inzicht": AI krijgt dagtotalen van 14–30 dagen (geen losse items, zuinig) en geeft 3 concrete tips. Max 1 per dag, antwoord bewaard in D1 | Inzicht verschijnt, 2e tik dezelfde dag toont het bewaarde antwoord zonder AI-verzoek |
+
+- Limiet (bronnen 23-10 en 2-9-2026): 3.1 Flash-Lite gratis = 15/min, 500/dag per Google-project; Google publiceert het niet meer officieel, eigen stand op aistudio.google.com/rate-limit. Gemini stuurt geen resterend-headers, alleen een 429 met QuotaFailure → balk = eigen teller (max via `AI_DAY_LIMIT`, standaard 500) + 429-signaal.
+- Gebruik nu ≈4–10/dag; doelen +1/week, analyse max +1/dag → ruim binnen 500, ook met een paar gebruikers.
+- Snelle winst zonder AI (veel gevraagd, klein): "kopieer gisteren" per maaltijd, streak-teller, weekgrafiek inname vs verbruik.
+
 ## Open vragen
 - Geen.
 
 ## Later
+- Barcodescanner via Open Food Facts (gratis, geen AI-verzoek).
+- Micronutriënten (vezels, suiker, zout) zoals Cronometer.
+- Water bijhouden.
 - Offline invoer bewaren op de telefoon als er geen internet is.
 - Wachtwoord wijzigen.
 - Beperking op inlogpogingen.
