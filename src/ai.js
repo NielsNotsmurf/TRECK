@@ -36,12 +36,34 @@ export async function analyseer({ text, image, audio, now, memory, fast }, env, 
   if (text) parts.push({ text: `Invoer: ${text}` });
   if (image) parts.push({ inline_data: { mime_type: image.mime, data: image.data } });
   if (audio) parts.push({ inline_data: { mime_type: audio.mime, data: audio.data } });
-  const out = await gemini(parts, { responseMimeType: 'application/json', responseSchema: SCHEMA }, env, userId, fast);
-  return JSON.parse(out || '{"items":[]}').items;
+  const out = await ask(parts, { responseMimeType: 'application/json', responseSchema: SCHEMA }, env, userId, fast);
+  return JSON.parse(out || '{"items":[]}').items || [];
 }
 
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
-export const tekst = (prompt, env, userId) => gemini([{ text: prompt }], {}, env, userId, true);
+export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, userId, true);
+
+// Backup: bij Gemini-drukte/storing (429, 5xx, time-out) Groq proberen als GROQ_API_KEY gezet is.
+async function ask(parts, cfg, env, userId, fast) {
+  try { return await gemini(parts, cfg, env, userId, fast); } catch (e) {
+    if (e.retry === false || !env.GROQ_API_KEY || parts.some((p) => p.inline_data?.mime_type?.startsWith('audio'))) throw e;
+    try { return await groq(parts, cfg, env, userId); } catch (g) { console.log('groq', g.message); throw e; }
+  }
+}
+
+async function groq(parts, cfg, env, userId) {
+  const content = parts.map((p) => p.text ? { type: 'text', text: p.text } : { type: 'image_url', image_url: { url: `data:${p.inline_data.mime_type};base64,${p.inline_data.data}` } });
+  const json = !!cfg.responseSchema;
+  if (json) content.push({ type: 'text', text: `Antwoord alleen met JSON volgens dit schema: ${JSON.stringify(cfg.responseSchema)}` });
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', signal: AbortSignal.timeout(30000),
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
+    body: JSON.stringify({ model: env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content }], ...(json && { response_format: { type: 'json_object' } }) }),
+  });
+  if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (userId) { const u = await usage(env, userId); await saveUsage(env, { d: u.d, n: u.n + 1, full: u.full }, `ai:${userId}`); }
+  return (await res.json()).choices?.[0]?.message?.content || '';
+}
 
 async function gemini(parts, generationConfig, env, userId, fast) {
   const mine = userId ? await usage(env, userId) : null;

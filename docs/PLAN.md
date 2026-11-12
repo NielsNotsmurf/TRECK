@@ -26,6 +26,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Garmin: Personal API (gratis sinds 22-10-2026); terugval Apple Health via iOS-opdracht.
 - 2026-11-11 Weegschaal: via Apple Health + iOS-opdracht (dekt alle merken).
 - 2026-11-11 Gebruiker kiest gratis: Gemini gratis laag (data mag voor training). Groq alleen als audio-terugval (geen betrouwbare gratis vision).
+- 2026-11-12 Backup-AI: Groq Llama 4 Scout (tekst+foto, gratis ~30/min, 1000/dag) springt in bij Gemini 429/5xx/time-out als secret GROQ_API_KEY bestaat; telt mee in AI-limiet per gebruiker; audio blijft Gemini-only.
 - 2026-11-11 Weegschaal = generieke bol.com/AliExpress-schaal → fase 5 via de app van de schaal → Apple Health → iOS-opdracht.
 - 2026-11-11 Pages vervangen door Worker met statische assets (`src/worker.js`, `public/`), omdat Cloudflare standaard een Worker aanmaakt.
 - 2026-11-11 Fase 1: Pages Functions (`functions/api`), AI in `src/ai.js`, foto client-side verkleind tot 1024 px, toegang via header `x-key`.
