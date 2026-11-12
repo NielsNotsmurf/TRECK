@@ -40,6 +40,15 @@ export async function analyseer({ text, image, audio, now, memory, fast }, env, 
   return JSON.parse(out || '{"items":[]}').items || [];
 }
 
+// Spraak → tekst, zodat de gebruiker hem kan nalezen vóór versturen. Telt als AI-verzoek.
+export async function transcribe({ request, env, user }) {
+  const { audio } = await request.json();
+  try {
+    const out = await ask([{ text: 'Schrijf letterlijk uit wat er gezegd wordt (meestal Nederlands). Alleen de uitgeschreven tekst, niets anders.' }, { inline_data: { mime_type: audio.mime, data: audio.data } }], {}, env, user.id, true);
+    return Response.json({ text: out.trim() });
+  } catch (e) { return Response.json({ error: e.message }, { status: e.limit ? 429 : 502 }); }
+}
+
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
 export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, userId, true);
 

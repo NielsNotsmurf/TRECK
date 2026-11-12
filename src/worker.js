@@ -26,6 +26,7 @@ export default {
     if (route === 'GET /api/stats') return insights.stats(ctx);
     if (route === 'POST /api/insight') return insights.summary(ctx);
     if (route === 'POST /api/plan') return ai.plan(ctx);
+    if (route === 'POST /api/transcribe') return ai.transcribe(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);
     if (route === 'PUT /api/items') return items.onRequestPut(ctx);

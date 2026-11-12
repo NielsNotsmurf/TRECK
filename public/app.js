@@ -524,6 +524,38 @@ $('send').onclick = () => {
   analyze(payload);
 };
 $('thumbX').onclick = clearPhoto;
+
+// Spraak: opnemen (MediaRecorder werkt in iOS-beginscherm-apps, Web Speech niet betrouwbaar) → uitschrijven → tekst in het veld om na te lezen.
+// Lukt uitschrijven niet (AI druk/limiet), dan kiezen: opnieuw inspreken of de opname zo versturen.
+let rec = null;
+const micIcon = (n) => { $('micBtn').querySelector('use').setAttribute('href', `#i-${n}`); };
+$('micBtn').onclick = async () => {
+  if (rec) return rec.stop();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { return toast('Geen toegang tot de microfoon. Zet hem aan bij Instellingen → Safari → Microfoon.'); }
+  const chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    const mime = (rec.mimeType || 'audio/mp4').split(';')[0];
+    rec = null; micIcon('mic'); $('micBtn').classList.remove('rec'); $('micBtn').disabled = true;
+    const audio = { mime, data: await b64(new Blob(chunks, { type: mime })) };
+    bubble('dots'); $('bubble').lastChild.textContent = 'Uitschrijven';
+    try {
+      const { text } = await api('/api/transcribe', { method: 'POST', body: JSON.stringify({ audio }) });
+      hide('bubble');
+      if (!text) bubble('Niets verstaan. Probeer opnieuw.', [], 'err');
+      const t = $('text'); t.value = [t.value.trim(), text].filter(Boolean).join(' ');
+      t.oninput({ target: t }); renderQuick(); canSend(); t.focus();
+    } catch (e) {
+      const n = new Date();
+      bubble(`Uitschrijven lukt nu niet (${e.message}).`, [['Opnieuw', () => $('micBtn').click()], ['Versturen', () => { const text = $('text').value.trim(); $('text').value = ''; canSend(); analyze({ text, audio, now: `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}` }); }]], 'err');
+    }
+    $('micBtn').disabled = false;
+  };
+  rec.start(); micIcon('stop'); $('micBtn').classList.add('rec');
+};
 // Typebalk boven het toetsenbord houden (iOS schuift vaste balken anders achter het toetsenbord).
 if (window.visualViewport) {
   const vv = visualViewport;
