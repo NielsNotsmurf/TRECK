@@ -55,6 +55,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Verbruik zonder datum = vandaag in NL-tijd (Europe/Amsterdam). Opdracht draait vaak (bij sluiten Garmin Connect + vaste tijden, laatste 23:55); elke run overschrijft de dag met het nieuwste totaal.
 - 2026-11-12 Invoer zonder genoemde dag komt op de geopende dag (app geeft die mee in `now`), anders vandaag.
 - 2026-11-12 Verbruik per dag los: schatting alleen op voorbije dagen, vandaag = "tot nu" + tijd laatste update, toekomst leeg. Week (vanaf ma) en maand (vanaf 1e) t/m geopende dag = som(verbruik − inname) over dagen met echte inname én echt verbruik.
+- 2026-11-12 Burn: kolommen active/resting apart, verzoek met één van beide laat de ander staan. Opdracht stuurt per dag uit Apple Health (Group by Day, laatste 30 dagen) → elke run vult historie aan, geen gaten na een week offline.
 
 ## Open vragen
 - Geen.

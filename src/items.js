@@ -32,35 +32,26 @@ export async function onRequestGet({ request, env, user }) {
     week: await period(monday), month: await period(date.slice(0, 8) + '01') });
 }
 
-// Fase 4: POST {date, active, resting} (of {date, kcal}) vanuit de iOS-opdracht (Garmin -> Apple Health). Overschrijft die dag.
+// Fase 4: POST {date, active?, resting?} (body of headers) vanuit de iOS-opdracht (Garmin -> Apple Health).
+// Actief en rust apart bewaard; een verzoek met alleen één van beide laat de ander staan. Zo kan de opdracht per dag/per soort sturen.
 export async function burn({ request, env, user }) {
   const h = (k) => request.headers.get(k);
-  const b = await request.json().catch(() => ({})); // waarden mogen ook als header (iOS-opdracht)
+  const b = await request.json().catch(() => ({}));
   for (const k of ['date', 'kcal', 'active', 'resting']) if (b[k] == null && h(k)) b[k] = h(k);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : nlToday();
-  const num = (v) => { // iOS stuurt soms "1.812,4 kcal"
-    let t = String(v ?? '').replace(/[^\d.,]/g, '');
+  const date = /^\d{4}-\d{2}-\d{2}/.test(b.date || '') ? b.date.slice(0, 10) : nlToday();
+  const num = (v) => { // iOS stuurt soms "1.812,4 kcal"; leeg = null
+    if (v == null || v === '') return null;
+    let t = String(v).replace(/[^\d.,]/g, '');
     t = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;
-    return parseFloat(t) || 0;
+    return Math.round(parseFloat(t)) || 0;
   };
-  const kcal = Math.round(num(b.kcal) || num(b.active) + num(b.resting));
-  if (!kcal) return Response.json({ error: 'Geen verbruik ontvangen' }, { status: 400 });
-  await env.DB.prepare('INSERT INTO burn (user_id, date, kcal, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT (user_id, date) DO UPDATE SET kcal = excluded.kcal, updated_at = excluded.updated_at')
-    .bind(user.id, date, kcal, new Date().toISOString()).run();
-  return Response.json({ ok: true, date, kcal });
-}
-
-// DELETE ?id=123
-export async function onRequestDelete({ request, env, user }) {
-  const id = new URL(request.url).searchParams.get('id');
-  await env.DB.prepare('DELETE FROM items WHERE id = ? AND user_id = ?').bind(id, user.id).run();
-  return new Response(null, { status: 204 });
-}
-
-// PUT {id, product, portion, kcal, protein_g, carbs_g, fat_g} -> handmatig aanpassen
-export async function onRequestPut({ request, env, user }) {
-  const i = await request.json();
-  await env.DB.prepare('UPDATE items SET product = ?, portion = ?, kcal = ?, protein_g = ?, carbs_g = ?, fat_g = ? WHERE id = ? AND user_id = ?')
-    .bind(i.product, i.portion, Math.round(i.kcal) || 0, Math.round(i.protein_g) || 0, Math.round(i.carbs_g) || 0, Math.round(i.fat_g) || 0, i.id, user.id).run();
-  return new Response(null, { status: 204 });
+  let active = num(b.active), resting = num(b.resting);
+  if (b.kcal != null && active == null && resting == null) { active = num(b.kcal); resting = 0; }
+  if (active == null && resting == null) return Response.json({ error: 'Geen verbruik ontvangen' }, { status: 400 });
+  await env.DB.prepare(`INSERT INTO burn (user_id, date, active, resting, kcal, updated_at) VALUES (?1, ?2, ?3, ?4, COALESCE(?3, 0) + COALESCE(?4, 0), ?5)
+    ON CONFLICT (user_id, date) DO UPDATE SET active = COALESCE(?3, active), resting = COALESCE(?4, resting),
+    kcal = COALESCE(?3, active, 0) + COALESCE(?4, resting, 0), updated_at = ?5`)
+    .bind(user.id, date, active, resting, new Date().toISOString()).run();
+  const r = await env.DB.prepare('SELECT kcal FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
+  return Response.json({ ok: true, date, kcal: r.kcal });
 }
