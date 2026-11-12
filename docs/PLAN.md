@@ -103,6 +103,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 - Fase 11 keuzes (12-11): maaltijd per item = kolom `meal`, leeg → afgeleid van invoertijd (ontbijt 5–11, lunch 11–15, avond 17–22, rest tussendoor); tempo per gebruiker (`users.pace`, kg/week × 1100 kcal/dag); AI-resultaat springt niet meer naar de dag maar toont "Bekijk"; meldingen die uit staan bewaart de telefoon (localStorage), server krijgt alleen de aan-tijden; Garmin-checklist ook lokaal.
 
+- Fase 11c (12-11): dagdelen staan altijd op de dag (ook leeg); lang vasthouden + slepen = ander dagdeel (kolom `meal`), loslaten zonder slepen = menu. Zonder eigen keuze bepaalt de invoertijd het dagdeel.
+
 ## Open vragen
 - Geen.
 

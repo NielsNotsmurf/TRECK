@@ -116,24 +116,50 @@ async function load() {
 // Fase 11: gegeten-lijst per maaltijd met subtotaal; tik = uitklappen (hoeveelheid), vegen = favoriet/wissen, lang drukken = menu.
 function renderList(items, est) {
   const L = $('list'); L.innerHTML = '';
-  if (!items.length) {
-    L.append(el('h2', '', 'Gegeten'));
-    const ul = el('ul', 'group'); ul.append(el('li', 'empty', est ? `Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.` : 'Nog niets ingevoerd'));
-    L.append(ul); return;
-  }
+  if (est && !items.length) { const ul = el('ul', 'group'); ul.append(el('li', 'empty', `Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.`)); L.append(ul); }
   const groups = {};
   for (const i of items) (groups[mealOf(i)] ||= []).push(i);
   let first = null;
+  // Fase 11c: dagdelen staan er altijd; item lang vasthouden en slepen = naar ander dagdeel.
   for (const k of Object.keys(MEALS)) {
-    if (!groups[k]) continue;
-    const h = el('h2', 'sec'); h.append(el('span', '', MEALS[k]), el('span', '', `${groups[k].reduce((a, i) => a + i.kcal, 0)} kcal`));
-    const ul = el('ul', 'group');
-    for (const i of groups[k]) { const li = itemRow(i); ul.append(li); if (fresh && i.input_id === fresh) { li.classList.add('new'); first ||= li; } }
+    const g = groups[k] || [];
+    const h = el('h2', 'sec'); h.append(el('span', '', MEALS[k]), el('span', '', g.length ? `${g.reduce((a, i) => a + i.kcal, 0)} kcal` : ''));
+    const ul = el('ul', 'group'); ul.dataset.meal = k;
+    if (!g.length) ul.append(el('li', 'empty slim', 'Nog niets'));
+    for (const i of g) { const li = itemRow(i); ul.append(li); if (fresh && i.input_id === fresh) { li.classList.add('new'); first ||= li; } }
     L.append(h, ul);
   }
   fresh = null; first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
-const closeSwipes = (except) => document.querySelectorAll('#list li.swiped').forEach((x) => { if (x !== except) { x.classList.remove('swiped'); x.querySelector('.row').style.transform = ''; } });
+// Lang vasthouden: loslaten zonder bewegen = menu, slepen = naar ander dagdeel.
+function dragPress(li, row, i, menu) {
+  let t, x0, y0, sy0, state = null, target = null;
+  const clear = () => document.querySelectorAll('#list ul').forEach((u) => u.classList.remove('drop', 'lift'));
+  row.addEventListener('touchstart', (e) => {
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; sy0 = scrollY; state = 'wait';
+    t = setTimeout(() => { state = 'held'; navigator.vibrate?.(10); li.classList.add('drag'); li.parentNode.classList.add('lift'); }, 450);
+  }, { passive: true });
+  row.addEventListener('touchmove', (e) => {
+    const p = e.touches[0], dy = p.clientY - y0;
+    if (state === 'wait' && Math.hypot(p.clientX - x0, dy) > 10) { clearTimeout(t); state = null; }
+    if (state !== 'held' && state !== 'move') return;
+    e.preventDefault(); state = 'move';
+    if (p.clientY < 90) scrollBy(0, -8); else if (p.clientY > innerHeight - 170) scrollBy(0, 8);
+    li.style.transform = `translateY(${dy + scrollY - sy0}px)`;
+    target = document.elementFromPoint(p.clientX, p.clientY)?.closest('#list ul[data-meal]');
+    document.querySelectorAll('#list ul[data-meal]').forEach((u) => u.classList.toggle('drop', u === target && u.dataset.meal !== mealOf(i)));
+  }, { passive: false });
+  row.addEventListener('touchend', async (e) => {
+    clearTimeout(t); const st = state; state = null;
+    if (st !== 'held' && st !== 'move') return;
+    e.preventDefault(); li.classList.remove('drag'); li.style.transform = ''; clear();
+    if (st === 'held') return menu();
+    const m = target?.dataset.meal;
+    if (m && m !== mealOf(i)) { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: m }) }); toast(`${i.product} → ${MEALS[m]}`); load(); }
+  });
+  row.addEventListener('contextmenu', (e) => { e.preventDefault(); menu(); });
+}
+const closeSwipes = (except) => document.querySelectorAll('#list li.swiped').forEach((x) => { if (x !== except) { x.classList.remove('swiped', 'sliding'); x.querySelector('.row').style.transform = ''; } });
 function itemRow(i) {
   const li = el('li');
   li.innerHTML = `<div class="swrap"><div class="sw"><button style="background:#ff9500">${svg('star', i.fav ? 'fill' : '')}${i.fav ? 'Uit fav.' : 'Favoriet'}</button><button style="background:var(--red)">${svg('trash')}Wis</button></div>
@@ -144,10 +170,12 @@ function itemRow(i) {
   const [favB, delB] = li.querySelectorAll('.sw button');
   favB.onclick = () => toggleFav(i); delB.onclick = () => removeItem(i);
   row.onclick = () => { if (li.classList.contains('swiped')) return closeSwipes(); closeSwipes(); li.classList.toggle('open'); };
-  press(row, () => actions(i.product, [
+  dragPress(li, row, i, () => actions(i.product, [
     { label: 'Wijzig', fn: () => editItem(i) },
     { label: 'Naar andere dag', fn: () => ask({ title: 'Naar andere dag', type: 'date', value: i.date, okText: 'Verplaats',
       ok: async (v) => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, date: v }) }); toast(`Verplaatst naar ${dayName(v).toLowerCase()}`); load(); } }) },
+    { label: 'Ander dagdeel', fn: () => actions('Verplaats naar', Object.entries(MEALS).filter(([k]) => k !== mealOf(i)).map(([k, l]) => ({ label: l,
+      fn: async () => { await api('/api/items', { method: 'PUT', body: JSON.stringify({ ...i, meal: k }) }); load(); } }))) },
     { label: 'Dupliceer', fn: () => quickAdd(`${i.product}`, [{ ...i, meal: mealOf(i) }]) },
     { label: i.fav ? 'Uit favorieten' : 'Bewaar als favoriet', fn: () => toggleFav(i) },
     { label: 'Verwijder', danger: true, fn: () => removeItem(i) },
@@ -157,12 +185,13 @@ function itemRow(i) {
   row.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; mode = null; dx = base = li.classList.contains('swiped') ? -W : 0; row.style.transition = 'none'; }, { passive: true });
   row.addEventListener('touchmove', (e) => {
     const x = e.touches[0].clientX - x0, y = e.touches[0].clientY - y0;
+    if (li.classList.contains('drag')) return;
     mode ||= Math.abs(x) > 8 && Math.abs(x) > Math.abs(y) ? 'x' : Math.abs(y) > 8 ? 'y' : null;
-    if (mode === 'x') { dx = Math.min(0, Math.max(-W - 40, base + x)); row.style.transform = `translateX(${dx}px)`; }
+    if (mode === 'x') { li.classList.add('sliding'); dx = Math.min(0, Math.max(-W - 40, base + x)); row.style.transform = `translateX(${dx}px)`; }
   }, { passive: true });
   row.addEventListener('touchend', () => {
     row.style.transition = ''; if (mode !== 'x') return;
-    const open = dx < -W / 2; closeSwipes(li); li.classList.toggle('swiped', open); row.style.transform = open ? `translateX(${-W}px)` : '';
+    const open = dx < -W / 2; closeSwipes(li); li.classList.toggle('swiped', open); if (!open) setTimeout(() => li.classList.remove('sliding'), 250); row.style.transform = open ? `translateX(${-W}px)` : '';
   });
   li.append(adjust(i, row.querySelector('.kcal')));
   return li;

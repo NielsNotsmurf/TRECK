@@ -273,6 +273,10 @@
   .mock .t { width:30px; height:18px; border-radius:9px; background:var(--fill); position:relative; flex:none; } .mock .t.on { background:var(--ok); }
   .mock .t::after { content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; } .mock .t.on::after { left:14px; }
   .mock .hl { outline:2px solid var(--accent); outline-offset:-2px; border-radius:8px; }
+  #list li.drag { z-index:5; pointer-events:none; } #list li.drag .row { transform:scale(1.03); box-shadow:0 8px 24px rgba(0,0,0,.18); border-radius:12px; transition:none; }
+  #list ul.lift { overflow:visible; } #list ul.drop { box-shadow:0 0 0 2px var(--accent); }
+  .empty.slim { padding:11px 16px !important; font-size:15px; justify-content:flex-start; text-align:left; }
+  #list li:not(.sliding) .sw { visibility:hidden; }
 </style>
 </head>
 <body>
