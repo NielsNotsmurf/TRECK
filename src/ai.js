@@ -31,24 +31,28 @@ const SCHEMA = {
 };
 
 export async function analyseer({ text, image, audio, now, memory, fast }, env, userId) {
-  const mine = userId ? await usage(env, userId) : null;
-  if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Neem een abonnement via Meer, of wacht tot de reset.`), { retry: false, limit: true });
   const parts = [{ text: PROMPT(now) }];
   if (memory) parts.push({ text: memory });
   if (text) parts.push({ text: `Invoer: ${text}` });
   if (image) parts.push({ inline_data: { mime_type: image.mime, data: image.data } });
   if (audio) parts.push({ inline_data: { mime_type: audio.mime, data: audio.data } });
+  const out = await gemini(parts, { responseMimeType: 'application/json', responseSchema: SCHEMA }, env, userId, fast);
+  return JSON.parse(out || '{"items":[]}').items;
+}
 
+// Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
+export const tekst = (prompt, env, userId) => gemini([{ text: prompt }], {}, env, userId, true);
+
+async function gemini(parts, generationConfig, env, userId, fast) {
+  const mine = userId ? await usage(env, userId) : null;
+  if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Neem een abonnement via Meer, of wacht tot de reset.`), { retry: false, limit: true });
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL || MODEL}:generateContent`,
     {
       method: 'POST',
       signal: AbortSignal.timeout(fast ? 12000 : 60000), // Fase 11f: live snel opgeven → wachtrij
       headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA },
-      }),
+      body: JSON.stringify({ contents: [{ parts }], generationConfig }),
     },
   );
   if (res.status === 429) {
@@ -64,8 +68,7 @@ export async function analyseer({ text, image, audio, now, memory, fast }, env, 
     throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { retry: res.status === 429 || res.status >= 500 });
   }
   const out = await res.json();
-  const json = out.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
-  return JSON.parse(json).items;
+  return out.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 // Fase 8: eigen teller per Pacific-dag (Gemini reset om middernacht Pacific). Totaal (k=ai, voor de echte 429) + per gebruiker (k=ai:<id>).

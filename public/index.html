@@ -137,6 +137,18 @@
   #soon { text-align:center; padding:40px 20px; margin-top:20px; } #soon .ic { width:52px; height:52px; color:var(--accent); stroke-width:1.4; }
   #soon h3 { margin:12px 0 4px; } #soon p { color:var(--muted); margin:0; }
 
+  /* Fase 12: Inzichten */
+  #insightsView h1 { font-size:34px; font-weight:700; margin:8px 0 10px; letter-spacing:.01em; }
+  .chart { display:block; width:100%; height:auto; overflow:visible; } .chart .ax { font-size:10px; fill:var(--muted); }
+  .legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--muted); margin-top:8px; }
+  .legend i { display:inline-block; width:8px; height:8px; border-radius:4px; margin-right:5px; } .legend i.dash { width:12px; height:0; border-top:1.5px dashed var(--muted); border-radius:0; vertical-align:middle; }
+  #insMac { display:flex; gap:16px; } #insMac div { flex:1; font-size:13px; } #insMac span { color:var(--muted); }
+  #insMac b { display:block; font-size:17px; font-variant-numeric:tabular-nums; } #insMac b small { font-size:13px; color:var(--muted); font-weight:400; }
+  #insMac div::after { content:''; display:block; height:4px; border-radius:2px; margin-top:6px; background:linear-gradient(to right, var(--m) var(--w), var(--fill) var(--w)); }
+  .split { display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:16px; background:var(--fill); }
+  .note { font-size:12px; color:var(--muted); margin:8px 0 0; text-align:center; } .aitxt { margin:0; line-height:1.4; }
+  #insAi .btn { margin:0; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; } #insAi .btn .ic { width:18px; height:18px; }
+
   /* Sheets met handgreep en navigatiekop */
   .sheet { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:flex-end; z-index:9; }
   .sheet > .card { width:100%; max-width:560px; margin:0 auto; border-radius:12px 12px 0 0; background:var(--bg); padding:0 16px calc(env(safe-area-inset-bottom) + 20px);
@@ -345,6 +357,9 @@
 </form>
 <main id="app" class="hidden">
   <section class="card hidden" id="soon"><svg class="ic"><use id="soonI" href="#i-book"/></svg><h3 id="soonT"></h3><p>Binnenkort beschikbaar.</p></section>
+  <div id="insightsView" class="hidden"><h1>Inzichten</h1>
+    <div class="seg" id="insSeg"><button data-d="7">7 dagen</button><button data-d="30" class="on">30 dagen</button><button data-d="90">90 dagen</button></div>
+    <div id="insBody"></div></div>
   <div id="todayView">
   <div id="mini"></div>
   <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
@@ -379,7 +394,7 @@
 </div></div>
 <nav id="tabs" class="hidden">
   <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
-  <button class="soon" data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
+  <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
   <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
   <button class="soon" data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
   <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
@@ -470,5 +485,6 @@
   <div class="btns"><button id="askX">Annuleer</button><button id="askOk">Bewaar</button></div></div></div>
 <div id="toast" class="hidden"></div>
 <script src="app.js"></script>
+<script src="insights.js"></script>
 </body>
 </html>

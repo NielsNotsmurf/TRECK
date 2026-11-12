@@ -136,6 +136,6 @@ export async function logout({ request, env }) {
 }
 export async function deleteAccount({ env, user }) {
   await env.DB.batch(['items', 'queue', 'meals', 'sessions', 'burn', 'weight', 'push'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id))
-    .concat(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id)));
+    .concat(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id), env.DB.prepare('DELETE FROM config WHERE k IN (?, ?)').bind(`ai:${user.id}`, `insight:${user.id}`)));
   return new Response(null, { status: 204 });
 }

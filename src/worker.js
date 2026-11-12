@@ -5,6 +5,7 @@ import * as auth from './auth.js';
 import * as memory from './memory.js';
 import * as push from './push.js';
 import * as ai from './ai.js';
+import * as insights from './insights.js';
 
 export default {
   async fetch(request, env) {
@@ -22,6 +23,8 @@ export default {
     if (!user) return new Response('Geen toegang', { status: 401 });
     const ctx = { request, env, user };
     if (route === 'GET /api/ai') return ai.status(ctx);
+    if (route === 'GET /api/stats') return insights.stats(ctx);
+    if (route === 'POST /api/insight') return insights.summary(ctx);
     if (route === 'POST /api/plan') return ai.plan(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);

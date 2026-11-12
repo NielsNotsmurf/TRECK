@@ -526,7 +526,9 @@ for (const b of document.querySelectorAll('#tabs [data-tab]')) b.onclick = () =>
   const today_ = b.dataset.tab === 'today';
   if (today_ && b.classList.contains('act')) { scrollTo({ top: 0, behavior: 'smooth' }); if (day !== today()) goto(today()); return; }
   document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('act', x === b));
-  $('todayView').classList.toggle('hidden', !today_); $('soon').classList.toggle('hidden', today_);
+  const ins = b.dataset.tab === 'insights'; // Fase 12
+  $('todayView').classList.toggle('hidden', !today_); $('soon').classList.toggle('hidden', today_ || ins); $('insightsView').classList.toggle('hidden', !ins);
+  if (ins) loadInsights().catch((e) => toast(e.message));
   document.body.classList.toggle('tab-other', !today_); if (!today_) $('soonI').setAttribute('href', `#${b.dataset.i}`);
   $('soonT').textContent = { recipes: 'Recepten en gerechten op maat', insights: 'AI-analyse en voortgang', plan: 'Voedingsprogramma\'s' }[b.dataset.tab] || '';
   scrollTo(0, 0);

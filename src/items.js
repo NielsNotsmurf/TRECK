@@ -40,7 +40,7 @@ export async function onRequestGet({ request, env, user }) {
 // Verbruik = gem. inname op gelogde dagen − gewichtstrend (kg/dag, lineaire regressie) × 7700. Doel = verbruik + tempo.
 // Fase 11: tempo (kg/week) per gebruiker instelbaar; 1 kg ≈ 7700 kcal → per dag pace × 1100.
 const PACE = { lose: [-0.5, 'voor −%s kg/week'], keep: [0, 'om op gewicht te blijven'], gain: [0.25, 'voor +%s kg/week'] };
-async function target(env, userId, monday) {
+export async function target(env, userId, monday) {
   const from = `date('${monday}', '-28 days')`;
   const { results: days } = await env.DB.prepare(`SELECT date, SUM(kcal) k FROM items WHERE review IS NULL AND user_id = ? AND date >= ${from} AND date < ? GROUP BY date`).bind(userId, monday).all();
   const { results: ws } = await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date >= ${from} AND date < ? ORDER BY date`).bind(userId, monday).all();

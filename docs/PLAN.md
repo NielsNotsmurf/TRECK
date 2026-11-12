@@ -72,6 +72,8 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 9: tempo in Meer → Doel (tik wisselt): afvallen −550 (standaard), op gewicht 0, aankomen +275 kcal; min. 1200. Macro's: eiwit 1,8 g/kg, vet 25%, rest koolh. Uitleg = vaste zin met de cijfers.
 - Fase 10: iOS-stijl (HIG): systeemkleuren, grouped inset lists met gekleurde icoontegels in Meer, eigen SVG-lijniconen i.p.v. emoji in de UI, iMessage-achtige typebalk (camera · pil · verstuurpijl, Enter = versturen), sheets met handgreep en Annuleer/Bewaar-kop.
 - Fase 10: item-icoon = Apple-voedselemoji in een tegel, gekozen op trefwoord in de productnaam (client, geen AI); verwijderen zit in het item-scherm i.p.v. op elke regel.
+- 2026-11-12 Fase 12: statistieken zonder AI (GET /api/stats?days=7|30|90), vandaag telt niet mee in gemiddelden (dag nog niet af); periode start bij de eerste data. Grafieken als inline SVG, geen bibliotheek.
+- 2026-11-12 Fase 12: AI-samenvatting (POST /api/insight) = 30 dagtotalen als CSV + doel naar Gemini, max 4 zinnen, geen advies/programma; bewaard in config k=insight:<id> per NL-dag, telt mee in de limiet per gebruiker. Geen stappenteller-data, alleen calorieën (besluit gebruiker).
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -82,7 +84,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 | 9 Doelen (adaptief) | Kcal-doel zoals MacroFactor: echt verbruik uit gewichtstrend + inname (rekenwerk, geen AI). AI 1× per week: doel + macro's (eiwit eerst) met één zin uitleg. Dagkaart: "nog X kcal" + macro-balkjes | Na ≥14 dagen data staat er een doel met uitleg; dagkaart toont resterend |
 | 10 Usability & look | Instellingen (Meer) en emoji's vervangen door een rustige, consistente stijl (lijn-iconen); duidelijkere typebalk (placeholder, knoppen, focus); betere plaatsing/ordening van items op de dagkaart; automatisch een icoon (of afbeelding) per item op basis van het product | Gebruiker vindt menu, typebalk en itemlijst op iPhone duidelijk en mooi; elk item heeft een passend icoon zonder extra AI-verzoek |
 | 11 UX-polish (iOS) | De belangrijkste 3–5 optimalisaties per scherm, zie "Fase 11 details" | Gebruiker test elk scherm op iPhone en vindt het native en duidelijk; geen prompt-popups meer |
-| 12 AI-analyse | Knop "Inzicht": AI krijgt dagtotalen van 14–30 dagen (geen losse items, zuinig) en geeft 3 concrete tips. Max 1 per dag, antwoord bewaard in D1 | Inzicht verschijnt, 2e tik dezelfde dag toont het bewaarde antwoord zonder AI-verzoek |
+| 12 Analytics (Inzichten) | Inzichten-tab: 7/30/90 d, gem. inname vs doel, dagen op doel, tekort/overschot met verwachte vs gemeten kg/week, grafiek inname/verbruik/doel, gewichtsgrafiek, macro's vs doel + energieverdeling. AI-samenvatting max 1/dag (bewaard), binnen de AI-limiet per gebruiker | Grafieken kloppen met gelogde data; 2e tik op samenvatting dezelfde dag = bewaard antwoord zonder AI-verzoek |
+| 13 Voedingsprogramma & advies | Gedetailleerder doel instellen in de Programma-tab; AI-advies wat te eten/aanpassen op basis van de statistieken uit fase 12. Geen stappenteller-data | Nog uitwerken na fase 12 |
 
 - Limiet (bronnen 23-10 en 2-9-2026): 3.1 Flash-Lite gratis = 15/min, 500/dag per Google-project; Google publiceert het niet meer officieel, eigen stand op aistudio.google.com/rate-limit. Gemini stuurt geen resterend-headers, alleen een 429 met QuotaFailure → balk = eigen teller (max via `AI_DAY_LIMIT`, standaard 500) + 429-signaal.
 - Gebruik nu ≈4–10/dag; doelen +1/week, analyse max +1/dag → ruim binnen 500, ook met een paar gebruikers.
@@ -118,7 +121,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 ## Later
 - Top-up (losse extra AI-verzoeken) en echte betaling voor het abonnement.
-- Onderbalk-tabs vullen: recepten/gerechten-suggesties, AI-analytics en progressie-inzichten (fase 10), voedingsprogramma's.
+- Onderbalk-tabs vullen: recepten/gerechten-suggesties (Programma = fase 13).
+- Evt. stappenteller-attributen uit Apple Health in analytics (gebruiker: voorlopig vermijden).
 - Barcodescanner via Open Food Facts (gratis, geen AI-verzoek).
 - Micronutriënten (vezels, suiker, zout) zoals Cronometer.
 - Water bijhouden.
