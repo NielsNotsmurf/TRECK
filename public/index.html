@@ -283,6 +283,8 @@
   #balTxt { font-size:11px; font-weight:600; margin-top:3px; text-align:center; max-width:120px; line-height:1.25; }
   #revList li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; } #revList li > div { cursor:pointer; }
   #revList select { border:0; background:var(--fill); border-radius:8px; padding:5px 6px; font-size:13px; max-width:104px; color:var(--fg); }
+  #tabs .center span { width:46px; height:46px; border-radius:23px; background:var(--fill); color:var(--accent); display:grid; place-items:center; transition:background .2s; }
+  #tabs .center.act span { background:var(--accent); color:#fff; box-shadow:0 4px 12px rgba(242,84,45,.35); } #tabs .center.act .ic { fill:none; }
 </style>
 </head>
 <body>
@@ -357,9 +359,9 @@
   </div>
 </div></div>
 <nav id="tabs" class="hidden">
-  <button data-tab="today" class="act"><svg class="ic"><use href="#i-fork"/></svg>Vandaag</button>
   <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
   <button class="soon" data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
+  <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
   <button class="soon" data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
   <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
 </nav>
