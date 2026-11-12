@@ -54,6 +54,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Dag zonder verbruik: ≈ gemiddelde verbruik van de 14 dagen ervoor (live, niet opgeslagen). Shortcut mag waarden ook als header sturen.
 - 2026-11-12 Verbruik zonder datum = vandaag in NL-tijd (Europe/Amsterdam). Opdracht draait vaak (bij sluiten Garmin Connect + vaste tijden, laatste 23:55); elke run overschrijft de dag met het nieuwste totaal.
 - 2026-11-12 Invoer zonder genoemde dag komt op de geopende dag (app geeft die mee in `now`), anders vandaag.
+- 2026-11-12 Verbruik per dag los: schatting alleen op voorbije dagen, vandaag = "tot nu" + tijd laatste update, toekomst leeg. Week (vanaf ma) en maand (vanaf 1e) t/m geopende dag = som(verbruik − inname) over dagen met echte inname én echt verbruik.
 
 ## Open vragen
 - Geen.

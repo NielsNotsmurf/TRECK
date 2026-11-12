@@ -1,4 +1,5 @@
 import { favs } from './memory.js';
+const nlToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }); // dag in NL-tijd
 // GET ?date=JJJJ-MM-DD -> {items, total}
 export async function onRequestGet({ request, env, user }) {
   const date = new URL(request.url).searchParams.get('date');
@@ -17,10 +18,18 @@ export async function onRequestGet({ request, env, user }) {
   }
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
   const fav = await favs(env, user.id);
-  const b = await env.DB.prepare('SELECT kcal FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
-  // Geen verbruik binnen: schatting = gemiddelde verbruik van de 14 dagen ervoor (niet opgeslagen).
-  const be = b ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
-  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n, burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null });
+  const b = await env.DB.prepare('SELECT kcal, updated_at FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
+  // Geen verbruik op een voorbije dag: schatting = gemiddelde van de 14 dagen ervoor (niet opgeslagen). Vandaag/toekomst: geen schatting.
+  const be = b || date >= nlToday() ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
+  // Week (vanaf maandag) en maand (vanaf de 1e) t/m de geopende dag: alleen dagen met echte inname én echt verbruik.
+  const d = new Date(date + 'T12:00Z');
+  const monday = new Date(d - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10);
+  const period = async (from) => env.DB.prepare(`SELECT COALESCE(SUM(b.kcal - i.k), 0) diff, COUNT(*) days FROM
+    (SELECT date, SUM(kcal) k FROM items WHERE user_id = ? AND date BETWEEN ? AND ? GROUP BY date) i JOIN burn b ON b.user_id = ? AND b.date = i.date`)
+    .bind(user.id, from, date, user.id).first();
+  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
+    burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
+    week: await period(monday), month: await period(date.slice(0, 8) + '01') });
 }
 
 // Fase 4: POST {date, active, resting} (of {date, kcal}) vanuit de iOS-opdracht (Garmin -> Apple Health). Overschrijft die dag.
@@ -28,7 +37,7 @@ export async function burn({ request, env, user }) {
   const h = (k) => request.headers.get(k);
   const b = await request.json().catch(() => ({})); // waarden mogen ook als header (iOS-opdracht)
   for (const k of ['date', 'kcal', 'active', 'resting']) if (b[k] == null && h(k)) b[k] = h(k);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }); // dag in NL-tijd
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : nlToday();
   const num = (v) => { // iOS stuurt soms "1.812,4 kcal"
     let t = String(v ?? '').replace(/[^\d.,]/g, '');
     t = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;

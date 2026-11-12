@@ -19,7 +19,7 @@ async function api(path, opts = {}) {
 async function load() {
   const d = new Date(day + 'T12:00');
   $('day').textContent = day === iso(new Date()) ? 'Vandaag' : `${DAGEN[d.getDay()]} ${d.getDate()}-${d.getMonth() + 1}`;
-  const { items, total, estimate, queued, burn, burnEst } = await api(`/api/items?date=${day}`);
+  const { items, total, estimate, queued, burn, burnEst, burnAt, week, month } = await api(`/api/items?date=${day}`);
   if (queued) $('status').textContent = `${queued} invoer wacht op verwerking (Gemini druk)`;
   const est = day < iso(new Date()) && estimate; // vergeten dag: schatting, alleen getoond
   const t = est || total;
@@ -27,8 +27,15 @@ async function load() {
   $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
   $('macros').innerHTML = [['Eiwit', t.protein_g], ['Koolh.', t.carbs_g], ['Vet', t.fat_g]]
     .map(([k, v]) => `<div><b>${est ? '≈ ' : ''}${v} g</b><span>${k}</span></div>`).join('');
-  const diff = burn - t.kcal; // fase 4: verbruik uit Garmin via Apple Health
-  $('burn').innerHTML = burn == null ? 'Verbruik: nog niet binnen' : `Verbruik ${burnEst ? '≈ ' : ''}${burn} kcal · <b class="${diff >= 0 ? 'neg' : 'pos'}">${est || burnEst ? '≈ ' : ''}${diff >= 0 ? 'tekort' : 'overschot'} ${Math.abs(diff)}</b>`;
+  // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
+  const today = day === iso(new Date());
+  const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
+  const at = burnAt ? new Date(burnAt) : null;
+  const when = at ? ` · bijgewerkt ${at.toDateString() === new Date().toDateString() ? '' : `${at.getDate()}-${at.getMonth() + 1} `}${pad(at.getHours())}:${pad(at.getMinutes())}` : '';
+  const sum = (p, label) => p.days ? `${label} ${bal(p.diff)} <small>(${p.days} d)</small>` : '';
+  $('burn').innerHTML = day > iso(new Date()) ? '' : (burn == null ? 'Verbruik: nog niet binnen'
+    : `Verbruik${today ? ' tot nu' : ''} ${burnEst ? '≈ ' : ''}${burn} kcal · ${bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}${when}`)
+    + `<br>${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).join(' · ')}`;
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
   for (const i of items) {
     const li = document.createElement('li');
