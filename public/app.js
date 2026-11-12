@@ -291,6 +291,26 @@ $('burnClear').onclick = async () => {
   if (!confirm('Al het ontvangen verbruik wissen? De iOS-opdracht vult het daarna weer aan.')) return;
   await api('/api/burn', { method: 'DELETE' }); $('burns').innerHTML = '<li class="empty">Nog niets ontvangen</li>'; load();
 };
+// Fase 6: herinneringen via Web Push (iOS: alleen als beginscherm-app).
+navigator.serviceWorker?.register('sw.js');
+$('pushBtn').onclick = async () => {
+  if (!('Notification' in window) || !navigator.serviceWorker) return alert('Meldingen werken alleen als TRECK op je beginscherm staat (iOS 16.4+).');
+  const perm = Notification.requestPermission(); // direct in de tik, anders weigert iOS
+  try {
+    const { publicKey, times } = await api('/api/push');
+    const t = prompt('Herinneren om (bijv. 12:30, 20:00). Leeg = uit:', times.replace(/,/g, ', '));
+    if (t === null) return;
+    let sub = null;
+    if (t.trim()) {
+      if (await perm !== 'granted') return alert('Meldingen geweigerd. Zet ze aan via iOS Instellingen → Meldingen → TRECK.');
+      const reg = await navigator.serviceWorker.ready;
+      sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true,
+        applicationServerKey: Uint8Array.from(atob(publicKey.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)) });
+    }
+    const r = await api('/api/push', { method: 'POST', body: JSON.stringify({ sub, times: t }) });
+    alert(r.times ? `Herinnering om ${r.times.replace(/,/g, ', ')}. Je krijgt nu een testmelding.` : 'Meldingen staan uit.');
+  } catch (e) { alert(e.message); }
+};
 $('logout').onclick = async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); bye(); };
 $('delAccount').onclick = async () => {
   if (!confirm('Account en al je gegevens definitief verwijderen?')) return;

@@ -3,6 +3,7 @@ import * as analyze from './analyze.js';
 import * as items from './items.js';
 import * as auth from './auth.js';
 import * as memory from './memory.js';
+import * as push from './push.js';
 
 export default {
   async fetch(request, env) {
@@ -31,6 +32,8 @@ export default {
     if (route === 'DELETE /api/burn') return items.burnClear(ctx);
     if (route === 'POST /api/burn') return items.burn(ctx);
     if (route === 'POST /api/weight') return items.weight(ctx);
+    if (route === 'GET /api/push') return push.get(ctx);
+    if (route === 'POST /api/push') return push.save(ctx);
     if (route === 'POST /api/synckey') return auth.syncKey(ctx);
     if (route === 'POST /api/logout') return auth.logout(ctx);
     if (route === 'DELETE /api/account') return auth.deleteAccount(ctx);
@@ -41,5 +44,6 @@ export default {
   async scheduled(event, env) {
     await auth.ensureSchema(env);
     await analyze.retryQueue(env);
+    await push.remind(env);
   },
 };
