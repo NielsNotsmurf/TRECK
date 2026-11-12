@@ -84,13 +84,27 @@ async function load() {
   $('total').innerHTML = `${est ? '≈ ' : ''}${t.kcal}<small>kcal</small>`;
   // Fase 9: ring = inname t.o.v. adaptief doel; zonder doel (nog < 14 dagen) t.o.v. verbruik of 2000 kcal.
   const T = target?.kcal ? target : null;
-  const goal = T?.kcal || burn || 2000, left = goal - t.kcal, f = t.kcal / goal;
+  // Fase 11e: ook zonder persoonlijk doel telt je keuze (afvallen/aankomen + tempo) mee: tijdelijk doel = verbruik (of 2000) ± tempo.
+  const G = target?.goal || 'lose', P = d.me?.pace || (G === 'gain' ? 0.25 : 0.5), delta = G === 'keep' ? 0 : (G === 'gain' ? 1 : -1) * Math.round(P * 1100);
+  const goal = T?.kcal || Math.max(1200, (burn || 2000) + delta), left = goal - t.kcal, f = t.kcal / goal;
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
-  $('ring').classList.toggle('over', f > 1.05);
-  $('goal').textContent = T ? `van ${T.kcal} doel` : burn ? `van ${burn} verbruik` : 'van 2000 kcal';
-  $('why').textContent = T ? T.why : `Doel volgt na 14 gelogde dagen en 2 wegingen (week uit elkaar) · nu ${target?.days ?? 0} d, ${target?.weighs ?? 0} wegingen`;
+  $('ring').classList.toggle('over', f > 1.05 && G !== 'gain');
+  $('ring').classList.toggle('ok', f >= 0.9 && (f <= 1.05 || G === 'gain'));
+  $('goal').textContent = `van ${goal} doel`;
+  // Buitenring: tekort/overschot (verbruik − inname) t.o.v. wat je doel vraagt; groen = goede kant op.
+  const bl = burn == null ? null : burn - t.kcal, want = -delta;
+  let bf = 0, good = false;
+  if (bl != null) {
+    if (G === 'keep') { bf = 1 - Math.min(1, Math.abs(bl) / 500); good = Math.abs(bl) < 250; }
+    else { bf = Math.max(0, Math.min(1, bl / want)); good = G === 'lose' ? bl >= 0 : bl <= 0; }
+  }
+  $('balArc').style.strokeDashoffset = 395.8 * (1 - (bl == null ? 0 : Math.max(bf, 0.03)));
+  $('balArc').classList.toggle('good', good);
+  $('balTxt').textContent = bl == null ? '' : `${bl >= 0 ? 'tekort' : 'overschot'} ${Math.abs(bl)}${want ? ` · doel ${want > 0 ? 'tekort' : 'overschot'} ${Math.abs(want)}` : ''}`;
+  $('balTxt').className = bl == null ? '' : good ? 'neg' : 'pos';
+  $('why').textContent = T ? T.why : `Tijdelijk doel: ${burn ? 'verbruik' : '2000'}${delta ? ` ${delta > 0 ? '+' : '−'} ${Math.abs(delta)}` : ''} kcal. Persoonlijk doel na 14 gelogde dagen en 2 wegingen (week uit elkaar) · nu ${target?.days ?? 0} d, ${target?.weighs ?? 0} wegingen`;
   $('motto').textContent = est ? 'Geschat op je gemiddelde' : !t.kcal ? (day === today() ? 'Klaar voor een goede dag?' : 'Niets gelogd op deze dag')
-    : f < 0.5 ? `Lekker bezig, nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg, nog ${left} kcal` : f <= 1.05 ? 'Precies op koers' : `${-left} kcal boven je ${T ? 'doel' : 'verbruik'}, morgen weer een dag`;
+    : f < 0.5 ? `Lekker bezig, nog ${left} kcal ruimte` : f < 0.9 ? `Goed op weg, nog ${left} kcal` : f <= 1.05 ? 'Precies op koers' : (G === 'gain' ? `Doel gehaald, ${-left} kcal erboven` : `${-left} kcal boven je doel, morgen weer een dag`);
   $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']]
     .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? ` · nog ${T[m] - t[m]}` : ''}</span></div>`).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.

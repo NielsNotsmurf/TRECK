@@ -107,6 +107,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 
 - Fase 11d (12-11): favoriet = één los item (`meals.source = item:<id>`), niet meer de hele invoer; oude favorieten per invoer blijven werken. Tijdens typen staan passende favorieten boven de typebalk (tik = toevoegen, geen AI).
 
+- Fase 11e (12-11): ring volgt je doelkeuze ook vóór het persoonlijke doel (verbruik of 2000 ± tempo×1100). Ringkleur: groen 90–105%, rood erboven (bij aankomen niet). Dunne buitenring = tekort/overschot t.o.v. wat je doel vraagt, groen = goede kant op.
+
 ## Open vragen
 - Geen.
 

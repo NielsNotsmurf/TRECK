@@ -278,6 +278,9 @@
   .empty.slim { padding:11px 16px !important; font-size:15px; justify-content:flex-start; text-align:left; }
   #list li:not(.sliding) .sw { visibility:hidden; }
   #suggest { display:flex; gap:8px; overflow-x:auto; padding:0 0 8px; scrollbar-width:none; } #suggest .chip { background:var(--soft); }
+  #ring circle.bal { stroke-width:4; } #balArc { stroke:var(--warn); transition:stroke-dashoffset .6s ease, stroke .3s; } #balArc.good { stroke:var(--ok); }
+  #ring.ok #arc { stroke:var(--ok); } #ring.over #arc { stroke:var(--red); }
+  #balTxt { font-size:11px; font-weight:600; margin-top:3px; text-align:center; max-width:120px; line-height:1.25; }
 </style>
 </head>
 <body>
@@ -324,9 +327,10 @@
   <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
     <div class="btns"><button id="todayBtn" class="hidden">Vandaag</button><button class="round" id="prev" aria-label="Vorige dag"><svg class="ic"><use href="#i-left"/></svg></button><button class="round" id="next" aria-label="Volgende dag"><svg class="ic"><use href="#i-right"/></svg></button></div></div>
   <section class="card">
-    <div id="ring"><svg viewBox="0 0 120 120"><defs><linearGradient id="grad"><stop offset="0" stop-color="#ff9f0a"/><stop offset="1" stop-color="#f2542d"/></linearGradient></defs>
-      <circle class="trk" cx="60" cy="60" r="52"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
-      <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div><div id="estTag" class="hidden">Schatting</div></div></div>
+    <div id="ring"><svg viewBox="-6 -6 132 132"><defs><linearGradient id="grad"><stop offset="0" stop-color="#ff9f0a"/><stop offset="1" stop-color="#f2542d"/></linearGradient></defs>
+      <circle class="trk" cx="60" cy="60" r="52"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+      <circle class="trk bal" cx="60" cy="60" r="63"/><circle id="balArc" class="bal" cx="60" cy="60" r="63" stroke-dasharray="395.8" stroke-dashoffset="395.8"/></svg>
+      <div id="ringIn"><div id="total">0<small>kcal</small></div><div id="goal"></div><div id="balTxt"></div><div id="estTag" class="hidden">Schatting</div></div></div>
     <div id="motto"></div>
     <div id="macros"></div>
     <div id="why"></div>
