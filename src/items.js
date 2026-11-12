@@ -18,7 +18,9 @@ export async function onRequestGet({ request, env, user }) {
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
   const fav = await favs(env, user.id);
   const b = await env.DB.prepare('SELECT kcal FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
-  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n, burn: b ? b.kcal : null });
+  // Geen verbruik binnen: schatting = gemiddelde verbruik van de 14 dagen ervoor (niet opgeslagen).
+  const be = b ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
+  return Response.json({ items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n, burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null });
 }
 
 // Fase 4: POST {date, active, resting} (of {date, kcal}) vanuit de iOS-opdracht (Garmin -> Apple Health). Overschrijft die dag.

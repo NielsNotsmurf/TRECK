@@ -51,6 +51,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-11 Fase 4 via Apple Health + iOS-opdracht i.p.v. Garmin Personal API: geen OAuth/ontwikkelaarsaanvraag, zelfde route als fase 5. Garmin Connect → Apple Health (actieve + rustenergie).
 - 2026-11-11 Tabel `burn` (user_id, date, kcal); `POST /api/burn {date, active, resting}` overschrijft die dag. Sleutel = eigen sessie via menu "Sleutel iOS-opdracht" (blijft na uitloggen).
 - 2026-11-11 Dagkaart: "Verbruik X kcal · tekort/overschot Y" (verbruik − intake; bij schatting met ≈).
+- 2026-11-12 Dag zonder verbruik: ≈ gemiddelde verbruik van de 14 dagen ervoor (live, niet opgeslagen). Shortcut mag waarden ook als header sturen.
 
 ## Open vragen
 - Geen.
@@ -59,3 +60,4 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - Offline invoer bewaren op de telefoon als er geen internet is.
 - Wachtwoord wijzigen.
 - Beperking op inlogpogingen.
+- Foto's bewaren per invoer en tonen bij het item (nu worden foto's niet bewaard).
