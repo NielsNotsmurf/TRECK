@@ -298,7 +298,7 @@ $('pushBtn').onclick = async () => {
   const perm = Notification.requestPermission(); // direct in de tik, anders weigert iOS
   try {
     const { publicKey, times } = await api('/api/push');
-    const t = prompt('Herinneren om (bijv. 12:30, 20:00). Leeg = uit:', times.replace(/,/g, ', '));
+    const t = prompt('Herinneren om (bijv. 12:30, 20:00). Leeg = uit:', times ? times.replace(/,/g, ', ') : '10:00, 14:00, 20:00, 22:00');
     if (t === null) return;
     let sub = null;
     if (t.trim()) {

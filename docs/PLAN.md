@@ -60,7 +60,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 5: tabel `weight` (user_id, date, kg); `POST /api/weight` overschrijft die dag. Gebruiker kiest: puur handmatig, geen koppeling met Health/weegschaal.
 - 2026-11-12 Trend: dagkaart toont laatste weging t/m geopende dag, verschil en lijntje over 30 dagen.
 - 2026-11-12 Gewicht ook handmatig: tik op de gewichtregel (of '+ gewicht') → invoer voor de geopende dag, zelfde /api/weight.
-- 2026-11-12 Fase 6: alleen kanaal Web Push (iOS 16.4+, beginscherm-app). Menu → Meldingen → tijden typen (leeg = uit), direct testmelding. Push zonder payload, sw.js toont vaste tekst. VAPID-sleutel maakt de Worker zelf en bewaart hem in D1 `config` (geen handmatig secret). Cron (10 min) stuurt per tijd één melding binnen 30 min, NL-tijd. Tabel `push` (user_id, endpoint, origin, times, sent); 404/410 = abonnement weg.
+- 2026-11-12 Fase 6: alleen kanaal Web Push (iOS 16.4+, beginscherm-app). Menu → Meldingen → tijden typen (voorstel 10:00, 14:00, 20:00, 22:00; leeg = uit), direct testmelding. Push zonder payload, sw.js toont vaste tekst. VAPID-sleutel maakt de Worker zelf en bewaart hem in D1 `config` (geen handmatig secret). Cron (10 min) stuurt per tijd één melding binnen 30 min, NL-tijd. Tabel `push` (user_id, endpoint, origin, times, sent); 404/410 = abonnement weg.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
