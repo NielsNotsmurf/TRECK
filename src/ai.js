@@ -48,6 +48,14 @@ export async function analyseer({ text, image, audio, now, memory }, env) {
       }),
     },
   );
+  if (res.status === 429) {
+    // Fase 8: QuotaFailure.quotaId zegt of het de minuut- of daglimiet is.
+    const body = await res.text();
+    const day = /PerDay/i.test(body);
+    if (day) await saveUsage(env, { ...(await usage(env)), full: true });
+    throw Object.assign(new Error(`Gemini 429: ${body.slice(0, 300)}`), { retry: true, quota: day ? 'day' : 'minute' });
+  }
+  if (res.ok) { const u = await usage(env); await saveUsage(env, { ...u, n: u.n + 1 }); }
   if (!res.ok) {
     // retry = tijdelijk (drukte/storing): de invoer gaat dan in de wachtrij.
     throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { retry: res.status === 429 || res.status >= 500 });
@@ -55,4 +63,22 @@ export async function analyseer({ text, image, audio, now, memory }, env) {
   const out = await res.json();
   const json = out.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
   return JSON.parse(json).items;
+}
+
+// Fase 8: eigen teller per Pacific-dag (Gemini reset om middernacht Pacific; stuurt geen resterend-headers).
+const pacific = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+export async function usage(env) {
+  const row = await env.DB.prepare("SELECT v FROM config WHERE k = 'ai'").first();
+  const u = row ? JSON.parse(row.v) : {};
+  return u.d === pacific() ? u : { d: pacific(), n: 0, full: false };
+}
+const saveUsage = (env, u) => env.DB.prepare("INSERT OR REPLACE INTO config (k, v) VALUES ('ai', ?)").bind(JSON.stringify(u)).run();
+
+// GET /api/ai -> {used, limit, full, reset} ; reset = volgende middernacht Pacific (ISO).
+export async function status({ env }) {
+  const u = await usage(env);
+  const now = new Date();
+  const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const reset = new Date(now.getTime() + (new Date(la).setHours(24, 0, 0, 0) - la.getTime()));
+  return Response.json({ used: u.n, limit: Number(env.AI_DAY_LIMIT) || 500, full: !!u.full, reset: reset.toISOString() });
 }

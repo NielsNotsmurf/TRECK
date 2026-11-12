@@ -1,4 +1,4 @@
-import { analyseer } from './ai.js';
+import { analyseer, usage } from './ai.js';
 import { context } from './memory.js';
 
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
@@ -31,12 +31,13 @@ export async function onRequestPost({ request, env, user }) {
     // Drukte of storing: bewaren en later opnieuw proberen. `now` blijft het moment van invoer.
     await env.DB.prepare('INSERT INTO queue (user_id, payload, attempts, created_at) VALUES (?, ?, 0, ?)')
       .bind(user.id, JSON.stringify(input), new Date().toISOString()).run();
-    return Response.json({ queued: true });
+    return Response.json({ queued: true, quota: e.quota });
   }
 }
 
 // Cron: de oudste 5 wachtende invoeren opnieuw proberen.
 export async function retryQueue(env) {
+  if ((await usage(env)).full) return; // daglimiet op: wachten tot de reset.
   const { results } = await env.DB.prepare('SELECT * FROM queue WHERE attempts < 50 ORDER BY id LIMIT 5').all();
   for (const q of results) {
     try {

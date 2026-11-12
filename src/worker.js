@@ -4,6 +4,7 @@ import * as items from './items.js';
 import * as auth from './auth.js';
 import * as memory from './memory.js';
 import * as push from './push.js';
+import * as ai from './ai.js';
 
 export default {
   async fetch(request, env) {
@@ -20,6 +21,7 @@ export default {
     const user = await auth.currentUser(request, env);
     if (!user) return new Response('Geen toegang', { status: 401 });
     const ctx = { request, env, user };
+    if (route === 'GET /api/ai') return ai.status(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
     if (route === 'GET /api/items') return items.onRequestGet(ctx);
     if (route === 'PUT /api/items') return items.onRequestPut(ctx);

@@ -228,8 +228,8 @@ $('send').onclick = async () => {
   if (day !== iso(n)) now += `. Geopende dag in de app: ${DAGEN[new Date(day + 'T12:00').getDay()]} ${day}`; // invoer hoort standaard bij de geopende dag
   $('status').textContent = 'Analyseren…'; $('send').disabled = true;
   try {
-    const { items, queued } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });
-    $('status').textContent = queued ? 'Gemini is druk: bewaard, wordt automatisch later verwerkt.' : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
+    const { items, queued, quota } = await api('/api/analyze', { method: 'POST', body: JSON.stringify({ text, image, now }) });
+    $('status').textContent = queued ? (quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk: bewaard, wordt automatisch later verwerkt.') : items.length ? `${items.length} item(s) opgeslagen` : 'Geen eten herkend';
     if (items?.length) day = items[0].date;
     $('text').value = ''; clearPhoto();
     load(); loadQuick();
@@ -321,6 +321,12 @@ $('menuBtn').onclick = () => {
     $('meals').append(li);
   }
   $('sheet').classList.remove('hidden');
+  api('/api/ai').then(({ used, limit, full, reset }) => { // Fase 8: AI-limietbalk
+    $('aiBar').classList.toggle('full', full);
+    $('aiTxt').textContent = full ? `AI vandaag vol (${used}/${limit})` : `AI vandaag ${used}/${limit}`;
+    $('aiSub').textContent = `reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
+    $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
+  }).catch(() => {});
 };
 $('closeSheet').onclick = () => $('sheet').classList.add('hidden');
 $('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').classList.add('hidden'); };

@@ -113,6 +113,9 @@
   #tabs button.act { color:var(--accent); } #tabs button.act span { filter:none; opacity:1; }
   #soon { text-align:center; padding:36px 20px; } #soon div { font-size:48px; } #soon p { color:var(--muted); }
   .sheet .card { animation:up .22s ease-out; } @keyframes up { from { transform:translateY(40%); opacity:0; } }
+  .aibar div { display:flex; justify-content:space-between; font-size:13px; } .aibar small { color:var(--muted); }
+  .aibar span { display:block; height:6px; border-radius:3px; background:var(--soft); margin-top:6px; overflow:hidden; }
+  .aibar i { display:block; height:100%; width:0; background:var(--accent); border-radius:3px; } .aibar.full i { background:#d44; }
   .menu { display:flex; flex-direction:column; gap:2px; margin-top:6px; }
   .menu button { display:flex; align-items:center; gap:12px; text-align:left; border:0; background:none; padding:12px 4px; border-radius:12px; font-weight:600; }
   .menu button:active { background:var(--bg); }
@@ -173,6 +176,7 @@
   <h2 style="margin-top:0">Mijn gerechten</h2>
   <ul id="meals"></ul>
   <h2>Instellingen</h2>
+  <div id="aiBar" class="aibar"><div><b id="aiTxt">AI vandaag …</b><small id="aiSub"></small></div><span><i id="aiFill"></i></span></div>
   <div class="menu">
     <button id="pushBtn"><i>🔔</i><div>Meldingen<small id="pushSub">Herinneringen om te loggen</small></div></button>
     <button id="garminBtn"><i>⌚</i><div>iOS &amp; Garmin<small>Verbruik via Apple Health</small></div></button>
