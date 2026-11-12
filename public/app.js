@@ -41,7 +41,7 @@ async function load() {
   const w = weights.at(-1), w0 = weights[0];
   const pts = weights.map((x) => [(new Date(x.date) - new Date(day)) / 864e5 + 30, x.kg]);
   const lo = Math.min(...pts.map((p) => p[1])), hi = Math.max(...pts.map((p) => p[1])) || 1;
-  $('weight').innerHTML = !w ? '' : `Gewicht ${kg(w.kg)} kg${w.date === day ? '' : ` <small>(${+w.date.slice(8)}-${+w.date.slice(5, 7)})</small>`}`
+  $('weight').innerHTML = !w ? (day > iso(new Date()) ? '' : '+ gewicht') : `Gewicht ${kg(w.kg)} kg${w.date === day ? '' : ` <small>(${+w.date.slice(8)}-${+w.date.slice(5, 7)})</small>`}`
     + (weights.length > 1 ? ` · 30 d ${w.kg - w0.kg > 0 ? '+' : ''}${kg(w.kg - w0.kg)} kg` : '')
     + (weights.length > 1 ? `<svg viewBox="0 0 30 10" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${pts.map(([x, y]) => `${x},${9 - (y - lo) / (hi - lo || 1) * 8}`).join(' ')}"/></svg>` : '');
   $('list').innerHTML = items.length ? '' : est ? `<li class="empty">Schatting: gemiddelde van ${est.days} ingevulde dag(en) in de 14 dagen ervoor. Voer iets in om te vervangen.</li>` : '<li class="empty">Nog niets ingevoerd</li>';
@@ -275,6 +275,12 @@ $('garminBtn').onclick = () => {
     api('/api/weight').then(({ days: ws }) => { $('weights').innerHTML = ws.length ? ws.map((x) => `<li><div>${x.date}<small>ontvangen ${new Date(x.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${x.kg.toFixed(1).replace('.', ',')} kg</span></li>`).join('') : '<li class="empty">Nog niets ontvangen</li>'; });
     $('burns').innerHTML = days.length ? days.map((b) => `<li><div>${b.date}<small>actief ${b.active ?? '–'} · rust ${b.resting ?? '–'} · ontvangen ${new Date(b.updated_at).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}</small></div><span class="kcal">${b.kcal}</span></li>`).join('') : '<li class="empty">Nog niets ontvangen</li>';
   });
+};
+// Handmatig wegen: tik op de gewichtregel, geldt voor de geopende dag (overschrijft die dag).
+$('weight').onclick = async () => {
+  const v = prompt(`Gewicht op ${day === iso(new Date()) ? 'vandaag' : day} (kg):`);
+  if (!v) return;
+  try { await api('/api/weight', { method: 'POST', body: JSON.stringify({ date: day, kg: v }) }); load(); } catch (e) { alert(e.message); }
 };
 $('closeGarmin').onclick = () => $('garmin').classList.add('hidden');
 $('syncKey').onclick = async () => {

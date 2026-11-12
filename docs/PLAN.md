@@ -59,6 +59,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Menu-knop "iOS & Garmin": uitleg koppelen, sleutel kopiëren, ontvangen verbruik (30 d) en wissen. Opdracht kan niet vanuit de app geëxporteerd worden (iOS vereist ondertekende .shortcut); later evt. iCloud-link van werkende opdracht met importvraag voor de sleutel.
 - 2026-11-12 Fase 5: tabel `weight` (user_id, date, kg); `POST /api/weight` (headers `date`, `kg`) via dezelfde iOS-opdracht: Find Health Samples Weight 30 d, oudste eerst → laatste weging van de dag wint. Geen Group by Day nodig.
 - 2026-11-12 Trend: dagkaart toont laatste weging t/m geopende dag, verschil en lijntje over 30 dagen. Uitleg + ontvangen gewicht in ⋯ → iOS & Garmin.
+- 2026-11-12 Gewicht ook handmatig: tik op de gewichtregel (of '+ gewicht') → invoer voor de geopende dag, zelfde /api/weight.
 
 ## Open vragen
 - Geen.
