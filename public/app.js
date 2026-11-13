@@ -509,8 +509,8 @@ async function analyze(payload) {
   if (sending) return;
   sending = true; bubble('dots'); $('send').disabled = true;
   try {
-    const { items, queued, quota } = await api('/api/analyze', { method: 'POST', body: JSON.stringify(payload) });
-    if (queued) bubble(quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : 'Gemini is druk. Bewaard: zodra het verwerkt is vraag ik je om goed te keuren.');
+    const { items, queued, quota, why } = await api('/api/analyze', { method: 'POST', body: JSON.stringify(payload) });
+    if (queued) bubble(quota === 'day' ? 'AI-daglimiet bereikt: bewaard, verwerkt na de reset.' : quota === 'minute' ? 'Even wachten (AI-minuutlimiet): bewaard, volgt vanzelf.' : `Gemini en Groq lukten niet${why ? ` (${why})` : ''}. Bewaard: zodra het verwerkt is vraag ik je om goed te keuren.`);
     else if (!items.length) bubble('Geen eten herkend. Omschrijf het iets anders?', [], 'err');
     else {
       const d = items[0].date, k = items.reduce((t, i) => t + i.kcal, 0), n = items.length === 1 ? '1 item' : `${items.length} items`;

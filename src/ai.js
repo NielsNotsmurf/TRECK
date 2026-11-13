@@ -66,7 +66,7 @@ export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, u
 async function ask(parts, cfg, env, userId, fast) {
   try { return await gemini(parts, cfg, env, userId, fast); } catch (e) {
     if (!fast || e.retry === false || !env.GROQ_API_KEY || parts.some((p) => p.inline_data?.mime_type?.startsWith('audio'))) throw e;
-    try { return await groq(parts, cfg, env, userId); } catch (g) { console.log('groq', g.message); throw e; }
+    try { return await groq(parts, cfg, env, userId); } catch (g) { console.log('groq', g.message); e.why = `${e.message.slice(0, 60)} · ${g.message.slice(0, 80)}`; throw e; }
   }
 }
 
@@ -74,11 +74,19 @@ async function groq(parts, cfg, env, userId) {
   const content = parts.map((p) => p.text ? { type: 'text', text: p.text } : { type: 'image_url', image_url: { url: `data:${p.inline_data.mime_type};base64,${p.inline_data.data}` } });
   const json = !!cfg.responseSchema;
   if (json) content.push({ type: 'text', text: `Antwoord alleen met JSON volgens dit schema: ${JSON.stringify(cfg.responseSchema)}` });
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', signal: AbortSignal.timeout(10000),
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
-    body: JSON.stringify({ model: env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content }], ...(json && { response_format: { type: 'json_object' } }) }),
-  });
+  // Llama 4 Scout is op 17-07-2026 uitgezet. Modellen verdwijnen vaker: probeer de lijst af, een onbekend model (400/404) kost niets.
+  const img = parts.some((p) => p.inline_data);
+  const models = [env.GROQ_MODEL, ...(img ? ['qwen/qwen3.8-27b'] : ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'])].filter(Boolean);
+  let res;
+  for (const model of models) {
+    res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', signal: AbortSignal.timeout(10000),
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${env.GROQ_API_KEY}` },
+      body: JSON.stringify({ model, messages: [{ role: 'user', content }], ...(json && { response_format: { type: 'json_object' } }) }),
+    });
+    if (res.ok || ![400, 404].includes(res.status)) break;
+    console.log('groq', model, res.status, (await res.clone().text()).slice(0, 200));
+  }
   if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
   if (userId) { const u = await usage(env, userId); await saveUsage(env, { d: u.d, n: u.n + 1, full: u.full }, `ai:${userId}`); }
   return (await res.json()).choices?.[0]?.message?.content || '';

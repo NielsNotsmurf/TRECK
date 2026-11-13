@@ -49,7 +49,7 @@ export async function onRequestPost({ request, env, user }) {
     // Drukte of storing: bewaren en later opnieuw proberen. `now` blijft het moment van invoer.
     await env.DB.prepare('INSERT INTO queue (user_id, payload, attempts, created_at) VALUES (?, ?, 0, ?)')
       .bind(user.id, JSON.stringify(input), new Date().toISOString()).run();
-    return Response.json({ queued: true, quota: e.quota });
+    return Response.json({ queued: true, quota: e.quota, why: e.why || e.message?.slice(0, 120) });
   }
 }
 
