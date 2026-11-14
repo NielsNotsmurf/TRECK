@@ -37,6 +37,7 @@ export async function ensureSchema(env) {
   const { results: pu } = await env.DB.prepare('PRAGMA table_info(push)').all();
   if (!pu.some((c) => c.name === 'weigh')) await env.DB.batch(['weigh', 'msg'].map((c) => env.DB.prepare(`ALTER TABLE push ADD COLUMN ${c} TEXT`)));
   await env.DB.prepare('DELETE FROM burn WHERE active > 15000 OR resting > 15000').run(); // foute invoer uit test opdracht
+  await env.DB.prepare('UPDATE burn SET active = ROUND(active / 1000.0), kcal = ROUND(active / 1000.0) + COALESCE(resting, 0) WHERE active > 6000').run(); // "11.823" als duizendtal gelezen
   schemaOk = true;
 }
 

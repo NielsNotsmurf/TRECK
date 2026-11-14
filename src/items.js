@@ -111,8 +111,9 @@ export async function burn({ request, env, user }) {
     const parts = String(v).match(/\d[\d.,]*/g) || [];
     if (parts.length !== 1) return NaN; // lijst of rommel (bijv. hele Health Samples i.p.v. Repeat Item)
     let t = parts[0];
-    t = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;
-    return Math.round(parseFloat(t)) || 0;
+    // "1.545" kan duizendtal (Garmin) of decimaal zijn (iPhone: "11.823" kcal). Duizendtal alleen als dat een logische dagwaarde (≤ 6000) geeft.
+    const th = t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t;
+    return Math.round(parseFloat(th) > 6000 && !t.includes(',') ? parseFloat(t) : parseFloat(th)) || 0;
   };
   let active = num(b.active), resting = num(b.resting);
   if (b.kcal != null && active == null && resting == null) { active = num(b.kcal); resting = 0; }
