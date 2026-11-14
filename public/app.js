@@ -101,18 +101,15 @@ async function load() {
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
   $('ring').classList.toggle('over', over && f > 1.05);
   $('ring').classList.toggle('ok', f >= 0.9 && (f <= 1.05 || G === 'gain'));
-  const mv = d.move, mt = T?.active, mf = mv != null && mt ? mv / mt : null;
-  $('balArc').style.strokeDashoffset = 395.8 * (1 - (mf == null ? 0 : Math.max(Math.min(mf, 1), 0.03)));
-  $('balArc').classList.toggle('good', mf >= 1);
-  $('ring').classList.toggle('nomove', mf == null);
-  $('legend').innerHTML = `<span class="eat"><i></i>Gegeten <b>${nl(t.kcal)}</b>/${nl(goal)}</span>` + (mf == null ? '' : `<span class="mov"><i></i>Bewogen <b>${nl(mv)}</b>/${nl(mt)}</span>`);
+  // 14 nov (2): één ring, alleen voeding; beweging heeft in een voedingsapp geen zinnig doel.
   const src = { burn: 'je normale verbruik', bmr: 'je lengte, leeftijd en gewicht', std: 'een standaardverbruik' }[T?.from];
   const td = T?.tdee || goal, dd = goal - td;
-  $('why').textContent = `Doel ${nl(goal)} = verbruik ${nl(td)}${dd ? ` ${dd > 0 ? '+' : '−'} ${nl(Math.abs(dd))}` : ''} (${paceTxt(G, P)})${T?.adaptive ? '' : T?.from === 'burn' ? ' · voorlopig' : ` · voorlopig, uit ${src}`}`;
-  $('motto').textContent = est ? 'Geschat op je gemiddelde' : !t.kcal ? (day === today() ? 'Klaar voor een goede dag?' : 'Niets gelogd op deze dag')
-    : f < 0.9 ? 'Goed bezig' : f <= 1.05 ? 'Precies op koers' : (G === 'gain' ? 'Doel gehaald' : 'Boven je doel, morgen weer een dag');
-  $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']]
-    .map(([k, m]) => `<div${T ? ` style="--w:${Math.min(100, t[m] / T[m] * 100 || 0)}%"` : ''}><b>${est ? '≈ ' : ''}${t[m]}${T ? `<small>/${T[m]}</small>` : ''} g</b><span>${k}${T && T[m] > t[m] ? `<em>nog ${T[m] - t[m]}</em>` : ''}</span></div>`).join('');
+  $('why').textContent = `Doel ${nl(goal)} · verbruik ${nl(td)}${dd ? ` ${dd > 0 ? '+' : '−'} ${nl(Math.abs(dd))}` : ''} ${T?.adaptive || T?.from === 'burn' ? '' : ` · schatting uit ${src}`}`;
+  $('motto').textContent = '';
+  // Balk = voortgang; schaal tot 125% van het doel met een streepje op het doel, zodat overschot zichtbaar voorbij het streepje loopt.
+  $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']].map(([k, m]) => {
+    const r = T?.[m] ? t[m] / T[m] : 0, cls = r > 1.1 && m !== 'protein_g' ? ' class="over"' : r >= 0.9 ? ' class="ok"' : '';
+    return `<div${cls} style="--w:${Math.min(100, r / 1.25 * 100)}%"><b>${est ? '≈ ' : ''}${t[m]} g</b><span>${k}</span></div>`; }).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
   const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
   const at = burnAt ? new Date(burnAt) : null;

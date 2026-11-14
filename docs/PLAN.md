@@ -139,7 +139,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Fase 11g (12-11): Vandaag-tab in het midden van de onderbalk, alleen icoon (oranje rondje).
 - Fase 11f (12-11): live AI-verzoek geeft na 12 s op → wachtrij (cron 60 s timeout). Uit de wachtrij verwerkte items krijgen `items.review = 1`, tellen nergens mee en verschijnen bij openen van de app in "Goedkeuren" (dagdeel, aanpassen, wissen) → `POST /api/review`. Tijdstip = moment van invoer.
 - 14-11 Ringen: één doel-bron op de server (`target()`): adaptief, anders voorlopig = normaal verbruik (gem. 14 hele dagen; bij Alleen iPhone + BMR als rust) of BMR×1,4 of 2000, ± tempo. Nooit het onvolledige verbruik van vandaag. Coach en Vandaag gebruiken hetzelfde getal.
-- 14-11 Ringen = prestatie (Apple Fitness): binnen = gegeten/dagdoel met in het midden "kcal mag nog", buiten = bewogen (verbruik − rust) t.o.v. normale dag; legenda met twee stippen, één regel waar het doel vandaan komt.
+- 14-11 Vandaag: één ring (gegeten/dagdoel, midden "kcal mag nog"); geen beweegring (geen zinnig doel in voedingsapp). Macro's = alleen grammen + balk tot 125% met streepje op het doel; koolh./vet erboven rood.
 
 ## Open vragen
 - Geen.
