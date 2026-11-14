@@ -95,7 +95,9 @@ async function load() {
   // 14 nov: één bron voor het doel (server: normaal verbruik ± tempo, ook voorlopig). Ringen tonen prestatie, zoals Apple Fitness:
   // binnen = gegeten van je dagdoel (midden: wat je nog mag eten), buiten = bewogen t.o.v. je normale dag.
   const T = target?.kcal ? target : null, G = target?.goal || 'lose', P = d.me?.pace || (G === 'gain' ? 0.25 : 0.5);
-  const goal = T?.kcal || 2000, left = goal - t.kcal, f = t.kcal / goal, over = left < 0 && G !== 'gain';
+  // Dynamisch: verbruik van de dag = normaal verbruik + (bewogen − normaal bewogen). Lopende dag: alleen extra beweging telt (ochtend is nog niet 'minder').
+  const xtra = d.move != null && T?.active ? (day === today() ? Math.max(0, d.move - T.active) : d.move - T.active) : 0;
+  const td = T?.tdee ? T.tdee + xtra : null, goal = T?.kcal ? Math.max(1200, T.kcal + xtra) : 2000, left = goal - t.kcal, f = t.kcal / goal, over = left < 0 && G !== 'gain';
   $('total').innerHTML = `${est ? '≈ ' : ''}${nl(Math.abs(left))}<small>${est ? 'geschat ' : ''}${left >= 0 ? (G === 'gain' ? 'kcal nog te eten' : 'kcal mag nog') : over ? 'kcal te veel' : 'kcal extra'}</small>`;
   $('total').classList.toggle('over', over);
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
@@ -103,8 +105,8 @@ async function load() {
   $('ring').classList.toggle('ok', f >= 0.9 && (f <= 1.05 || G === 'gain'));
   // 14 nov (2): één ring, alleen voeding; beweging heeft in een voedingsapp geen zinnig doel.
   const src = { burn: 'je normale verbruik', bmr: 'je lengte, leeftijd en gewicht', std: 'een standaardverbruik' }[T?.from];
-  const td = T?.tdee || goal, dd = goal - td;
-  $('why').textContent = `Doel ${nl(goal)} · verbruik ${nl(td)}${dd ? ` ${dd > 0 ? '+' : '−'} ${nl(Math.abs(dd))}` : ''} ${T?.adaptive || T?.from === 'burn' ? '' : ` · schatting uit ${src}`}`;
+  const dd = goal - (td || goal);
+  $('why').textContent = `Doel ${nl(goal)} · verbruik ${nl(td || goal)}${dd ? ` ${dd > 0 ? '+' : '−'} ${nl(Math.abs(dd))}` : ''} ${T?.adaptive || T?.from === 'burn' ? '' : ` · schatting uit ${src}`}`;
   $('motto').textContent = '';
   // Balk = voortgang; schaal tot 125% van het doel met een streepje op het doel, zodat overschot zichtbaar voorbij het streepje loopt.
   $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']].map(([k, m]) => {

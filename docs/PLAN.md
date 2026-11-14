@@ -138,7 +138,8 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Fase 11h (12-11): voedselemoji vervangen door 17 eigen lijn-iconen (zelfde stijl als de app), gekleurd tegeltje per categorie; onbekend = bestek.
 - Fase 11g (12-11): Vandaag-tab in het midden van de onderbalk, alleen icoon (oranje rondje).
 - Fase 11f (12-11): live AI-verzoek geeft na 12 s op → wachtrij (cron 60 s timeout). Uit de wachtrij verwerkte items krijgen `items.review = 1`, tellen nergens mee en verschijnen bij openen van de app in "Goedkeuren" (dagdeel, aanpassen, wissen) → `POST /api/review`. Tijdstip = moment van invoer.
-- 14-11 Ringen: één doel-bron op de server (`target()`): adaptief, anders voorlopig = normaal verbruik (gem. 14 hele dagen; bij Alleen iPhone + BMR als rust) of BMR×1,4 of 2000, ± tempo. Nooit het onvolledige verbruik van vandaag. Coach en Vandaag gebruiken hetzelfde getal.
+- 14-11 Ringen: één doel-bron op de server (`target()`): adaptief, anders voorlopig = normaal verbruik (gem. 14 hele dagen; bij Alleen iPhone + BMR als rust) of BMR×1,4 of 2000, ± tempo. Basis voor Vandaag én Coach.
+- 14-11 Dagdoel Vandaag dynamisch: verbruik dag = normaal verbruik + (bewogen − normaal bewogen); lopende dag telt alleen extra beweging (nooit onder normaal), voorbije dag ook minder; geen verbruiksdata = normaal verbruik.
 - 14-11 Vandaag: één ring (gegeten/dagdoel, midden "kcal mag nog"); geen beweegring (geen zinnig doel in voedingsapp). Macro's = alleen grammen + balk tot 125% met streepje op het doel; koolh./vet erboven rood.
 
 ## Open vragen
@@ -159,4 +160,3 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Foto's bewaren per invoer en tonen bij het item (nu worden foto's niet bewaard).
 - Meldingen: ander kanaal (mail/Telegram), tekst met dagtotaal (payload-encryptie), alleen melden als er nog niets is ingevoerd.
 - Betaaldienst (Stripe/Mollie) voor abonnementen i.p.v. handmatige goedkeuring
-- Extra beweging boven je normale dag als extra eetruimte (Lose It-stijl).
