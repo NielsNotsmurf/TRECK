@@ -1,3 +1,4 @@
+import { fixDay } from './analyze.js';
 import { activiteit } from './ai.js';
 import { favs } from './memory.js';
 import { prog, PROT } from './program.js';
@@ -171,10 +172,10 @@ export async function onRequestPut({ request, env, user }) {
 
 // Activiteiten (zonder horloge): POST {text, now} -> AI schat kcal -> opgeslagen per dag. Telt als AI-verzoek.
 export async function actAdd({ request, env, user }) {
-  const { text, now } = await request.json();
+  const { text, now, day } = await request.json();
   const w = await env.DB.prepare('SELECT kg FROM weight WHERE user_id = ? ORDER BY date DESC LIMIT 1').bind(user.id).first();
   let acts;
-  try { acts = await activiteit({ text, now, kg: w?.kg }, env, user.id); } catch (e) { return Response.json({ error: e.limit ? e.message : 'AI is even druk, probeer zo opnieuw.' }, { status: e.limit ? 429 : 502 }); }
+  try { acts = fixDay(await activiteit({ text, now, kg: w?.kg }, env, user.id), text, day); } catch (e) { return Response.json({ error: e.limit ? e.message : 'AI is even druk, probeer zo opnieuw.' }, { status: e.limit ? 429 : 502 }); }
   const at = new Date().toISOString(), stmt = env.DB.prepare('INSERT INTO acts (user_id, date, name, minutes, kcal, created_at) VALUES (?, ?, ?, ?, ?, ?)');
   const ok = acts.filter((a) => parseDate(a.date) && a.kcal > 0);
   if (ok.length) await env.DB.batch(ok.map((a) => stmt.bind(user.id, parseDate(a.date), a.name, Math.round(a.minutes) || null, Math.round(a.kcal), at)));

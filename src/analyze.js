@@ -12,13 +12,16 @@ const WORDS = {
 const NUM = { een: 1, twee: 2, drie: 3, vier: 4, vijf: 5, zes: 6, dubbel: 2, dubbele: 2, half: 0.5, halve: 0.5, anderhalf: 1.5, anderhalve: 1.5 };
 export const counts = (t) => [...String(t || '').toLowerCase().matchAll(/\b(\d+(?:[.,]\d+)?|een|twee|drie|vier|vijf|zes)\s*(?:x|×|keer|maal)\b(?:\s+(?:een\s+|de\s+)?([a-zà-ÿ'-]+))?|\b(dubbele?|halve?|anderhalve?)\s+([a-zà-ÿ'-]+)/g)]
   .map((m) => `${m[1] ? (NUM[m[1]] || +m[1].replace(',', '.')) : NUM[m[3]]}× ${m[2] || m[4] || ''}`.trim());
+// Geen dagwoord in de tekst → altijd de geopende dag (zonder AI). Wel een dagwoord → AI rekent vanaf de echte datum van vandaag.
+const DAYWORD = /gister|eergister|morgen|vandaag|vanochtend|vanmiddag|vanavond|vannacht|maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag|weekend|vorige week|dagen geleden|\d{1,2}[-/.]\d{1,2}|\d{1,2} (jan|feb|maa|mrt|apr|mei|jun|jul|aug|sep|okt|nov|dec)/;
+export const fixDay = (list, text, day) => (day && text && !DAYWORD.test(String(text).toLowerCase()) ? list.map((x) => ({ ...x, date: day })) : list);
 export const mealWord = (t) => { const hit = Object.keys(WORDS).filter((k) => WORDS[k].test(String(t || '').toLowerCase())); return hit.length === 1 ? hit[0] : null; };
 
 // Analyseer één invoer en sla de items op. Gooit door bij een AI-fout.
 // review = 1: later uit de wachtrij verwerkt, telt pas mee na goedkeuring in de app. at = moment van invoer.
 async function verwerk(input, userId, env, review = null, at = null) {
   const n = counts(input.text);
-  const items = await analyseer({ ...input, text: n.length ? `${input.text}\n(Genoemde aantallen: ${n.join(', ')}. Zet amount en kcal voor het totaal.)` : input.text, fast: !review, memory: await context(env, userId) }, env, userId);
+  const items = fixDay(await analyseer({ ...input, text: n.length ? `${input.text}\n(Genoemde aantallen: ${n.join(', ')}. Zet amount en kcal voor het totaal.)` : input.text, fast: !review, memory: await context(env, userId) }, env, userId), input.text, input.day);
   const note = input.text || (input.audio ? '[spraak]' : '') || (input.image ? '[foto]' : '');
   const word = mealWord(input.text);
   const inputId = crypto.randomUUID();

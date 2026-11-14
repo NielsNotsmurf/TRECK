@@ -89,6 +89,7 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-12 Fase 13: AI-advies alleen op knop (niet automatisch, spaart limiet), max 1× per NL-dag, bewaard in k=advice:<id>; input = 14 dagtotalen + 20 meest gegeten producten + doel.
 - 2026-11-14 Verbruik "11.823" (iPhone, decimaal) werd 11823: punt+3 cijfers is alleen duizendtal als het ≤ 6000 kcal geeft; foute rijen > 6000 actief eenmalig gecorrigeerd.
 - 2026-11-14 Activiteiten (tik op Verbruik): tekst/spraak → AI schat extra kcal bovenop rust ((MET−1)×kg×u), tabel acts; telt via view burn_total alleen mee bij bron "Alleen iPhone" (keuze in Verbruik koppelen, nu ook op server users.src) en op dagen met Apple Health-verbruik, anders dubbel met horloge.
+- 2026-11-14 Dag van invoer (eten + activiteit): geen dagwoord in de tekst → altijd de geopende dag (server, zonder AI); wel een dagwoord → AI rekent relatief vanaf de echte datum van vandaag.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).

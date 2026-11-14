@@ -532,7 +532,7 @@ $('send').onclick = () => {
   const n = new Date();
   let now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
   if (day !== iso(n)) now += `. Geopende dag in de app: ${DAGEN[new Date(day + 'T12:00').getDay()]} ${day}`; // invoer hoort standaard bij de geopende dag
-  const payload = { text, image, now };
+  const payload = { text, image, now, day };
   $('text').value = ''; $('text').style.height = ''; clearPhoto(); renderQuick();
   analyze(payload);
 };
@@ -563,7 +563,7 @@ $('micBtn').onclick = async () => {
       t.oninput({ target: t }); renderQuick(); canSend(); t.focus();
     } catch (e) {
       const n = new Date();
-      bubble(`Uitschrijven lukt nu niet (${e.message}).`, [['Opnieuw', () => $('micBtn').click()], ['Versturen', () => { const text = $('text').value.trim(); $('text').value = ''; canSend(); analyze({ text, audio, now: `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}` }); }]], 'err');
+      bubble(`Uitschrijven lukt nu niet (${e.message}).`, [['Opnieuw', () => $('micBtn').click()], ['Versturen', () => { const text = $('text').value.trim(); $('text').value = ''; canSend(); analyze({ text, audio, day, now: `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}${day !== iso(n) ? `. Geopende dag in de app: ${day}` : ''}` }); }]], 'err');
     }
     $('micBtn').disabled = false;
   };
@@ -773,7 +773,7 @@ $('spBtn').onclick = async () => {
   if (day !== iso(n)) now += `. Geopende dag in de app: ${DAGEN[new Date(day + 'T12:00').getDay()]} ${day}`;
   $('spBtn').disabled = true; $('spStatus').textContent = 'AI schat je verbruik…';
   try {
-    const { acts } = await api('/api/acts', { method: 'POST', body: JSON.stringify({ text, now }) });
+    const { acts } = await api('/api/acts', { method: 'POST', body: JSON.stringify({ text, now, day }) });
     $('spText').value = ''; $('spStatus').textContent = acts.length ? acts.map((a) => `${a.name}: ${Math.round(a.kcal)} kcal${a.date !== day ? ` (${dayName(a.date)})` : ''}`).join(' · ') : 'Geen activiteit herkend.';
     await load(); renderSport();
   } catch (e) { $('spStatus').textContent = e.message; }

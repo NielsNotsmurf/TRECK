@@ -5,7 +5,7 @@ const MODEL = 'gemini-3.1-flash-lite';
 
 const PROMPT = (now) => `Je bent een voedingsassistent. Nu is het: ${now}.
 Bepaal uit de invoer (tekst, foto en/of spraak) elk gegeten product of gerecht.
-Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; "gisteravond", "zaterdag" e.d. omrekenen vanaf nu; standaard de geopende dag als die genoemd is, anders vandaag),
+Geef per item: date (JJJJ-MM-DD, de dag waarop het gegeten is; standaard de geopende dag als die genoemd is, anders vandaag; alleen bij een expliciete dag ("gisteravond", "zaterdag", een datum) die dag, relatieve woorden omrekenen vanaf de echte datum van nu, niet vanaf de geopende dag),
 product (kort, Nederlands), portion (bijv. "1 bord, ca. 350 g"), kcal, protein_g, carbs_g, fat_g (getallen, schatting),
 amount + unit: de hoeveelheid waar kcal bij hoort. unit "g" voor vast eten dat je weegt (pasta, kaas, vlees), "ml" voor dranken/vloeibaar, "stuk" voor telbare dingen (boterham, ei, appel, koek).
 meal: alleen als de invoer het dagdeel noemt of duidelijk maakt (ontbijt, lunch, avondeten/diner, tussendoor/snack/extraatje, of bijv. "gisteravond" = diner): ontbijt|lunch|diner|snack; anders weglaten.
@@ -64,7 +64,7 @@ const ACT = { type: 'OBJECT', properties: { acts: { type: 'ARRAY', items: { type
   date: { type: 'STRING' }, name: { type: 'STRING' }, minutes: { type: 'NUMBER' }, kcal: { type: 'NUMBER' } }, required: ['date', 'name', 'minutes', 'kcal'] } } }, required: ['acts'] };
 export async function activiteit({ text, now, kg }, env, userId) {
   const p = `Je schat verbrande kcal van sport en activiteiten. Nu is het: ${now}. Gewicht: ${kg ? `${kg} kg` : 'onbekend, neem 75 kg'}.
-Geef per genoemde activiteit: date (JJJJ-MM-DD; "gisteren", "zaterdag" e.d. omrekenen; standaard de geopende dag als die genoemd is, anders vandaag), name (kort, Nederlands, bijv. "Fietsen, rustig"),
+Geef per genoemde activiteit: date (JJJJ-MM-DD; standaard de geopende dag als die genoemd is, anders vandaag; alleen bij een expliciete dag ("gisteren", "zaterdag", een datum) die dag, relatief vanaf de echte datum van nu), name (kort, Nederlands, bijv. "Fietsen, rustig"),
 minutes (duur; niet genoemd = gebruikelijke duur), kcal = extra verbruik bovenop rust: (MET − 1) × kg × uren, afgerond. Geen activiteit herkend? Lege lijst.
 Invoer: ${text}`;
   const out = await ask([{ text: p }], { responseMimeType: 'application/json', responseSchema: ACT }, env, userId, true);
