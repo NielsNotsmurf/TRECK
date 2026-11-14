@@ -526,7 +526,42 @@ async function analyze(payload) {
   }
   sending = false; canSend();
 }
+// Opgeslagen gerecht (bijna) letterlijk genoemd? Zonder AI: woordvenster vergelijken met de naam, spaties en accenten genegeerd, kleine tikfouten toegestaan.
+const flat = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+function lev(a, b) {
+  let p = [...Array(b.length + 1).keys()];
+  for (let i = 1; i <= a.length; i++) { const c = [i]; for (let j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] !== b[j - 1])); p = c; }
+  return p[b.length];
+}
+function findMeal(text) {
+  const words = [...text.matchAll(/\S+/g)];
+  let best = null;
+  for (const m of meals) {
+    const name = flat(m.name), n = m.name.split(/\s+/).length; if (name.length < 4) continue;
+    const tol = Math.floor(name.length / 6);
+    for (let i = 0; i < words.length; i++) for (let k = Math.max(1, n - 1); k <= n + 1 && i + k <= words.length; k++) {
+      const d = lev(flat(words.slice(i, i + k).map((w) => w[0]).join('')), name);
+      if (d <= tol && (!best || d < best.d)) best = { m, d, from: words[i].index, to: words[i + k - 1].index + words[i + k - 1][0].length };
+    }
+  }
+  return best;
+}
+const FILLER = /\b(en|ik|had|heb|hebben|gegeten|gedronken|mijn|met|ook|als|een|de|het|daarna|toen|nog|vandaag|gisteren|ontbijt|lunch|diner|avondeten|snack|tussendoor|vanochtend|vanmiddag|vanavond|plus|erbij)\b/g;
 $('send').onclick = () => {
+  const text = $('text').value.trim();
+  if (!text && !image) return;
+  const hit = text && findMeal(text);
+  if (hit) return actions(`Heb je "${hit.m.name}" gegeten?`, [
+    { label: 'Ja, voeg toe', fn: async () => {
+      const rest = (text.slice(0, hit.from) + ' ' + text.slice(hit.to)).replace(/\s+/g, ' ').trim();
+      await quickAdd(hit.m.name, hit.m.items, hit.m.id);
+      if (rest.toLowerCase().replace(FILLER, '').replace(/[^a-zà-ÿ0-9]/g, '').length > 2 || image) { $('text').value = rest; send(); }
+    } },
+    { label: 'Nee, laat AI het analyseren', fn: send },
+  ]);
+  send();
+};
+function send() {
   const text = $('text').value.trim();
   if (!text && !image) return;
   const n = new Date();
@@ -535,7 +570,7 @@ $('send').onclick = () => {
   const payload = { text, image, now, day };
   $('text').value = ''; $('text').style.height = ''; clearPhoto(); renderQuick();
   analyze(payload);
-};
+}
 $('thumbX').onclick = clearPhoto;
 
 // Spraak: opnemen (MediaRecorder werkt in iOS-beginscherm-apps, Web Speech niet betrouwbaar) → uitschrijven → tekst in het veld om na te lezen.
