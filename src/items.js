@@ -21,7 +21,7 @@ export async function onRequestGet({ request, env, user }) {
   }
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
   const fav = await favs(env, user.id);
-  const b = await env.DB.prepare('SELECT kcal, updated_at FROM burn_total WHERE user_id = ? AND date = ?').bind(user.id, date).first();
+  const b = await env.DB.prepare('SELECT kcal, updated_at, (SELECT resting FROM burn WHERE user_id = burn_total.user_id AND date = burn_total.date) resting FROM burn_total WHERE user_id = ? AND date = ?').bind(user.id, date).first();
   // Geen verbruik op een voorbije dag: schatting = gemiddelde van de 14 dagen ervoor (niet opgeslagen). Vandaag/toekomst: geen schatting.
   const be = b || date >= nlToday() ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn_total WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
   // Week (vanaf maandag) en maand (vanaf de 1e) t/m de geopende dag: alleen dagen met echte inname én echt verbruik.
@@ -35,7 +35,7 @@ export async function onRequestGet({ request, env, user }) {
   const linked = !!(await env.DB.prepare('SELECT 1 FROM burn WHERE user_id = ? LIMIT 1').bind(user.id).first());
   const { results: acts } = await env.DB.prepare('SELECT id, name, minutes, kcal FROM acts WHERE user_id = ? AND date = ? ORDER BY id').bind(user.id, date).all();
   return Response.json({ me, review, linked, acts, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
-    burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
+    burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null, move: b ? b.kcal - (b.resting || 0) : null,
     week: await period(monday), month: await period(date.slice(0, 8) + '01'),
     target: await target(env, user.id, monday),
     weights: (await env.DB.prepare(`SELECT date, kg FROM weight WHERE user_id = ? AND date BETWEEN date(?, '-30 days') AND ? ORDER BY date`).bind(user.id, date, date).all()).results });
@@ -52,15 +52,27 @@ export async function target(env, userId, monday) {
   const span = ws.length > 1 ? (new Date(ws.at(-1).date) - new Date(ws[0].date)) / 864e5 : 0;
   const u = await env.DB.prepare('SELECT goal, pace FROM users WHERE id = ?').bind(userId).first();
   const pr = await prog(env, userId), pf = PROT[pr.focus || u?.goal] || 1.8, fs = DIET[pr.diet] || 0.25; // eiwit per kg volgt de focus, vet-aandeel de voedingsstijl
-  if (days.length < 14 || span < 7) return { days: days.length, weighs: ws.length, goal: u?.goal || 'lose' };
+  const [p0, txt] = PACE[u?.goal] || PACE.lose, pace = p0 && (u?.pace ? Math.sign(p0) * u.pace : p0), delta = Math.round(pace * 1100);
+  // Normaal verbruik (14 hele dagen vóór vandaag); bij "Alleen iPhone" ontbreekt rustenergie: dan BMR erbij. Ook gemiddeld actief voor de beweegring.
+  const lw = ws.at(-1)?.kg || (await env.DB.prepare('SELECT kg FROM weight WHERE user_id = ? ORDER BY date DESC LIMIT 1').bind(userId).first())?.kg;
+  const bmr = lw && pr.h && pr.age && pr.sex ? Math.round(10 * lw + 6.25 * pr.h - 5 * pr.age + (pr.sex === 'm' ? 5 : -161)) : null; // Mifflin-St Jeor
+  const nb = await env.DB.prepare(`SELECT ROUND(AVG(t.kcal + CASE WHEN b.resting IS NULL AND u.src = 'iphone' THEN ? ELSE 0 END)) k, ROUND(AVG(t.kcal - COALESCE(b.resting, 0))) act, COUNT(*) n
+    FROM burn_total t JOIN burn b ON b.user_id = t.user_id AND b.date = t.date JOIN users u ON u.id = t.user_id WHERE t.user_id = ? AND t.date < ? AND t.date >= date(?, '-14 days')`)
+    .bind(bmr || 1600, userId, nlToday(), nlToday()).first();
+  const active = nb?.act || null;
+  if (days.length < 14 || span < 7) {
+    // Voorlopig doel, zelfde formule als het adaptieve: normaal verbruik ± tempo. Nooit het (onvolledige) verbruik van vandaag.
+    const tdee = nb?.n >= 3 ? Math.round(nb.k / 10) * 10 : bmr ? Math.round(bmr * 1.4 / 10) * 10 : 2000, kcal = Math.max(1200, tdee + delta), kg = lw || 75;
+    const protein_g = Math.round(kg * pf), fat_g = Math.round(kcal * fs / 9), carbs_g = Math.max(0, Math.round((kcal - protein_g * 4 - fat_g * 9) / 4));
+    return { kcal, tdee, active, protein_g, carbs_g, fat_g, from: nb?.n >= 3 ? 'burn' : bmr ? 'bmr' : 'std', days: days.length, weighs: ws.length, goal: u?.goal || 'lose' };
+  }
   const xs = ws.map((w) => (new Date(w.date) - new Date(ws[0].date)) / 864e5), mx = xs.reduce((a, b) => a + b) / xs.length, my = ws.reduce((a, w) => a + w.kg, 0) / ws.length;
   const slope = xs.reduce((a, x, i) => a + (x - mx) * (ws[i].kg - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0); // kg per dag
   const intake = days.reduce((a, d) => a + d.k, 0) / days.length, tdee = Math.round((intake - slope * 7700) / 10) * 10;
-  const [p0, txt] = PACE[u?.goal] || PACE.lose, pace = p0 && (u?.pace ? Math.sign(p0) * u.pace : p0);
-  const delta = Math.round(pace * 1100), why = txt.replace('%s', String(Math.abs(pace)).replace('.', ',')), kcal = Math.max(1200, tdee + delta), kg = ws.at(-1).kg;
+  const why = txt.replace('%s', String(Math.abs(pace)).replace('.', ',')), kcal = Math.max(1200, tdee + delta), kg = ws.at(-1).kg;
   const protein_g = Math.round(kg * pf), fat_g = Math.round(kcal * fs / 9), carbs_g = Math.max(0, Math.round((kcal - protein_g * 4 - fat_g * 9) / 4));
   const wk = (slope * 7).toFixed(2).replace('.', ',').replace(/^(\d)/, '+$1');
-  return { kcal, tdee, protein_g, carbs_g, fat_g, goal: u?.goal || 'lose', days: days.length, weighs: ws.length,
+  return { kcal, tdee, active, adaptive: true, protein_g, carbs_g, fat_g, goal: u?.goal || 'lose', days: days.length, weighs: ws.length,
     why: `Je verbruik is ≈ ${tdee} kcal: ${days.length} dagen gem. ${Math.round(intake)} kcal gegeten bij ${wk} kg/week. Doel ${kcal} kcal ${why}, eiwit ${String(pf).replace('.', ',')} g per kg.` };
 }
 
