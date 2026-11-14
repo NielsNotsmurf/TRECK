@@ -1,5 +1,9 @@
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
+// 14 nov: statuskleur als glijdende schaal (rood → oranje → amber → limoen → groen) i.p.v. hard rood/groen; mild: ruim 'oké'.
+// r = gedaan / doel. Onder doel = op weg (warm → groen vanaf 75%); erboven pas na 110% langzaam naar rood (135%). up = meer is prima (eiwit, aankomen).
+const hueOf = (r, up) => r < 0.75 ? 35 + r / 0.75 * 100 : r <= 1.1 || up ? 135 : Math.max(0, 135 - (r - 1.1) / 0.25 * 135);
+const tone = (r, up, l = 46) => `hsl(${Math.round(hueOf(r, up))} 72% ${l}%)`;
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const DAGEN = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
 const today = () => iso(new Date());
@@ -99,10 +103,9 @@ async function load() {
   const xtra = d.move != null && T?.active ? (day === today() ? Math.max(0, d.move - T.active) : d.move - T.active) : 0;
   const td = T?.tdee ? T.tdee + xtra : null, goal = T?.kcal ? Math.max(1200, T.kcal + xtra) : 2000, left = goal - t.kcal, f = t.kcal / goal, over = left < 0 && G !== 'gain';
   $('total').innerHTML = `${est ? '≈ ' : ''}${nl(Math.abs(left))}<small>${est ? 'geschat ' : ''}${left >= 0 ? (G === 'gain' ? 'kcal nog te eten' : 'kcal mag nog') : over ? 'kcal te veel' : 'kcal extra'}</small>`;
-  $('total').classList.toggle('over', over);
+  $('total').style.color = over && f > 1.1 ? tone(f) : '';
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
-  $('ring').classList.toggle('over', over && f > 1.05);
-  $('ring').classList.toggle('ok', f >= 0.9 && (f <= 1.05 || G === 'gain'));
+  document.querySelectorAll('#grad stop').forEach((x, i) => x.setAttribute('stop-color', tone(i ? f : f * 0.7, G === 'gain', i ? 46 : 58)));
   // 14 nov (2): één ring, alleen voeding; beweging heeft in een voedingsapp geen zinnig doel.
   const src = { burn: 'je normale verbruik', bmr: 'je lengte, leeftijd en gewicht', std: 'een standaardverbruik' }[T?.from];
   const dd = goal - (td || goal);
@@ -110,10 +113,10 @@ async function load() {
   $('motto').textContent = '';
   // Balk = voortgang; schaal tot 125% van het doel met een streepje op het doel, zodat overschot zichtbaar voorbij het streepje loopt.
   $('macros').innerHTML = [['Eiwit', 'protein_g'], ['Koolh.', 'carbs_g'], ['Vet', 'fat_g']].map(([k, m]) => {
-    const r = T?.[m] ? t[m] / T[m] : 0, cls = r > 1.1 && m !== 'protein_g' ? ' class="over"' : r >= 0.9 ? ' class="ok"' : '';
-    return `<div${cls} style="--w:${Math.min(100, r / 1.25 * 100)}%"><b>${est ? '≈ ' : ''}${t[m]} g</b><span>${k}</span></div>`; }).join('');
+    const r = T?.[m] ? t[m] / T[m] : 0, up = m === 'protein_g';
+    return `<div style="--m:linear-gradient(to right, ${tone(r * 0.6, up, 60)}, ${tone(r, up)});--w:${Math.min(100, r / 1.25 * 100)}%"><b>${est ? '≈ ' : ''}${t[m]} g</b><span>${k}</span></div>`; }).join('');
   // Fase 4: verbruik (Garmin via Apple Health) per dag; vandaag = tot nu toe.
-  const bal = (x, approx = '') => `<b class="${x >= 0 ? 'neg' : 'pos'}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
+  const bal = (x, approx = '') => `<b style="color:${tone(x >= 0 ? 1 : 1 + -x / 1500)}">${approx}${x >= 0 ? 'tekort' : 'overschot'} ${Math.abs(x)}</b>`;
   const at = burnAt ? new Date(burnAt) : null;
   const upto = !at ? '' : iso(at) === day ? ` t/m ${pad(at.getHours())}:${pad(at.getMinutes())}` : iso(at) > day ? ' hele dag' : '';
   const sum = (p, label) => p.days ? `${label} ${bal(p.diff)}` : '';

@@ -141,6 +141,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - 14-11 Ringen: één doel-bron op de server (`target()`): adaptief, anders voorlopig = normaal verbruik (gem. 14 hele dagen; bij Alleen iPhone + BMR als rust) of BMR×1,4 of 2000, ± tempo. Basis voor Vandaag én Coach.
 - 14-11 Dagdoel Vandaag dynamisch: verbruik dag = normaal verbruik + (bewogen − normaal bewogen); lopende dag telt alleen extra beweging (nooit onder normaal), voorbije dag ook minder; geen verbruiksdata = normaal verbruik.
 - 14-11 Vandaag: één ring (gegeten/dagdoel, midden "kcal mag nog"); geen beweegring (geen zinnig doel in voedingsapp). Macro's = alleen grammen + balk tot 125% met streepje op het doel; koolh./vet erboven rood.
+- 14-11 Statuskleuren: één glijdende schaal `tone()` in app.js (rood→oranje→amber→limoen→groen, met gradiënt); mild: groen vanaf 75% van doel, pas rood rond 135%. Gebruikt in ring, macrobalken, verbruik-tekort en Coach-weekbalken.
 
 ## Open vragen
 - Geen.

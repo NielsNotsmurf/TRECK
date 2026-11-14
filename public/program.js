@@ -101,8 +101,8 @@ function budget(c) {
   const past = wk.slice(0, dow).reduce((a, x) => a + (x.k ?? c.goalK), 0), perDay = Math.round((B - past) / (7 - dow));
   const used = past + c.today.kcal, left = B - used, todayLeft = perDay - c.today.kcal, max = Math.max(c.goalK * 1.4, ...wk.map((x) => x.k || 0), perDay);
   const h = (k) => `${Math.min(100, k / max * 100)}%`;
-  const bars = wk.map((x) => x.i < dow ? `<div><i class="${x.k == null ? 'est' : x.k > c.goalK * 1.1 ? 'over' : ''}" style="height:${h(x.k ?? c.goalK)}"></i></div>`
-    : x.i === dow ? `<div><i class="${c.today.kcal > perDay ? 'over' : ''}" style="height:${h(Math.max(c.today.kcal, 1))}"></i></div>` : `<div><i class="plan" style="height:${h(perDay)}"></i></div>`).join('');
+  const bars = wk.map((x) => x.i < dow ? `<div><i class="${x.k == null ? 'est' : ''}" style="height:${h(x.k ?? c.goalK)}${x.k == null ? '' : `;background:linear-gradient(${tone(x.k / c.goalK)}, ${tone(x.k / c.goalK * 0.8, false, 60)})`}"></i></div>`
+    : x.i === dow ? `<div><i style="height:${h(Math.max(c.today.kcal, 1))};background:linear-gradient(${tone(c.today.kcal / perDay)}, ${tone(c.today.kcal / perDay * 0.8, false, 60)})"></i></div>` : `<div><i class="plan" style="height:${h(perDay)}"></i></div>`).join('');
   const diff = perDay - c.goalK, note = Math.abs(diff) < 25 ? 'Je ligt op koers: je dagdoel blijft gelijk.'
     : diff > 0 ? `Je hebt ${nl(diff * (7 - dow))} kcal gespaard: ${nl(diff)} kcal per dag extra ruimte tot zondag.`
     : `Eerder deze week ${nl(-diff * (7 - dow))} kcal te veel: ${nl(-diff)} kcal per dag minder tot zondag.${perDay < 1200 ? ' Ga niet onder 1200 kcal; neem het verlies liever mee.' : ''}`;
