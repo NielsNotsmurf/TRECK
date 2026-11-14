@@ -4,6 +4,9 @@ const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart
 const clean = (s) => String(s || '').trim().toLowerCase();
 const now = () => new Date().toISOString();
 const ADMIN = 'admin';
+// Eigenaar (Google-account) is ook beheerder; alleen de SHA-256 staat in de code, niet het e-mailadres.
+const OWNER = 'e54729a695479ca545669cdab1f925363d9eeea2dcddcbe760d356d07ecc1f56';
+const isAdmin = async (name) => name === ADMIN || hex(await crypto.subtle.digest('SHA-256', enc.encode(name))) === OWNER;
 
 // Database bijwerken bij de eerste aanvraag; geen handwerk in de console nodig.
 let schemaOk = false;
@@ -31,6 +34,7 @@ export async function ensureSchema(env) {
   if (!us.some((c) => c.name === 'plan')) await env.DB.prepare('ALTER TABLE users ADD COLUMN plan TEXT').run();
   if (!us.some((c) => c.name === 'goal')) await env.DB.prepare('ALTER TABLE users ADD COLUMN goal TEXT').run();
   if (!us.some((c) => c.name === 'pace')) await env.DB.prepare('ALTER TABLE users ADD COLUMN pace REAL').run();
+  if (!us.some((c) => c.name === 'req')) await env.DB.prepare('ALTER TABLE users ADD COLUMN req TEXT').run(); // aangevraagd abonnement
   if (!us.some((c) => c.name === 'src')) await env.DB.prepare('ALTER TABLE users ADD COLUMN src TEXT').run();
   // Verbruik incl. ingevoerde activiteiten, alleen bij bron "Alleen iPhone" (horloge meet sport al: anders dubbel).
   await env.DB.prepare(`CREATE VIEW IF NOT EXISTS burn_total AS SELECT b.user_id, b.date, b.updated_at, b.kcal + CASE WHEN u.src = 'iphone'
@@ -56,7 +60,7 @@ async function hash(pw, saltHex) {
 async function session(env, u) {
   const token = hex(crypto.getRandomValues(new Uint8Array(32)));
   await env.DB.prepare('INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)').bind(token, u.id, now()).run();
-  return Response.json({ token, admin: u.name === ADMIN });
+  return Response.json({ token, admin: await isAdmin(u.name) });
 }
 
 // Bestaande gebruiker inloggen, of nieuwe aanmaken die op goedkeuring wacht.
@@ -118,14 +122,10 @@ export async function currentUser(request, env) {
   const token = (request.headers.get('authorization') || '').trim().replace(/^bearer\s*/i, '').trim(); // iOS-opdracht: hoofdletters/spaties maken niet uit
   if (!token) return null;
   const u = await env.DB.prepare('SELECT u.id, u.name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ? AND u.approved = 1').bind(token).first();
-  return u && { ...u, admin: u.name === ADMIN };
+  return u && { ...u, admin: await isAdmin(u.name) };
 }
 
-// Admin: GET -> wachtende gebruikers; POST {id, ok} -> goedkeuren of weigeren
-export async function pending({ env }) {
-  const { results } = await env.DB.prepare('SELECT id, name, created_at FROM users WHERE approved = 0 ORDER BY id').all();
-  return Response.json({ users: results });
-}
+// Admin: POST {id, ok} -> nieuwe gebruiker goedkeuren of weigeren (lijst: ai.adminUsers)
 export async function decide({ request, env }) {
   const { id, ok } = await request.json();
   await env.DB.prepare(ok ? 'UPDATE users SET approved = 1 WHERE id = ?' : 'DELETE FROM users WHERE id = ? AND approved = 0').bind(id).run();

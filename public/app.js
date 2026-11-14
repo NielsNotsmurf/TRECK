@@ -8,7 +8,6 @@ const dayName = (d) => { const x = new Date(d + 'T12:00'); return d === today() 
 const kg = (x) => x.toFixed(1).replace('.', ',');
 
 let token = localStorage.getItem('treck-token');
-let admin = localStorage.getItem('treck-admin') === '1';
 
 let day = today();
 const svg = (i, c = '') => `<svg class="ic ${c}"><use href="#i-${i}"/></svg>`;
@@ -640,7 +639,7 @@ $('registerBtn').onclick = () => busy($('registerBtn'), async () => {
 $('login').onsubmit = (e) => { e.preventDefault(); busy($('loginBtn'), async () => loggedIn(await api('/api/login', { method: 'POST', body: creds() }))); };
 function loggedIn(r) {
   if (r.pending) { loginMsg('Aangevraagd. Je kunt inloggen zodra je bent goedgekeurd.'); return; }
-  localStorage.setItem('treck-token', r.token); localStorage.setItem('treck-admin', r.admin ? '1' : '0');
+  localStorage.setItem('treck-token', r.token);
   location.reload();
 }
 
@@ -662,24 +661,8 @@ async function setupGoogle() {
   document.head.append(s);
 }
 
-// Beheerder: wachtende gebruikers goedkeuren of weigeren
-async function loadPending() {
-  const { users } = await api('/api/pending');
-  $('pending').innerHTML = '';
-  for (const u of users) {
-    const li = document.createElement('li');
-    li.innerHTML = '<div></div><button>Goedkeuren</button><button aria-label="Weigeren">×</button>';
-    li.querySelector('div').textContent = `Nieuw: ${u.name}`;
-    const [ok, no] = li.querySelectorAll('button');
-    const decide = (v) => async () => { await api('/api/decide', { method: 'POST', body: JSON.stringify({ id: u.id, ok: v }) }); loadPending(); };
-    ok.onclick = decide(true); no.onclick = decide(false);
-    $('pending').append(li);
-  }
-  $('pendingCard').classList.toggle('hidden', !users.length);
-}
-
-// Meer: profielkop, status rechts in de rijen, subschermen met terugknop.
-const bye = () => { localStorage.removeItem('treck-token'); localStorage.removeItem('treck-admin'); location.reload(); };
+// Instellingen: profielkop met abonnement, status rechts in de rijen, subschermen met terugknop.
+const bye = () => { localStorage.removeItem('treck-token'); location.reload(); };
 const GOALS = { lose: 'Afvallen', keep: 'Op gewicht blijven', gain: 'Aankomen' };
 const paceTxt = (g, p) => (g === 'keep' ? 'Op gewicht' : `${g === 'gain' ? '+' : '−'}${String(p).replace('.', ',')} kg/week`);
 const sub = (id) => { hide('sheet'); show(id); };
@@ -688,7 +671,6 @@ function openMenu() {
   const me = data.me || {}, g = data.target?.goal || 'lose', w = data.weights?.at(-1);
   $('profAv').textContent = (me.name || '?')[0]; $('profName').textContent = me.name || '';
   $('profSub').textContent = [GOALS[g], w && `${kg(w.kg)} kg`].filter(Boolean).join(' · ');
-  $('goalSub').textContent = paceTxt(g, me.pace || (g === 'gain' ? 0.25 : 0.5));
   $('mealsSub').textContent = meals.length || '';
   show('sheet');
   api('/api/ai').then(showAi).catch(() => {});
@@ -708,38 +690,53 @@ function renderMeals() {
     $('mealList').append(li);
   }
 }
-// Fase 8: AI-limietbalk (oranje vanaf 80%) + nep-abonnement (gratis 10/dag, abonnement 100/dag).
-function showAi({ used, limit, plan, full, reset }) {
+// Abonnementen: limiet per plan; groter = aanvraag die de beheerder goedkeurt.
+const PLAN = { free: ['Gratis', 10, 'Om te proberen'], plus: ['Plus', 40, 'Elke maaltijd loggen, met foto en spraak'], pro: ['Pro', 100, 'Onbeperkt gevoel, voor zware gebruikers'] };
+let ai = {};
+function showAi(r) {
+  ai = r; const { used, limit, plan, req, full, reset } = r;
   $('aiBar').classList.toggle('full', full); $('aiBar').classList.toggle('warn', !full && used >= limit * 0.8);
   $('aiTxt').textContent = full ? `vol · ${used}/${limit}` : `${used}/${limit}`;
-  $('aiSub').textContent = `Verzoeken vandaag · reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
   $('aiFill').style.width = `${full ? 100 : Math.min(100, (used / limit) * 100)}%`;
-  $('planSub').textContent = plan === 'pro' ? 'Actief (proef): 100 per dag · tik om op te zeggen' : 'Gratis: 10 per dag · tik voor 100 per dag';
+  $('planName').textContent = `TRECK ${PLAN[plan][0]}`;
+  $('planSub').textContent = req ? `${PLAN[req][0]} aangevraagd · wacht op goedkeuring` : `${limit} AI-verzoeken per dag · reset ${new Date(reset).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`;
+  $('profPlan').textContent = PLAN[plan][0]; $('profPlan').className = `planpill ${plan}`;
+  $('adminWrap').classList.toggle('hidden', !r.admin);
+  [$('adminTodo'), $('todoDot')].forEach((b) => { b.textContent = b.id === 'adminTodo' ? r.todo : ''; b.classList.toggle('hidden', !r.todo); });
+  if (!$('planSheet').classList.contains('hidden')) renderPlans();
 }
-$('planBtn').onclick = () => api('/api/plan', { method: 'POST' }).then(showAi);
+function renderPlans() {
+  $('plans').innerHTML = Object.entries(PLAN).map(([k, [n, lim, t]]) => {
+    const on = ai.plan === k, asked = ai.req === k, down = lim < PLAN[ai.plan][1];
+    const btn = on ? '<button class="ghost" disabled>Huidig abonnement</button>' : asked ? `<button class="ghost" data-p="${ai.plan}">Aangevraagd · intrekken</button>`
+      : `<button data-p="${k}">${down ? 'Overstappen' : ai.admin ? 'Activeren' : 'Aanvragen'}</button>`;
+    return `<div class="plan${on ? ' on' : ''}"><div class="top"><b>${n}</b><span class="planpill ${k}">${lim}/dag</span></div><p>${lim} AI-verzoeken per dag · ${t}</p>${btn}</div>`;
+  }).join('');
+  $('plans').querySelectorAll('[data-p]').forEach((b) => { b.onclick = () => busy(b, async () => { showAi(await api('/api/plan', { method: 'POST', body: JSON.stringify({ plan: b.dataset.p }) })); renderPlans(); }); });
+}
+$('planBtn').onclick = () => { renderPlans(); sub('planSheet'); };
+
+// Adminmenu: nieuwe gebruikers goedkeuren, abonnement-aanvragen afhandelen, plan per gebruiker zetten.
+async function loadAdmin(r) {
+  const { users } = r || await api('/api/admin');
+  const row = (u, right) => `<li data-id="${u.id}"><div>${esc(u.name)}<small>${u.approved ? `${PLAN[u.plan][0]} · ${u.used} AI vandaag` : `Aangemeld ${new Date(u.created_at).toLocaleDateString('nl-NL')}`}</small></div>${right}</li>`;
+  const neu = users.filter((u) => !u.approved), req = users.filter((u) => u.approved && u.req), all = users.filter((u) => u.approved);
+  const sec = (t, l, f) => (l.length ? `<h2>${t}</h2><ul class="group">${l.map(f).join('')}</ul>` : '');
+  $('adminBody').innerHTML = (neu.length + req.length ? '' : '<h2>Te doen</h2><div class="group"><div class="cell"><div>Niets te doen<small>Geen nieuwe gebruikers of aanvragen</small></div></div></div>')
+    + sec('Nieuwe gebruikers', neu, (u) => row(u, '<button data-ok="1">Goedkeuren</button><button data-ok="0" aria-label="Weigeren">×</button>'))
+    + sec('Abonnement-aanvragen', req, (u) => row(u, `<button data-plan="${u.req}">${PLAN[u.req][0]} geven</button><button data-plan="" aria-label="Weigeren">×</button>`))
+    + sec(`Gebruikers (${all.length})`, all, (u) => row(u, `<select data-set>${Object.keys(PLAN).map((k) => `<option value="${k}"${k === u.plan ? ' selected' : ''}>${PLAN[k][0]}</option>`).join('')}</select>`));
+  const id = (e) => +e.closest('li').dataset.id;
+  const setP = async (e, plan) => loadAdmin(await api('/api/admin/plan', { method: 'POST', body: JSON.stringify({ id: id(e), plan }) }));
+  $('adminBody').querySelectorAll('[data-ok]').forEach((b) => { b.onclick = async () => { await api('/api/decide', { method: 'POST', body: JSON.stringify({ id: id(b), ok: b.dataset.ok === '1' }) }); loadAdmin(); }; });
+  $('adminBody').querySelectorAll('[data-plan]').forEach((b) => { b.onclick = () => setP(b, b.dataset.plan || null); });
+  $('adminBody').querySelectorAll('[data-set]').forEach((s_) => { s_.onchange = () => setP(s_, s_.value); });
+  api('/api/ai').then(showAi).catch(() => {});
+}
+$('adminBtn').onclick = () => { loadAdmin(); sub('adminSheet'); };
 $('closeSheet').onclick = () => hide('sheet');
 // Sheets sluiten door op de achtergrond te tikken (editor vraagt eerst bij wijzigingen).
 document.querySelectorAll('.sheet').forEach((s) => { s.onclick = (e) => { if (e.target === s) (s.id === 'editor' ? edCancel() : s.classList.add('hidden')); }; });
-
-// Doel: segmentkeuze + tempo, live dagdoel en voortgang naar een persoonlijk doel.
-let gSel = 'lose';
-function goalView() {
-  document.querySelectorAll('#goalSeg button').forEach((b) => b.classList.toggle('on', b.dataset.g === gSel));
-  const p = +$('pace').value, T = data.target || {};
-  $('paceWrap').classList.toggle('hidden', gSel === 'keep'); $('paceVal').textContent = paceTxt(gSel, p);
-  $('goalKcal').textContent = T.tdee ? `≈ ${Math.max(1200, Math.round(T.tdee + (gSel === 'keep' ? 0 : (gSel === 'gain' ? 1 : -1) * p * 1100)))} kcal` : '–';
-  $('goalHint').textContent = T.tdee ? `per dag · je verbruik is ≈ ${T.tdee} kcal` : 'Je dagdoel volgt zodra beide balken hieronder vol zijn';
-  const d = Math.min(14, T.days || 0), w = Math.min(2, T.weighs || 0);
-  $('gDays').textContent = `${T.days || 0}/14`; $('gDaysBar').style.width = `${d / 14 * 100}%`;
-  $('gW').textContent = `${T.weighs || 0}/2`; $('gWBar').style.width = `${w / 2 * 100}%`;
-}
-$('goalBtn').onclick = () => { gSel = data.target?.goal || 'lose'; $('pace').value = data.me?.pace || (gSel === 'gain' ? 0.25 : 0.5); goalView(); sub('goalSheet'); };
-$('goalSeg').onclick = (e) => { const g = e.target.dataset.g; if (!g) return; gSel = g; if (g !== 'keep') $('pace').value = g === 'gain' ? 0.25 : 0.5; goalView(); };
-$('pace').oninput = goalView;
-$('goalSave').onclick = async () => {
-  await api('/api/goal', { method: 'POST', body: JSON.stringify({ goal: gSel, pace: +$('pace').value }) });
-  hide('goalSheet'); toast('Doel bewaard'); load();
-};
 
 // Handmatig wegen: geldt voor de geopende dag (overschrijft die dag).
 $('weight').onclick = () => ask({ title: 'Gewicht', msg: `Op ${dayName(day).toLowerCase()}, in kg`, type: 'text', mode: 'decimal', placeholder: '82,4',
@@ -906,7 +903,7 @@ $('logout').onclick = async () => { await api('/api/logout', { method: 'POST' })
 $('delAccount').onclick = () => actions('Je account en al je gegevens worden definitief verwijderd.', [{ label: 'Verwijder account', danger: true,
   fn: async () => { await api('/api/account', { method: 'DELETE' }); bye(); } }]);
 
-if (token) { ['app', 'tabs', 'compose'].forEach(show); load(); loadQuick(); if (admin) loadPending(); }
+if (token) { ['app', 'tabs', 'compose'].forEach(show); load(); loadQuick(); api('/api/ai').then(showAi).catch(() => {}); }
 else { show('login'); setupGoogle(); }
 
 // Uitnodiging voor het beginscherm: iOS (Safari) uitleg, elders de installeerknop. Wegtikken = nooit meer.

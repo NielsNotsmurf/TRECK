@@ -35,7 +35,7 @@ export async function save({ request, env, user }) {
   if (p.focus || (p.tkg && w)) {
     const diff = p.tkg && w ? p.tkg - w.kg : 0, weeks = p.tdate ? (Date.parse(p.tdate) - Date.parse(nlToday())) / 6048e5 : 0;
     const goal = p.focus === 'keep' || (p.tkg && w && Math.abs(diff) < 0.5) ? 'keep' : diff < 0 ? 'lose' : diff > 0 ? 'gain' : p.focus === 'lose' ? 'lose' : 'gain';
-    const pace = weeks > 0 && diff ? Math.min(1, Math.max(0.1, Math.round(Math.abs(diff) / weeks * 20) / 20)) : null;
+    const pace = weeks > 0 && diff ? Math.min(1, Math.max(0.1, Math.round(Math.abs(diff) / weeks * 20) / 20)) : num(b.pace, 0.1, 1) || null; // zonder streefdatum: gekozen tempo
     await env.DB.prepare('UPDATE users SET goal = ?, pace = COALESCE(?, pace) WHERE id = ?').bind(goal, pace, user.id).run();
   }
   return Response.json({ p });

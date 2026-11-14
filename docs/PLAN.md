@@ -94,6 +94,9 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-14 Programma → Coach (naar MacroFactor/Lose It): weekbudget ma–zo = dagdoel×7, over/onder eten verdeelt zich over resterende dagen, niet-gelogde dagen tellen als op doel, waarschuwing onder 1200.
 - 2026-11-14 Coach: week-check-in = gem. gewicht en inname deze vs vorige week + uitleg adaptief doel; voedingsstijl (gebalanceerd/koolhydraatarm/vetarm/keto) = vet 25/40/20/70% van kcal, koolh = rest, in prog.diet.
 - 2026-11-14 Fix: dubbele `esc` (app.js + program.js) brak sinds 9ccf425 de hele tab; die in program.js weg.
+- 14-11: Abonnementen Gratis 10 / Plus 40 / Pro 100 AI per dag; omhoog = aanvraag die de beheerder goedkeurt, omlaag direct. Geen betaaldienst (vergt account, sleutels, webhooks): later-lijst.
+- 14-11: Beheerder = "admin" of het Google-account van de eigenaar (alleen SHA-256 van het e-mailadres in de code). Adminmenu in Instellingen: nieuwe gebruikers, aanvragen, plan per gebruiker.
+- 14-11: Meer heet Instellingen (nieuwe profielkop + abonnementskaart); Doel weg uit Instellingen, tempo zit nu in Coach → Mijn doel.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -153,3 +156,4 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Gewicht automatisch uit Apple Health via de iOS-opdracht (endpoint bestaat al).
 - Foto's bewaren per invoer en tonen bij het item (nu worden foto's niet bewaard).
 - Meldingen: ander kanaal (mail/Telegram), tekst met dagtotaal (payload-encryptie), alleen melden als er nog niets is ingevoerd.
+- Betaaldienst (Stripe/Mollie) voor abonnementen i.p.v. handmatige goedkeuring

@@ -106,7 +106,7 @@ async function groq(parts, cfg, env, userId) {
 
 async function gemini(parts, generationConfig, env, userId, fast) {
   const mine = userId ? await usage(env, userId) : null;
-  if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Neem een abonnement via Meer, of wacht tot de reset.`), { retry: false, limit: true });
+  if (mine && mine.n >= mine.limit) throw Object.assign(new Error(`AI-daglimiet bereikt (${mine.n}/${mine.limit}). Kies een groter abonnement via Instellingen, of wacht tot de reset.`), { retry: false, limit: true });
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL || MODEL}:generateContent`,
     {
@@ -133,7 +133,8 @@ async function gemini(parts, generationConfig, env, userId, fast) {
 }
 
 // Fase 8: eigen teller per Pacific-dag (Gemini reset om middernacht Pacific). Totaal (k=ai, voor de echte 429) + per gebruiker (k=ai:<id>).
-// Per gebruiker: gratis 10/dag, abonnement (nu nep) 100/dag.
+// Per gebruiker een limiet per abonnement; betaald abonnement = aanvraag die de beheerder goedkeurt.
+export const PLANS = { free: 10, plus: 40, pro: 100 };
 const pacific = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
 export async function usage(env, userId) {
   const k = userId ? `ai:${userId}` : 'ai';
@@ -141,26 +142,44 @@ export async function usage(env, userId) {
   const u = row ? JSON.parse(row.v) : {};
   const out = u.d === pacific() ? u : { d: pacific(), n: 0, full: false };
   if (userId) {
-    const p = await env.DB.prepare('SELECT plan FROM users WHERE id = ?').bind(userId).first();
-    out.plan = p?.plan || 'free'; out.limit = out.plan === 'pro' ? 100 : 10;
+    const p = await env.DB.prepare('SELECT plan, req FROM users WHERE id = ?').bind(userId).first();
+    out.plan = PLANS[p?.plan] ? p.plan : 'free'; out.limit = PLANS[out.plan]; out.req = p?.req || null;
   }
   return out;
 }
 const saveUsage = (env, u, k) => env.DB.prepare('INSERT OR REPLACE INTO config (k, v) VALUES (?, ?)').bind(k, JSON.stringify(u)).run();
 
-// GET /api/ai -> {used, limit, plan, full, reset}; reset = volgende middernacht Pacific (ISO).
+// GET /api/ai -> {used, limit, plan, req, full, reset, admin, todo}; reset = volgende middernacht Pacific (ISO). todo = wachtende users + aanvragen.
 export async function status({ env, user }) {
   const u = await usage(env, user.id);
   const g = await usage(env);
   const now = new Date();
   const la = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
   const reset = new Date(now.getTime() + (new Date(la).setHours(24, 0, 0, 0) - la.getTime()));
-  return Response.json({ used: u.n, limit: u.limit, plan: u.plan, full: u.n >= u.limit || !!g.full, reset: reset.toISOString() });
+  const todo = user.admin ? (await env.DB.prepare('SELECT COUNT(*) n FROM users WHERE approved = 0 OR req IS NOT NULL').first()).n : 0;
+  return Response.json({ used: u.n, limit: u.limit, plan: u.plan, req: u.req, full: u.n >= u.limit || !!g.full, reset: reset.toISOString(), admin: user.admin, todo });
 }
 
-// POST /api/plan: abonnement aan/uit (nep, geen betaling).
-export async function plan({ env, user }) {
+// POST /api/plan {plan}: omlaag of aanvraag intrekken gaat direct; omhoog wordt een aanvraag (beheerder zelf: direct).
+export async function plan({ request, env, user }) {
+  const { plan: want } = await request.json().catch(() => ({}));
+  if (!PLANS[want]) return Response.json({ error: 'Onbekend abonnement' }, { status: 400 });
   const u = await usage(env, user.id);
-  await env.DB.prepare('UPDATE users SET plan = ? WHERE id = ?').bind(u.plan === 'pro' ? 'free' : 'pro', user.id).run();
+  const now = want === 'free' || want === u.plan || PLANS[want] < PLANS[u.plan] || user.admin;
+  await env.DB.prepare(now ? 'UPDATE users SET plan = ?, req = NULL WHERE id = ?' : 'UPDATE users SET req = ? WHERE id = ?').bind(want, user.id).run();
   return status({ env, user });
+}
+
+// Beheer: GET alle gebruikers met abonnement, aanvraag en AI-gebruik vandaag; POST {id, plan} zet abonnement (plan leeg = aanvraag weigeren).
+export async function adminUsers({ env }) {
+  const { results } = await env.DB.prepare(`SELECT u.id, u.name, u.approved, u.plan, u.req, u.created_at, c.v ai FROM users u
+    LEFT JOIN config c ON c.k = 'ai:' || u.id ORDER BY u.approved, u.req IS NULL, u.name`).all();
+  const d = pacific();
+  return Response.json({ plans: PLANS, users: results.map(({ ai, ...u }) => { const a = ai ? JSON.parse(ai) : {}; return { ...u, plan: PLANS[u.plan] ? u.plan : 'free', used: a.d === d ? a.n : 0 }; }) });
+}
+export async function setPlan({ request, env }) {
+  const { id, plan: p } = await request.json();
+  const q = PLANS[p] ? env.DB.prepare('UPDATE users SET plan = ?, req = NULL WHERE id = ?').bind(p, id) : env.DB.prepare('UPDATE users SET req = NULL WHERE id = ?').bind(id);
+  await q.run();
+  return adminUsers({ env });
 }

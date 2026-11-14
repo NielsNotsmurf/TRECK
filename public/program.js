@@ -181,12 +181,12 @@ function adviceView(a) {
 // Mijn doel
 function openGoal() {
   const p = prg.p;
-  $('pFocus').value = p.focus || prg.s.me?.goal || 'lose'; $('pDiet').value = p.diet || 'balans'; $('pTkg').value = p.tkg ? kg(p.tkg) : ''; $('pTdate').value = p.tdate || '';
+  $('pFocus').value = p.focus || prg.s.me?.goal || 'lose'; $('pDiet').value = p.diet || 'balans'; $('pTkg').value = p.tkg ? kg(p.tkg) : ''; $('pTdate').value = p.tdate || ''; $('pPace').value = String(prg.s.me?.pace || 0.5);
   $('pH').value = p.h || ''; $('pAge').value = p.age || ''; $('pSex').value = p.sex || '';
   show('progSheet');
 }
 $('progSave').onclick = async () => {
-  const body = { focus: $('pFocus').value, diet: $('pDiet').value, tkg: $('pTkg').value, tdate: $('pTdate').value, h: $('pH').value, age: $('pAge').value, sex: $('pSex').value };
+  const body = { focus: $('pFocus').value, diet: $('pDiet').value, tkg: $('pTkg').value, tdate: $('pTdate').value, pace: $('pPace').value, h: $('pH').value, age: $('pAge').value, sex: $('pSex').value };
   await api('/api/program', { method: 'POST', body: JSON.stringify(body) });
   hide('progSheet'); toast('Doel bewaard'); loadProgram();
 };

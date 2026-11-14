@@ -54,7 +54,8 @@ export default {
     if (route === 'POST /api/synckey') return auth.syncKey(ctx);
     if (route === 'POST /api/logout') return auth.logout(ctx);
     if (route === 'DELETE /api/account') return auth.deleteAccount(ctx);
-    if (user.admin && route === 'GET /api/pending') return auth.pending(ctx);
+    if (user.admin && route === 'GET /api/admin') return ai.adminUsers(ctx);
+    if (user.admin && route === 'POST /api/admin/plan') return ai.setPlan(ctx);
     if (user.admin && route === 'POST /api/decide') return auth.decide(ctx);
     return new Response('Niet gevonden', { status: 404 });
   },

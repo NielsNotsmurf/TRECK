@@ -81,7 +81,7 @@
 
   /* Items */
   ul { list-style:none; padding:0; margin:0; }
-  #list li, #pending li, #meals li, #burns li, #spList li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; }
+  #list li, #adminBody li, #meals li, #burns li, #spList li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; }
   #list { --inset:66px; }
   #list li { flex-wrap:wrap; }
   .food { width:40px; height:40px; border-radius:10px; background:var(--fill); display:grid; place-items:center; font-size:23px; flex:none; }
@@ -229,7 +229,7 @@
   #login .fields input { width:100%; padding:13px 16px; border:0; background:var(--card); font-size:17px; outline:none; }
   .btn { display:block; width:100%; margin-top:12px; padding:14px; border:0; border-radius:12px; font-weight:600; font-size:17px; background:var(--fill); color:var(--accent); }
   .btn.primary { background:var(--accent); color:#fff; }
-  #pending li button { border:0; background:none; color:var(--accent); font-weight:600; font-size:15px; padding:0 4px; }
+  #adminBody li button { border:0; background:none; color:var(--accent); font-weight:600; font-size:15px; padding:0 4px; }
 
   /* Fase 11: UX-polish (HIG) */
   #mini { position:fixed; top:0; left:0; right:0; z-index:8; height:calc(env(safe-area-inset-top) + 44px); padding-top:env(safe-area-inset-top); text-align:center; line-height:44px;
@@ -288,9 +288,18 @@
   .big span { color:var(--muted); font-size:15px; }
   .sheet input[type=range] { padding:0; accent-color:var(--accent); background:none; }
   .aibar.warn i { background:var(--warn); }
-  #prof { display:flex; align-items:center; gap:14px; padding:14px 16px; }
-  #prof .av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#ff9f0a,#f2542d); color:#fff; font-size:24px; font-weight:600; display:grid; place-items:center; flex:none; text-transform:uppercase; }
-  #prof b { font-size:20px; } #prof small { display:block; color:var(--muted); font-size:15px; margin-top:2px; }
+  #prof { display:flex; flex-direction:column; align-items:center; text-align:center; padding:6px 16px 4px; }
+  #prof .av { width:76px; height:76px; font-size:32px !important; margin-bottom:10px; box-shadow:0 6px 18px rgba(242,84,45,.35); border-radius:50%; background:linear-gradient(135deg,#ff9f0a,#f2542d); color:#fff; font-size:24px; font-weight:600; display:grid; place-items:center; flex:none; text-transform:uppercase; }
+  #prof b { font-size:22px; } #prof small { display:block; color:var(--muted); font-size:15px; margin-top:2px; }
+  .planpill { margin-top:8px; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; background:var(--fill); color:var(--muted); }
+  .planpill.plus { background:#007aff; color:#fff; } .planpill.pro { background:linear-gradient(135deg,#ff9f0a,#f2542d); color:#fff; }
+  .badge { min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--red); color:#fff; font-size:13px; font-weight:600; font-style:normal; display:inline-grid; place-items:center; }
+  #menuBtn { position:relative; } #todoDot { position:absolute; top:2px; left:calc(50% + 6px); min-width:9px; height:9px; padding:0; }
+  .plan { background:var(--card); border-radius:14px; padding:16px; margin:12px 0; border:2px solid transparent; }
+  .plan.on { border-color:var(--accent); } .plan .top { display:flex; justify-content:space-between; align-items:center; } .plan .top b { font-size:20px; }
+  .plan p { margin:6px 0 12px; color:var(--muted); font-size:15px; } .plan button { width:100%; border:0; border-radius:10px; padding:11px; font-size:16px; font-weight:600; background:var(--accent); color:#fff; }
+  .plan button.ghost { background:var(--fill); color:var(--fg); } .plan button:disabled { opacity:.5; }
+  #adminBody li select { border:0; background:var(--fill); border-radius:8px; padding:5px 8px; font-size:15px; color:var(--fg); }
   .dot { width:10px; height:10px; border-radius:50%; background:var(--red); flex:none; } .dot.ok { background:var(--ok); }
   .chk { width:24px; height:24px; border-radius:50%; border:1.5px solid var(--line); background:none; flex:none; display:grid; place-items:center; padding:0; color:#fff; }
   .chk .ic { width:15px; height:15px; stroke-width:3; opacity:0; } .done .chk { background:var(--ok); border-color:var(--ok); } .done .chk .ic { opacity:1; }
@@ -430,7 +439,6 @@
   </div>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
   <div id="list"></div>
-  <section class="hidden" id="pendingCard"><h2>Wacht op goedkeuring</h2><ul class="group" id="pending"></ul></section>
   </div>
 </main>
 <div id="compose" class="hidden"><div>
@@ -449,17 +457,14 @@
   <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
   <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
   <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Coach</button>
-  <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
+  <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Instellingen<i id="todoDot" class="badge hidden"></i></button>
 </nav>
 <div id="sheet" class="sheet hidden"><div class="card">
-  <div class="head"><span></span><b>Meer</b><button id="closeSheet">Klaar</button></div>
-  <div class="group" id="prof"><span class="av" id="profAv"></span><div><b id="profName"></b><small id="profSub"></small></div></div>
-  <h2>Doel en AI</h2>
-  <div class="group has-tile">
-    <button class="cell nav" id="goalBtn"><span class="tile" style="background:#f2542d"><svg class="ic"><use href="#i-target"/></svg></span><div>Doel</div><span class="val" id="goalSub"></span></button>
-    <button class="cell nav" id="planBtn"><span class="tile" style="background:#ffcc00"><svg class="ic fill"><use href="#i-star"/></svg></span><div>Abonnement<small id="planSub">Gratis: 10 AI-verzoeken per dag</small></div></button>
-    <div class="cell" style="flex-wrap:wrap" id="aiCell"><span class="tile" style="background:#af52de"><svg class="ic"><use href="#i-spark"/></svg></span><div>AI vandaag<small id="aiSub"></small></div><span class="val" id="aiTxt">…</span>
-      <div id="aiBar" class="aibar" style="flex-basis:100%;padding:0 0 12px 41px"><span><i id="aiFill"></i></span></div></div>
+  <div class="head"><span></span><b>Instellingen</b><button id="closeSheet">Klaar</button></div>
+  <div id="prof"><span class="av" id="profAv"></span><b id="profName"></b><small id="profSub"></small><span class="planpill" id="profPlan"></span></div>
+  <h2>Abonnement</h2>
+  <div class="group">
+    <button class="cell nav" id="planBtn"><div><b id="planName">Gratis</b><small id="planSub"></small><div id="aiBar" class="aibar" style="padding:8px 0 0"><span><i id="aiFill"></i></span></div></div><span class="val" id="aiTxt">…</span></button>
   </div>
   <h2>Koppelingen</h2>
   <div class="group has-tile">
@@ -467,13 +472,25 @@
     <button class="cell nav" id="garminBtn"><span class="tile" style="background:#007aff"><svg class="ic"><use href="#i-watch"/></svg></span><div>Verbruik koppelen<small>Garmin, Apple Watch of iPhone</small></div><span class="val" id="garminSub"></span></button>
     <button class="cell nav" id="mealsBtn"><span class="tile" style="background:#34c759"><svg class="ic"><use href="#i-book"/></svg></span><div>Mijn gerechten</div><span class="val" id="mealsSub"></span></button>
   </div>
+  <div class="hidden" id="adminWrap"><h2>Beheer</h2>
+  <div class="group has-tile"><button class="cell nav" id="adminBtn"><span class="tile" style="background:#1c1c1e"><svg class="ic"><use href="#i-check"/></svg></span><div>Adminmenu<small>Gebruikers en abonnementen</small></div><span class="badge hidden" id="adminTodo"></span></button></div></div>
   <div class="group" style="margin-top:28px">
     <button class="cell center" id="logout"><div>Uitloggen</div></button>
     <button class="cell center danger" id="delAccount"><div>Account verwijderen</div></button>
   </div>
+  <p class="note" style="text-align:center">Je doel stel je in bij Coach.</p>
+</div></div>
+<div id="planSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Abonnement</b><span></span></div>
+  <div id="plans"></div>
+  <p class="note">Een groter abonnement vraag je aan; de beheerder keurt het goed. Omlaag of opzeggen gaat direct. Limieten resetten elke dag om 09:00.</p>
+</div></div>
+<div id="adminSheet" class="sheet hidden"><div class="card">
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Adminmenu</b><span></span></div>
+  <div id="adminBody"></div>
 </div></div>
 <div id="garmin" class="sheet hidden"><div class="card">
-  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Verbruik koppelen</b><button id="closeGarmin">Klaar</button></div>
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Verbruik koppelen</b><button id="closeGarmin">Klaar</button></div>
   <div class="group"><div class="cell"><span class="dot" id="gDot"></span><div id="gStat">Laatst ontvangen<small id="gWhen"></small></div></div></div>
   <h2>Wat meet je verbruik?</h2>
   <div class="seg" id="srcSeg"><button data-s="garmin">Garmin</button><button data-s="watch">Apple Watch</button><button data-s="iphone">Alleen iPhone</button></div>
@@ -501,14 +518,9 @@
   <div id="edStatus" class="status"></div>
 </div></div>
 <div id="meals" class="sheet hidden"><div class="card">
-  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Mijn gerechten</b><button id="mealNew">Nieuw</button></div>
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Mijn gerechten</b><button id="mealNew">Nieuw</button></div>
   <ul class="group" id="mealList"></ul>
 </div></div>
-<div id="goalSheet" class="sheet hidden"><div class="card">
-  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Doel</b><button id="goalSave">Bewaar</button></div>
-  <div class="seg" id="goalSeg"><button data-g="lose">Afvallen</button><button data-g="keep">Op gewicht</button><button data-g="gain">Aankomen</button></div>
-  <div class="group" id="paceWrap"><div class="cell" style="flex-wrap:wrap"><div>Tempo</div><span class="val" id="paceVal"></span>
-    <input id="pace" type="range" min="0.1" max="1" step="0.05" style="flex-basis:100%;margin:0 0 12px"></div></div>
   <div class="group big"><b id="goalKcal"></b><span id="goalHint"></span></div>
   <h2>Voortgang naar een persoonlijk doel</h2>
   <div class="group">
@@ -523,6 +535,7 @@
     <label class="cell"><div>Voedingsstijl</div><select id="pDiet"><option value="balans">Gebalanceerd</option><option value="laagkh">Koolhydraatarm</option><option value="laagvet">Vetarm</option><option value="keto">Keto</option></select></label>
     <label class="cell"><div>Streefgewicht</div><input id="pTkg" inputmode="decimal" placeholder="kg"></label>
     <label class="cell"><div>Streefdatum</div><input id="pTdate" type="date"></label>
+    <label class="cell"><div>Tempo<small>Als je geen streefdatum kiest</small></div><select id="pPace"><option value="0.25">0,25 kg/week</option><option value="0.5">0,5 kg/week</option><option value="0.75">0,75 kg/week</option><option value="1">1 kg/week</option></select></label>
   </div>
   <h2>Over jou</h2><div class="group">
     <label class="cell"><div>Lengte</div><input id="pH" inputmode="numeric" placeholder="cm"></label>
@@ -536,7 +549,7 @@
   <div id="kpiList"></div>
 </div></div>
 <div id="pushSheet" class="sheet hidden"><div class="card">
-  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Meer</button><b>Meldingen</b><button id="pushSave">Bewaar</button></div>
+  <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Meldingen</b><button id="pushSave">Bewaar</button></div>
   <div class="help hidden" id="pushNote" style="padding-left:16px"></div>
   <h2>Herinnering om te loggen</h2>
   <ul class="group" id="pushTimes"></ul>
