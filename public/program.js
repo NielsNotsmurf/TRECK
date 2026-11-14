@@ -1,4 +1,4 @@
-// Fase 13: Programma-tab. Doel in detail, kerncijfers (zelf te kiezen), voortgang, "vandaag nog" uit je favorieten (zonder AI) en AI-advies max 1× per dag.
+// Fase 13: Programma-tab, 14 nov: Coach (weekbudget, week-check-in, voedingsstijl). Doel in detail, kerncijfers (zelf te kiezen), voortgang, "vandaag nog" uit je favorieten (zonder AI) en AI-advies max 1× per dag.
 let prg = null;
 const KPI_DEF = ['bmi', 'weight', 'toGoal', 'trend', 'protKg', 'streak'];
 const num = (x, n = 0) => x.toFixed(n).replace('.', ',');
@@ -77,18 +77,54 @@ function renderProgram() {
     const [val, sub] = f(c);
     return `<div class="kpi${val == null ? ' off' : ''}"><span>${t}</span><b>${val ?? 'Nog niet'}</b><small>${val == null ? `nodig: ${sub}` : sub}</small></div>`;
   }).join('');
-  const FOC = { lose: 'Afvallen', keep: 'Op gewicht', muscle: 'Spieropbouw', gain: 'Aankomen' };
+  const FOC = { lose: 'Afvallen', keep: 'Op gewicht', muscle: 'Spieropbouw', gain: 'Aankomen' }, DIET = { laagkh: 'koolhydraatarm', laagvet: 'vetarm', keto: 'keto' };
   const goalTxt = p.tkg ? `${kg(p.tkg)} kg${p.tdate ? ` op ${shortDate(p.tdate)}` : ''}` : 'Stel je streefgewicht in';
   v.innerHTML = `
-  <div class="group"><button class="cell nav" id="prgGoal">${svg('target')}<div>${FOC[p.focus || s.me?.goal || 'lose']}<small>${goalTxt}</small></div></button></div>
+  <div class="group"><button class="cell nav" id="prgGoal">${svg('target')}<div>${FOC[p.focus || s.me?.goal || 'lose']}${p.diet && DIET[p.diet] ? ` · ${DIET[p.diet]}` : ''}<small>${goalTxt}</small></div></button></div>
+  <h2>Weekbudget</h2>${budget(c)}
+  <h2>Week-check-in</h2><div class="group">${progress(c)}</div>
   <div class="kpihead"><h2>Kerncijfers</h2><button id="kpiEdit">Wijzig</button></div>
   <div class="kpis">${tiles || '<div class="kpi off"><b>Kies cijfers via Wijzig</b></div>'}</div>
-  <h2>Voortgang</h2><div class="group">${progress(c)}</div>
-  <h2>Vandaag nog</h2><div class="group" id="prgNow">${nowView(c)}</div>
-  <h2>Advies</h2><div class="card" id="prgAi"></div>`;
+  <h2>Past nog vandaag</h2><div class="group" id="prgNow">${nowView(c)}</div>
+  <h2>Coach-advies</h2><div class="card" id="prgAi"></div>`;
   $('prgGoal').onclick = openGoal; $('kpiEdit').onclick = openKpis;
   v.querySelectorAll('[data-add]').forEach((b) => { b.onclick = () => addNow(prg.sugg[+b.dataset.add]); });
   adviceView(prg.advice);
+}
+
+// Weekbudget (ma–zo, zoals Lose It/MacroFactor): dagdoel × 7; wat je eerder in de week over- of onderat verdeelt zich over de resterende dagen.
+// Niet-gelogde dagen tellen als op doel, zodat vergeten loggen het budget niet opblaast.
+function budget(c) {
+  if (!c.goalK) return '<div class="group"><div class="cell"><div>Nog geen dagdoel<small>Stel je doel in of log twee weken</small></div></div></div>';
+  const dow = (new Date(c.to + 'T12:00').getDay() + 6) % 7, mon = addDays(c.to, -dow), B = c.goalK * 7;
+  const wk = [...Array(7)].map((_, i) => { const d = addDays(mon, i), x = c.s.days.find((y) => y.date === d); return { d, i, k: x ? x.kcal : null }; });
+  const past = wk.slice(0, dow).reduce((a, x) => a + (x.k ?? c.goalK), 0), perDay = Math.round((B - past) / (7 - dow));
+  const used = past + c.today.kcal, left = B - used, todayLeft = perDay - c.today.kcal, max = Math.max(c.goalK * 1.4, ...wk.map((x) => x.k || 0), perDay);
+  const h = (k) => `${Math.min(100, k / max * 100)}%`;
+  const bars = wk.map((x) => x.i < dow ? `<div><i class="${x.k == null ? 'est' : x.k > c.goalK * 1.1 ? 'over' : ''}" style="height:${h(x.k ?? c.goalK)}"></i></div>`
+    : x.i === dow ? `<div><i class="${c.today.kcal > perDay ? 'over' : ''}" style="height:${h(Math.max(c.today.kcal, 1))}"></i></div>` : `<div><i class="plan" style="height:${h(perDay)}"></i></div>`).join('');
+  const diff = perDay - c.goalK, note = Math.abs(diff) < 25 ? 'Je ligt op koers: je dagdoel blijft gelijk.'
+    : diff > 0 ? `Je hebt ${nl(diff * (7 - dow))} kcal gespaard: ${nl(diff)} kcal per dag extra ruimte tot zondag.`
+    : `Eerder deze week ${nl(-diff * (7 - dow))} kcal te veel: ${nl(-diff)} kcal per dag minder tot zondag.${perDay < 1200 ? ' Ga niet onder 1200 kcal; neem het verlies liever mee.' : ''}`;
+  return `<div class="wb"><div class="top"><b>${nl(Math.max(0, todayLeft))}</b><span>${nl(left)} van ${nl(B)} kcal over</span></div><span class="sub">kcal ruimte vandaag</span>
+    <div class="days"><hr style="bottom:${h(c.goalK)}">${bars}</div>
+    <div class="lbl">${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((t, i) => `<span${i === dow ? ' class="now"' : ''}>${t}</span>`).join('')}</div>
+    <div class="aibar${used > B ? ' full' : ''}"><span><i style="width:${Math.min(100, used / B * 100)}%"></i></span></div><p>${note}</p></div>`;
+}
+
+// Week-check-in (zoals MacroFactor): deze week tegenover vorige week, op schema richting streefgewicht en waarom je doel is wat het is.
+const wAvg = (ws, a, b) => { const x = ws.filter((w) => w.date >= a && w.date <= b); return x.length ? avg(x.map((w) => w.kg)) : null; };
+function checkin(c) {
+  const dow = (new Date(c.to + 'T12:00').getDay() + 6) % 7, mon = addDays(c.to, -dow), pm = addDays(mon, -7);
+  const now = wAvg(c.ws, mon, c.to), prev = wAvg(c.ws, pm, addDays(mon, -1));
+  const dd = (a, b) => c.s.days.filter((d) => d.date >= a && d.date <= b && d.date < c.to);
+  const iNow = dd(mon, c.to), iPrev = dd(pm, addDays(mon, -1));
+  const cell = (t, sub, val) => `<div class="cell"><div>${t}<small>${sub}</small></div><span class="val">${val}</span></div>`;
+  const out = [];
+  if (now != null) out.push(cell('Gewicht', prev != null ? `gem. deze week · vorige week ${kg(prev)} kg` : 'gem. deze week', prev != null ? `${dec(now - prev)} kg` : `${kg(now)} kg`));
+  if (iNow.length || iPrev.length) out.push(cell('Inname', `gem. per gelogde dag${iPrev.length ? ` · vorige week ${nl(avg(iPrev.map((d) => d.kcal)))}` : ''}`, iNow.length ? `${nl(avg(iNow.map((d) => d.kcal)))} kcal` : '–'));
+  if (c.T?.why) out.push(`<div class="cell"><div>Je doel<small>${c.T.why}</small></div></div>`);
+  return out.join('');
 }
 
 // Op schema: verwachte datum bij huidige trend vs streefdatum; plus weekscore.
@@ -103,9 +139,9 @@ function progress(c) {
   }
   if (c.last7.length) {
     const kh = c.goalK ? c.last7.filter((d) => Math.abs(d.kcal - c.goalK) <= c.goalK * 0.1).length : null, ph = c.protT ? c.last7.filter((d) => d.p >= c.protT * 0.9).length : null;
-    out.push(cell('Deze week', [kh != null && `kcal binnen marge ${kh}/${c.last7.length}`, ph != null && `eiwit gehaald ${ph}/${c.last7.length}`].filter(Boolean).join(' · ') || 'Nog geen doel', `${c.last7.length}/7 gelogd`));
+    out.push(cell('Laatste 7 dagen', [kh != null && `kcal binnen marge ${kh}/${c.last7.length}`, ph != null && `eiwit gehaald ${ph}/${c.last7.length}`].filter(Boolean).join(' · ') || 'Nog geen doel', `${c.last7.length}/7 gelogd`));
   }
-  return out.join('') || '<div class="cell"><div>Nog te weinig data<small>Log een paar dagen en weeg je af en toe</small></div></div>';
+  return checkin(c) + out.join('') || '<div class="cell"><div>Nog te weinig data<small>Log een paar dagen en weeg je af en toe</small></div></div>';
 }
 
 // Vandaag nog: eigen gerechten en vaste combinaties die in je resterende kcal passen; meer eiwit eerst als je eiwit tekort komt.
@@ -124,7 +160,6 @@ async function addNow(m) {
   toast(`${m.name} toegevoegd`, 'Ongedaan', async () => { await api(`/api/items?input=${input_id}`, { method: 'DELETE' }); loadProgram(); });
   loadProgram();
 }
-const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
 
 // Advies: tips (regels met "- ") als lijst, de voorbeelddag eronder.
 function adviceView(a) {
@@ -146,12 +181,12 @@ function adviceView(a) {
 // Mijn doel
 function openGoal() {
   const p = prg.p;
-  $('pFocus').value = p.focus || prg.s.me?.goal || 'lose'; $('pTkg').value = p.tkg ? kg(p.tkg) : ''; $('pTdate').value = p.tdate || '';
+  $('pFocus').value = p.focus || prg.s.me?.goal || 'lose'; $('pDiet').value = p.diet || 'balans'; $('pTkg').value = p.tkg ? kg(p.tkg) : ''; $('pTdate').value = p.tdate || '';
   $('pH').value = p.h || ''; $('pAge').value = p.age || ''; $('pSex').value = p.sex || '';
   show('progSheet');
 }
 $('progSave').onclick = async () => {
-  const body = { focus: $('pFocus').value, tkg: $('pTkg').value, tdate: $('pTdate').value, h: $('pH').value, age: $('pAge').value, sex: $('pSex').value };
+  const body = { focus: $('pFocus').value, diet: $('pDiet').value, tkg: $('pTkg').value, tdate: $('pTdate').value, h: $('pH').value, age: $('pAge').value, sex: $('pSex').value };
   await api('/api/program', { method: 'POST', body: JSON.stringify(body) });
   hide('progSheet'); toast('Doel bewaard'); loadProgram();
 };

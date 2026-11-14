@@ -168,7 +168,7 @@
   .note { font-size:12px; color:var(--muted); margin:8px 0 0; text-align:center; } .aitxt { margin:0; line-height:1.4; }
   #insAi .btn { margin:0; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; } #insAi .btn .ic { width:18px; height:18px; }
 
-  /* Fase 13: Programma */
+  /* Fase 13: Programma, 14 nov hernoemd naar Coach */
   .kpihead { display:flex; justify-content:space-between; align-items:baseline; margin:22px 16px 7px; } .kpihead h2 { margin:0; }
   .kpihead button { border:0; background:none; color:var(--accent); font-size:15px; padding:0; }
   .kpis { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding:0 16px; margin:0 -16px; padding:0 16px 4px; scrollbar-width:none; } .kpis::-webkit-scrollbar { display:none; }
@@ -178,6 +178,15 @@
   .cell .add { border:0; background:var(--fill); color:var(--accent); border-radius:50%; width:30px; height:30px; display:grid; place-items:center; padding:0; flex:none; } .cell .add .ic { width:16px; height:16px; }
   #prgAi ul { margin:0 0 10px; padding-left:18px; line-height:1.4; } #prgAi li { margin-bottom:6px; } #prgAi .day { font-size:15px; line-height:1.45; margin:0; white-space:pre-line; }
   #prgAi .btn { margin:0; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; } #prgAi .btn .ic { width:18px; height:18px; }
+  /* Coach: weekbudget */
+  .wb { background:var(--card); border-radius:12px; padding:16px; }
+  .wb .top { display:flex; justify-content:space-between; align-items:baseline; } .wb .top b { font-size:28px; font-variant-numeric:tabular-nums; } .wb .top span, .wb .sub { color:var(--muted); font-size:13px; }
+  .wb .days { display:flex; gap:6px; align-items:flex-end; height:72px; margin:14px 0 4px; position:relative; }
+  .wb .days div { flex:1; display:flex; flex-direction:column; justify-content:flex-end; height:100%; }
+  .wb .days i { display:block; border-radius:4px; background:var(--accent); min-height:3px; } .wb .days i.over { background:var(--red); } .wb .days i.plan { background:none; border:1.5px dashed var(--muted); opacity:.6; } .wb .days i.est { opacity:.35; }
+  .wb .days hr { position:absolute; left:0; right:0; margin:0; border:0; border-top:1px solid var(--muted); opacity:.5; }
+  .wb .lbl { display:flex; gap:6px; font-size:11px; color:var(--muted); } .wb .lbl span { flex:1; text-align:center; } .wb .lbl .now { color:var(--fg); font-weight:600; }
+  .wb .aibar { padding:12px 0 0; } .wb p { margin:8px 0 0; font-size:13px; color:var(--muted); }
   #progSheet .cell input, #progSheet .cell select { width:auto; max-width:55%; flex:none; text-align:right; padding:6px 10px; border:0; border-radius:8px; background:var(--fill); font-size:17px; color:var(--fg); }
 
   /* Sheets met handgreep en navigatiekop */
@@ -401,7 +410,7 @@
   <div id="insightsView" class="hidden"><h1>Inzichten</h1>
     <div class="seg" id="insSeg"><button data-d="7">7 dagen</button><button data-d="30" class="on">30 dagen</button><button data-d="90">90 dagen</button></div>
     <div id="insBody"></div></div>
-  <div id="programView" class="hidden"><h1>Programma</h1><div id="prgBody"></div></div>
+  <div id="programView" class="hidden"><h1>Coach</h1><div id="prgBody"></div></div>
   <div id="todayView">
   <div id="mini"></div>
   <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
@@ -439,7 +448,7 @@
   <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
   <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
   <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
-  <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Programma</button>
+  <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Coach</button>
   <button id="menuBtn"><svg class="ic"><use href="#i-more"/></svg>Meer</button>
 </nav>
 <div id="sheet" class="sheet hidden"><div class="card">
@@ -511,6 +520,7 @@
   <div class="head"><button data-x>Annuleer</button><b>Mijn doel</b><button id="progSave">Bewaar</button></div>
   <h2>Doel</h2><div class="group">
     <label class="cell"><div>Focus</div><select id="pFocus"><option value="lose">Afvallen</option><option value="keep">Op gewicht</option><option value="muscle">Spieropbouw</option><option value="gain">Aankomen</option></select></label>
+    <label class="cell"><div>Voedingsstijl</div><select id="pDiet"><option value="balans">Gebalanceerd</option><option value="laagkh">Koolhydraatarm</option><option value="laagvet">Vetarm</option><option value="keto">Keto</option></select></label>
     <label class="cell"><div>Streefgewicht</div><input id="pTkg" inputmode="decimal" placeholder="kg"></label>
     <label class="cell"><div>Streefdatum</div><input id="pTdate" type="date"></label>
   </div>
@@ -519,7 +529,7 @@
     <label class="cell"><div>Leeftijd</div><input id="pAge" inputmode="numeric" placeholder="jaar"></label>
     <label class="cell"><div>Geslacht</div><select id="pSex"><option value="">–</option><option value="m">Man</option><option value="v">Vrouw</option></select></label>
   </div>
-  <p class="note">Streefgewicht en -datum bepalen je tempo; de focus je eiwitdoel. Lengte, leeftijd en geslacht zijn nodig voor BMI, vetpercentage en ruststofwisseling.</p>
+  <p class="note">Streefgewicht en -datum bepalen je tempo; de focus je eiwitdoel, de voedingsstijl de verdeling koolhydraten/vet. Lengte, leeftijd en geslacht zijn nodig voor BMI, vetpercentage en ruststofwisseling.</p>
 </div></div>
 <div id="kpiSheet" class="sheet hidden"><div class="card">
   <div class="head"><button data-x>Annuleer</button><b>Kerncijfers</b><button id="kpiSave">Bewaar</button></div>

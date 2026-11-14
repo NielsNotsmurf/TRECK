@@ -91,6 +91,9 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 2026-11-14 Activiteiten (tik op Verbruik): tekst/spraak → AI schat extra kcal bovenop rust ((MET−1)×kg×u), tabel acts; telt via view burn_total alleen mee bij bron "Alleen iPhone" (keuze in Verbruik koppelen, nu ook op server users.src) en op dagen met Apple Health-verbruik, anders dubbel met horloge.
 - 2026-11-14 Dag van invoer (eten + activiteit): geen dagwoord in de tekst → altijd de geopende dag (server, zonder AI); wel een dagwoord → AI rekent relatief vanaf de echte datum van vandaag.
 - 2026-11-14 Opgeslagen gerecht (bijna) letterlijk genoemd in invoer → pop-up "Heb je dit gegeten?"; ja = gerecht toevoegen en die tekst eruit vóór de AI (rest alleen naar AI als er nog iets overblijft). Fuzzy zonder AI: woordvenster vs naam, spaties/accenten genegeerd, ~1 tikfout per 6 letters.
+- 2026-11-14 Programma → Coach (naar MacroFactor/Lose It): weekbudget ma–zo = dagdoel×7, over/onder eten verdeelt zich over resterende dagen, niet-gelogde dagen tellen als op doel, waarschuwing onder 1200.
+- 2026-11-14 Coach: week-check-in = gem. gewicht en inname deze vs vorige week + uitleg adaptief doel; voedingsstijl (gebalanceerd/koolhydraatarm/vetarm/keto) = vet 25/40/20/70% van kcal, koolh = rest, in prog.diet.
+- 2026-11-14 Fix: dubbele `esc` (app.js + program.js) brak sinds 9ccf425 de hele tab; die in program.js weg.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -137,6 +140,7 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Geen.
 
 ## Later
+- Coach: micronutriënten (Cronometer), vastenvenster (Yazio), budget-dagen zelf verdelen (bijv. meer in weekend).
 - Top-up (losse extra AI-verzoeken) en echte betaling voor het abonnement.
 - Onderbalk-tabs vullen: recepten/gerechten-suggesties (Programma = fase 13).
 - Evt. stappenteller-attributen uit Apple Health in analytics (gebruiker: voorlopig vermijden).

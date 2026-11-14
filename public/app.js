@@ -621,7 +621,7 @@ for (const b of document.querySelectorAll('#tabs [data-tab]')) b.onclick = () =>
   if (ins) loadInsights().catch((e) => toast(e.message));
   if (prg) loadProgram().catch((e) => toast(e.message));
   document.body.classList.toggle('tab-other', !today_); if (!today_) $('soonI').setAttribute('href', `#${b.dataset.i}`);
-  $('soonT').textContent = { recipes: 'Recepten en gerechten op maat', insights: 'AI-analyse en voortgang', plan: 'Voedingsprogramma\'s' }[b.dataset.tab] || '';
+  $('soonT').textContent = { recipes: 'Recepten en gerechten op maat', insights: 'AI-analyse en voortgang', plan: 'Coach' }[b.dataset.tab] || '';
   scrollTo(0, 0);
 };
 
