@@ -105,6 +105,11 @@ async function load() {
   $('total').innerHTML = `${est ? '≈ ' : ''}${nl(Math.abs(left))}<small>${est ? 'geschat ' : ''}${left >= 0 ? (G === 'gain' ? 'kcal nog te eten' : 'kcal mag nog') : over ? 'kcal te veel' : 'kcal extra'}</small>`;
   $('total').style.color = over && f > 1.1 ? tone(f) : '';
   $('arc').style.strokeDashoffset = 326.7 * (1 - Math.min(f, 1));
+  // Buitenring: eiwit (belangrijkste voedingsdoel naast kcal; meer is prima). Vaste blauwe kleur zodat de twee ringen te onderscheiden zijn.
+  const pf = T?.protein_g ? t.protein_g / T.protein_g : 0;
+  $('prArc').style.strokeDashoffset = 395.8 * (1 - Math.max(Math.min(pf, 1), t.protein_g ? 0.03 : 0));
+  $('eaten').textContent = `${nl(t.kcal)} gegeten`;
+  $('legend').innerHTML = `<span style="--k:${tone(f, G === 'gain')}"><i></i>Kcal</span><span><i></i>Eiwit</span>`;
   document.querySelectorAll('#grad stop').forEach((x, i) => x.setAttribute('stop-color', tone(i ? f : f * 0.7, G === 'gain', i ? 46 : 58)));
   // 14 nov (2): één ring, alleen voeding; beweging heeft in een voedingsapp geen zinnig doel.
   const src = { burn: 'je normale verbruik', bmr: 'je lengte, leeftijd en gewicht', std: 'een standaardverbruik' }[T?.from];
