@@ -11,7 +11,7 @@ export async function collect(env, userId, n) {
   const [days, burn, weights] = await Promise.all([
     q(`SELECT date, ROUND(SUM(kcal)) kcal, ROUND(SUM(protein_g)) p, ROUND(SUM(carbs_g)) c, ROUND(SUM(fat_g)) f
        FROM items WHERE review IS NULL AND user_id = ? AND date BETWEEN ? AND ? GROUP BY date ORDER BY date`),
-    q('SELECT date, kcal FROM burn WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date'),
+    q('SELECT date, kcal FROM burn_total WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date'),
     q('SELECT date, kg FROM weight WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date'),
   ]);
   const me = await env.DB.prepare('SELECT goal, pace FROM users WHERE id = ?').bind(userId).first();

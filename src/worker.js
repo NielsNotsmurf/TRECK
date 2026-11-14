@@ -44,6 +44,9 @@ export default {
     if (route === 'GET /api/burn') return items.burnList(ctx);
     if (route === 'DELETE /api/burn') return items.burnClear(ctx);
     if (route === 'POST /api/burn') return items.burn(ctx);
+    if (route === 'POST /api/acts') return items.actAdd(ctx);
+    if (route === 'DELETE /api/acts') return items.actDel(ctx);
+    if (route === 'POST /api/src') return items.src(ctx);
     if (route === 'POST /api/goal') return items.goal(ctx);
     if (route === 'POST /api/weight') return items.weight(ctx);
     if (route === 'GET /api/push') return push.get(ctx);

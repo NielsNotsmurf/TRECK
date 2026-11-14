@@ -1,3 +1,4 @@
+import { activiteit } from './ai.js';
 import { favs } from './memory.js';
 import { prog, PROT } from './program.js';
 const nlToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' }); // dag in NL-tijd
@@ -19,19 +20,20 @@ export async function onRequestGet({ request, env, user }) {
   }
   const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM queue WHERE user_id = ?').bind(user.id).first();
   const fav = await favs(env, user.id);
-  const b = await env.DB.prepare('SELECT kcal, updated_at FROM burn WHERE user_id = ? AND date = ?').bind(user.id, date).first();
+  const b = await env.DB.prepare('SELECT kcal, updated_at FROM burn_total WHERE user_id = ? AND date = ?').bind(user.id, date).first();
   // Geen verbruik op een voorbije dag: schatting = gemiddelde van de 14 dagen ervoor (niet opgeslagen). Vandaag/toekomst: geen schatting.
-  const be = b || date >= nlToday() ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
+  const be = b || date >= nlToday() ? null : await env.DB.prepare(`SELECT ROUND(AVG(kcal)) kcal FROM burn_total WHERE user_id = ? AND date < ? AND date >= date(?, '-14 days')`).bind(user.id, date, date).first();
   // Week (vanaf maandag) en maand (vanaf de 1e) t/m de geopende dag: alleen dagen met echte inname én echt verbruik.
   const d = new Date(date + 'T12:00Z');
   const monday = new Date(d - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10);
   const period = async (from) => env.DB.prepare(`SELECT COALESCE(SUM(b.kcal - i.k), 0) diff, COUNT(*) days FROM
-    (SELECT date, SUM(kcal) k FROM items WHERE review IS NULL AND user_id = ? AND date BETWEEN ? AND ? GROUP BY date) i JOIN burn b ON b.user_id = ? AND b.date = i.date`)
+    (SELECT date, SUM(kcal) k FROM items WHERE review IS NULL AND user_id = ? AND date BETWEEN ? AND ? GROUP BY date) i JOIN burn_total b ON b.user_id = ? AND b.date = i.date`)
     .bind(user.id, from, date, user.id).first();
-  const me = await env.DB.prepare('SELECT name, pace FROM users WHERE id = ?').bind(user.id).first();
+  const me = await env.DB.prepare('SELECT name, pace, src FROM users WHERE id = ?').bind(user.id).first();
   const { results: review } = await env.DB.prepare('SELECT * FROM items WHERE user_id = ? AND review = 1 ORDER BY created_at, id').bind(user.id).all();
   const linked = !!(await env.DB.prepare('SELECT 1 FROM burn WHERE user_id = ? LIMIT 1').bind(user.id).first());
-  return Response.json({ me, review, linked, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
+  const { results: acts } = await env.DB.prepare('SELECT id, name, minutes, kcal FROM acts WHERE user_id = ? AND date = ? ORDER BY id').bind(user.id, date).all();
+  return Response.json({ me, review, linked, acts, items: results.map((r) => ({ ...r, fav: fav(r) })), total, estimate, queued: n,
     burn: b ? b.kcal : be?.kcal ?? null, burnEst: !b && be?.kcal != null, burnAt: b?.updated_at || null,
     week: await period(monday), month: await period(date.slice(0, 8) + '01'),
     target: await target(env, user.id, monday),
@@ -165,4 +167,26 @@ export async function onRequestPut({ request, env, user }) {
     .bind(i.product, i.portion, Math.round(i.kcal) || 0, Math.round(i.protein_g) || 0, Math.round(i.carbs_g) || 0, Math.round(i.fat_g) || 0,
       +i.amount || null, i.unit || null, /^\d{4}-\d\d-\d\d$/.test(i.date) ? i.date : null, i.meal || null, i.id, user.id).run();
   return new Response(null, { status: 204 });
+}
+
+// Activiteiten (zonder horloge): POST {text, now} -> AI schat kcal -> opgeslagen per dag. Telt als AI-verzoek.
+export async function actAdd({ request, env, user }) {
+  const { text, now } = await request.json();
+  const w = await env.DB.prepare('SELECT kg FROM weight WHERE user_id = ? ORDER BY date DESC LIMIT 1').bind(user.id).first();
+  let acts;
+  try { acts = await activiteit({ text, now, kg: w?.kg }, env, user.id); } catch (e) { return Response.json({ error: e.limit ? e.message : 'AI is even druk, probeer zo opnieuw.' }, { status: e.limit ? 429 : 502 }); }
+  const at = new Date().toISOString(), stmt = env.DB.prepare('INSERT INTO acts (user_id, date, name, minutes, kcal, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+  const ok = acts.filter((a) => parseDate(a.date) && a.kcal > 0);
+  if (ok.length) await env.DB.batch(ok.map((a) => stmt.bind(user.id, parseDate(a.date), a.name, Math.round(a.minutes) || null, Math.round(a.kcal), at)));
+  return Response.json({ acts: ok });
+}
+export async function actDel({ request, env, user }) {
+  await env.DB.prepare('DELETE FROM acts WHERE id = ? AND user_id = ?').bind(new URL(request.url).searchParams.get('id'), user.id).run();
+  return Response.json({ ok: true });
+}
+// Bron van verbruik (garmin|watch|iphone); alleen bij iphone tellen activiteiten mee.
+export async function src({ request, env, user }) {
+  const { src } = await request.json();
+  await env.DB.prepare('UPDATE users SET src = ? WHERE id = ?').bind(['garmin', 'watch', 'iphone'].includes(src) ? src : null, user.id).run();
+  return Response.json({ ok: true });
 }

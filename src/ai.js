@@ -59,6 +59,18 @@ export async function transcribe({ request, env }) {
   return Response.json({ text: ((await res.json()).text || '').trim() });
 }
 
+// Activiteiten: extra verbruik bovenop rust, want rust komt al uit Apple Health.
+const ACT = { type: 'OBJECT', properties: { acts: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+  date: { type: 'STRING' }, name: { type: 'STRING' }, minutes: { type: 'NUMBER' }, kcal: { type: 'NUMBER' } }, required: ['date', 'name', 'minutes', 'kcal'] } } }, required: ['acts'] };
+export async function activiteit({ text, now, kg }, env, userId) {
+  const p = `Je schat verbrande kcal van sport en activiteiten. Nu is het: ${now}. Gewicht: ${kg ? `${kg} kg` : 'onbekend, neem 75 kg'}.
+Geef per genoemde activiteit: date (JJJJ-MM-DD; "gisteren", "zaterdag" e.d. omrekenen; standaard de geopende dag als die genoemd is, anders vandaag), name (kort, Nederlands, bijv. "Fietsen, rustig"),
+minutes (duur; niet genoemd = gebruikelijke duur), kcal = extra verbruik bovenop rust: (MET − 1) × kg × uren, afgerond. Geen activiteit herkend? Lege lijst.
+Invoer: ${text}`;
+  const out = await ask([{ text: p }], { responseMimeType: 'application/json', responseSchema: ACT }, env, userId, true);
+  return JSON.parse(out || '{"acts":[]}').acts || [];
+}
+
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
 export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, userId, true);
 

@@ -18,6 +18,7 @@ export async function ensureSchema(env) {
     env.DB.prepare('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, payload TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS push (user_id INTEGER PRIMARY KEY, endpoint TEXT NOT NULL, origin TEXT NOT NULL, times TEXT NOT NULL, sent TEXT)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS config (k TEXT PRIMARY KEY, v TEXT NOT NULL)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS acts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, date TEXT NOT NULL, name TEXT NOT NULL, minutes INTEGER, kcal INTEGER NOT NULL, created_at TEXT NOT NULL)'),
   ]);
   const { results } = await env.DB.prepare('PRAGMA table_info(items)').all();
   if (!results.some((c) => c.name === 'user_id')) await env.DB.prepare('ALTER TABLE items ADD COLUMN user_id INTEGER').run();
@@ -30,6 +31,10 @@ export async function ensureSchema(env) {
   if (!us.some((c) => c.name === 'plan')) await env.DB.prepare('ALTER TABLE users ADD COLUMN plan TEXT').run();
   if (!us.some((c) => c.name === 'goal')) await env.DB.prepare('ALTER TABLE users ADD COLUMN goal TEXT').run();
   if (!us.some((c) => c.name === 'pace')) await env.DB.prepare('ALTER TABLE users ADD COLUMN pace REAL').run();
+  if (!us.some((c) => c.name === 'src')) await env.DB.prepare('ALTER TABLE users ADD COLUMN src TEXT').run();
+  // Verbruik incl. ingevoerde activiteiten, alleen bij bron "Alleen iPhone" (horloge meet sport al: anders dubbel).
+  await env.DB.prepare(`CREATE VIEW IF NOT EXISTS burn_total AS SELECT b.user_id, b.date, b.updated_at, b.kcal + CASE WHEN u.src = 'iphone'
+    THEN COALESCE((SELECT SUM(a.kcal) FROM acts a WHERE a.user_id = b.user_id AND a.date = b.date), 0) ELSE 0 END kcal FROM burn b JOIN users u ON u.id = b.user_id`).run();
   const { results: it } = await env.DB.prepare('PRAGMA table_info(items)').all();
   if (!it.some((c) => c.name === 'meal')) await env.DB.prepare('ALTER TABLE items ADD COLUMN meal TEXT').run();
   if (!it.some((c) => c.name === 'review')) await env.DB.prepare('ALTER TABLE items ADD COLUMN review INTEGER').run();
@@ -137,7 +142,7 @@ export async function logout({ request, env }) {
   return new Response(null, { status: 204 });
 }
 export async function deleteAccount({ env, user }) {
-  await env.DB.batch(['items', 'queue', 'meals', 'sessions', 'burn', 'weight', 'push'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id))
+  await env.DB.batch(['items', 'queue', 'meals', 'sessions', 'burn', 'acts', 'weight', 'push'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id))
     .concat(env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id), env.DB.prepare('DELETE FROM config WHERE k IN (?, ?)').bind(`ai:${user.id}`, `insight:${user.id}`), env.DB.prepare('DELETE FROM config WHERE k IN (?, ?)').bind(`prog:${user.id}`, `advice:${user.id}`)));
   return new Response(null, { status: 204 });
 }

@@ -128,7 +128,9 @@ async function load() {
   $('burnCell').parentNode.classList.toggle('hidden', day > today());
   $('burnCell').classList.toggle('hidden', !d.linked); // zonder Garmin/Apple Health geen verbruik-regel
   $('burnVal').textContent = burn == null ? '' : `${burnEst ? '≈ ' : ''}${burn} kcal`;
-  $('burn').innerHTML = `Verbruik${upto}<small>${burn == null ? 'Nog niet binnen' : 'Vandaag ' + bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}`
+  if (d.me?.src !== (localStorage.getItem(SRC) || 'garmin')) api('/api/src', { method: 'POST', body: JSON.stringify({ src: localStorage.getItem(SRC) || 'garmin' }) }).then(() => { d.me.src = localStorage.getItem(SRC) || 'garmin'; }).catch(() => {});
+  const ak = (d.acts || []).reduce((s, a) => s + a.kcal, 0);
+  $('burn').innerHTML = `Verbruik${upto}<small>${burn == null ? 'Nog niet binnen' : 'Vandaag ' + bal(burn - t.kcal, est || burnEst ? '≈ ' : '')}${ak && d.me?.src === 'iphone' ? ` · incl. ${ak} activiteit` : ''}`
     + `${[sum(week, 'Week'), sum(month, 'Maand')].filter(Boolean).map((x) => `<br>${x}`).join('')}</small>`;
   // Fase 5: gewicht, laatste weging t/m deze dag + lijn van 30 dagen.
   const w = weights.at(-1), w0 = weights[0];
@@ -747,7 +749,54 @@ function renderSteps(ok) {
   });
   document.querySelectorAll('#steps .num .ic').forEach((i) => { i.style.width = i.style.height = '16px'; i.style.strokeWidth = 3; });
 }
-$('srcSeg').onclick = (e) => { const s = e.target.dataset.s; if (s) { localStorage.setItem(SRC, s); renderSteps($('gDot').classList.contains('ok')); } };
+$('srcSeg').onclick = (e) => { const s = e.target.dataset.s; if (s) { localStorage.setItem(SRC, s); renderSteps($('gDot').classList.contains('ok')); api('/api/src', { method: 'POST', body: JSON.stringify({ src: s }) }).then(load).catch(() => {}); } };
+
+// Activiteiten zonder horloge: typen of inspreken → AI schat extra kcal → telt op bij het verbruik van die dag (alleen bron "Alleen iPhone").
+const esc = (t) => String(t).replace(/[<&>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+function renderSport() {
+  const own = (localStorage.getItem(SRC) || 'garmin') === 'iphone', acts = data.acts || [];
+  $('spNote').classList.toggle('hidden', own);
+  $('spNote').innerHTML = 'Je horloge meet sport al, dus activiteiten tellen niet mee (anders dubbel). <a href="#" id="spOwn">Ik heb geen horloge</a>';
+  $('spOwn').onclick = (e) => { e.preventDefault(); $('srcSeg').querySelector('[data-s=iphone]').click(); renderSport(); };
+  $('spDay').textContent = dayName(day);
+  $('spList').innerHTML = acts.map((a) => `<li><div>${esc(a.name)}<small>${a.minutes ? `${a.minutes} min` : ''}</small></div><span class="kcal">${a.kcal}</span><button data-id="${a.id}" aria-label="Wis" style="border:0;background:none;color:var(--muted);padding:6px"><svg class="ic"><use href="#i-x"/></svg></button></li>`).join('')
+    || '<li class="empty">Nog geen activiteiten</li>';
+  $('spList').querySelectorAll('[data-id]').forEach((b) => { b.onclick = async () => { await api(`/api/acts?id=${b.dataset.id}`, { method: 'DELETE' }); await load(); renderSport(); }; });
+}
+$('burnCell').onclick = () => { $('spStatus').textContent = ''; renderSport(); show('spSheet'); };
+$('spClose').onclick = () => hide('spSheet');
+$('spText').onkeydown = (e) => { if (e.key === 'Enter') $('spBtn').click(); };
+$('spBtn').onclick = async () => {
+  const text = $('spText').value.trim(); if (!text || $('spBtn').disabled) return;
+  const n = new Date();
+  let now = `${DAGEN[n.getDay()]} ${iso(n)} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  if (day !== iso(n)) now += `. Geopende dag in de app: ${DAGEN[new Date(day + 'T12:00').getDay()]} ${day}`;
+  $('spBtn').disabled = true; $('spStatus').textContent = 'AI schat je verbruik…';
+  try {
+    const { acts } = await api('/api/acts', { method: 'POST', body: JSON.stringify({ text, now }) });
+    $('spText').value = ''; $('spStatus').textContent = acts.length ? acts.map((a) => `${a.name}: ${Math.round(a.kcal)} kcal${a.date !== day ? ` (${dayName(a.date)})` : ''}`).join(' · ') : 'Geen activiteit herkend.';
+    await load(); renderSport();
+  } catch (e) { $('spStatus').textContent = e.message; }
+  $('spBtn').disabled = false;
+};
+let spRec = null;
+$('spMic').onclick = async () => {
+  if (spRec) return spRec.stop();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { return toast('Geen toegang tot de microfoon.'); }
+  const chunks = []; spRec = new MediaRecorder(stream);
+  spRec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  spRec.onstop = async () => {
+    stream.getTracks().forEach((t) => t.stop());
+    const mime = (spRec.mimeType || 'audio/mp4').split(';')[0]; spRec = null; $('spMic').style.color = '';
+    $('spStatus').textContent = 'Uitschrijven…';
+    try {
+      const { text } = await api('/api/transcribe', { method: 'POST', body: JSON.stringify({ audio: { mime, data: await b64(new Blob(chunks, { type: mime })) } }) });
+      $('spText').value = [$('spText').value.trim(), text].filter(Boolean).join(' '); $('spStatus').textContent = text ? 'Check de tekst en tik op AI.' : 'Niets verstaan.';
+    } catch (e) { $('spStatus').textContent = e.message; }
+  };
+  spRec.start(); $('spMic').style.color = '#ff3b30'; $('spStatus').textContent = 'Opnemen… tik nogmaals om te stoppen';
+};
 $('burnsBtn').onclick = () => $('burnsWrap').classList.toggle('hidden');
 $('garminBtn').onclick = () => {
   hide('burnsWrap'); renderSteps(false); sub('garmin');

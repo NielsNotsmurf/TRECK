@@ -81,7 +81,7 @@
 
   /* Items */
   ul { list-style:none; padding:0; margin:0; }
-  #list li, #pending li, #meals li, #burns li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; }
+  #list li, #pending li, #meals li, #burns li, #spList li { position:relative; display:flex; gap:12px; align-items:center; padding:10px 16px; }
   #list { --inset:66px; }
   #list li { flex-wrap:wrap; }
   .food { width:40px; height:40px; border-radius:10px; background:var(--fill); display:grid; place-items:center; font-size:23px; flex:none; }
@@ -416,7 +416,7 @@
     <div id="why"></div>
   </section>
   <div class="group has-tile">
-    <div class="cell" id="burnCell"><span class="tile" style="background:#ff9500"><svg class="ic"><use href="#i-flame"/></svg></span><div id="burn"></div><span class="val" id="burnVal"></span></div>
+    <button class="cell nav" id="burnCell"><span class="tile" style="background:#ff9500"><svg class="ic"><use href="#i-flame"/></svg></span><div id="burn"></div><span class="val" id="burnVal"></span></button>
     <button class="cell" id="weight"></button>
   </div>
   <div id="quickWrap"><h2>Snel toevoegen</h2><div id="quick"></div></div>
@@ -540,6 +540,15 @@
   <div class="head"><button id="revLater">Later</button><b>Goedkeuren</b><button id="revOk">Voeg toe</button></div>
   <p class="help" style="padding-left:16px">Gemini was druk, dit is later verwerkt. Check dagdeel en hoeveelheid; pas na <b>Voeg toe</b> telt het mee.</p>
   <div id="revList"></div>
+</div></div>
+<div id="spSheet" class="sheet hidden"><div class="card">
+  <div class="head"><span></span><b>Activiteiten</b><button id="spClose">Klaar</button></div>
+  <p class="help hidden" id="spNote" style="padding-left:16px"></p>
+  <div class="group"><div class="airow"><button id="spMic" aria-label="Spreek in" style="background:none;padding:5px 0 5px 16px"><svg class="ic"><use href="#i-mic"/></svg></button>
+    <input id="spText" placeholder="Bijv. 45 min fietsen, half uur tennis" enterkeyhint="send" style="flex:1;min-width:0;border:0;background:none;font:inherit;padding:11px 10px;color:inherit;outline:0">
+    <button id="spBtn" class="ai"><svg class="ic"><use href="#i-spark"/></svg>AI</button></div></div>
+  <div id="spStatus" class="status"></div>
+  <h2 id="spDay"></h2><ul class="group" id="spList"></ul>
 </div></div>
 <div id="acts" class="sheet hidden"><div class="as"><div class="group" id="actsList"></div><div class="group"><button class="cell" id="actsX"><div>Annuleer</div></button></div></div></div>
 <div id="ask" class="sheet alert hidden"><div class="card"><b id="askT"></b><p id="askM"></p><input id="askIn"><div class="status" id="askS"></div>
