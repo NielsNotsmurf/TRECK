@@ -97,6 +97,10 @@ Fase 1 deliverables: PWA met één scherm (tekstveld, fotoknop, opnameknop, dago
 - 14-11: Abonnementen Gratis 10 / Plus 40 / Pro 100 AI per dag; omhoog = aanvraag die de beheerder goedkeurt, omlaag direct. Geen betaaldienst (vergt account, sleutels, webhooks): later-lijst.
 - 14-11: Beheerder = "admin" of het Google-account van de eigenaar (alleen SHA-256 van het e-mailadres in de code). Adminmenu in Instellingen: nieuwe gebruikers, aanvragen, plan per gebruiker.
 - 14-11: Meer heet Instellingen (nieuwe profielkop + abonnementskaart); Doel weg uit Instellingen, tempo zit nu in Coach → Mijn doel.
+- 14-11 Receptenblog (tab Recepten): tabellen recipes + comments; foto als verkleinde data-URL (900 px) + thumbnail (200 px) in D1, geen R2.
+- 14-11 Macro's per portie: zelf invullen of ✦ AI (1 AI-verzoek, zelfde limiet); recept aan vandaag = /api/quick met 1 item, porties ½-stappen.
+- 14-11 "Wat doet dit met je dag": twee ringen nu/na met dezelfde doelformule als Vandaag (bij wijzigen load() ook rcDay() in recipes.js aanpassen) + macro's voor/na.
+- 14-11 Zoeken = LIKE op titel en tekst per woord; auteur = naam vóór @; eigenaar of admin wist recept/reactie.
 
 ## Voorstel verbeteringen (12-11, wacht op akkoord)
 Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volgens de rode draad; elk een eigen fase ná 6 (meldingen).
@@ -162,3 +166,4 @@ Vergeleken met MyFitnessPal, Lose It!, Cronometer en MacroFactor. Volgorde volge
 - Foto's bewaren per invoer en tonen bij het item (nu worden foto's niet bewaard).
 - Meldingen: ander kanaal (mail/Telegram), tekst met dagtotaal (payload-encryptie), alleen melden als er nog niets is ingevoerd.
 - Betaaldienst (Stripe/Mollie) voor abonnementen i.p.v. handmatige goedkeuring
+- Recepten: likes, volgen, DM/chat, melden + moderatiewachtrij, tags/filters (eiwitrijk, < 500 kcal), recept bewerken, recept als favoriet, foto's in R2.

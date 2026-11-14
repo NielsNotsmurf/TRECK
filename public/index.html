@@ -156,6 +156,29 @@
   #a2hs button { border:0; background:none; color:var(--accent); font-weight:600; padding:6px; } #a2hsX { color:var(--muted) !important; }
   #list li.mate { opacity:.55; } /* rest van het gerecht tijdens slepen */
   /* Fase 12: Inzichten */
+  /* 14 nov: receptenblog */
+  #recipesView h1 { font-size:34px; font-weight:700; margin:0; } .rchead { display:flex; justify-content:space-between; align-items:center; margin:8px 0 10px; }
+  #rcSearch { width:100%; padding:9px 12px; border:0; border-radius:10px; background:var(--fill); font-size:17px; color:var(--fg); margin-bottom:12px; outline:0; }
+  .rc { display:flex; gap:12px; width:100%; text-align:left; border:0; background:var(--card); border-radius:12px; padding:10px; margin-bottom:10px; color:var(--fg); font:inherit; align-items:center; }
+  .rc img, .rcimg { width:72px; height:72px; border-radius:10px; object-fit:cover; flex:none; } .rcimg { display:grid; place-items:center; background:var(--fill); } .rcimg .ic { width:30px; height:30px; }
+  .rc b { display:block; font-size:17px; } .rc small, .by { display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+  .rchero { width:calc(100% + 32px); margin:0 -16px 8px; max-height:300px; object-fit:cover; display:block; }
+  #rcBody h1 { font-size:28px; margin:8px 0 2px; } .by { margin:0 0 12px; } .rck b { font-size:28px; } .rck small { display:block; color:var(--muted); font-size:13px; }
+  .rctext { white-space:pre-wrap; line-height:1.45; font-size:15px; }
+  .rings { display:flex; align-items:center; justify-content:center; gap:10px; } .rings > span { color:var(--muted); font-size:22px; }
+  .rcring { position:relative; width:132px; height:132px; } .rcring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .rcring circle { fill:none; stroke-width:12; stroke-linecap:round; } .rcring .trk { stroke:var(--fill); }
+  .rcring > div { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .rcring b { font-size:24px; font-variant-numeric:tabular-nums; } .rcring small { font-size:11px; color:var(--muted); line-height:1.2; }
+  .rcmac { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0 4px; font-size:13px; } .rcmac span, .rcmac small { color:var(--muted); display:block; }
+  .rcmac b { display:block; font-size:15px; font-variant-numeric:tabular-nums; } .rcmac i { display:block; height:4px; border-radius:2px; margin:4px 0 2px; background:linear-gradient(var(--m),var(--m)) 0 0 / var(--w) 100% no-repeat, var(--fill); }
+  #rcBody .adj { padding:8px 0 0; justify-content:center; } #rcBody .adj b { min-width:90px; }
+  .rcx { border:0; background:none; color:var(--muted); padding:4px; } .rcx .ic { width:18px; height:18px; }
+  #rcBody .airow input, #rcNew input, #rcNew textarea { flex:1; min-width:0; border:0; background:none; font:inherit; font-size:17px; padding:11px 16px; color:var(--fg); outline:0; }
+  #rcBody .airow .btn { width:auto; margin:0; padding:6px 14px; font-size:15px; } #rcNew textarea { width:100%; resize:vertical; display:block; }
+  #rcPhotoL { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; height:150px; border-radius:12px; background:var(--card) center / cover; color:var(--accent); margin-bottom:12px; }
+  #rcPhotoL.on { color:transparent; } #rcPhotoL.on .ic { opacity:0; }
+  .rcnum { display:grid; grid-template-columns:repeat(4,1fr); padding:6px 4px; } .rcnum label { font-size:12px; color:var(--muted); text-align:center; } .rcnum input { text-align:center; padding:6px 4px !important; }
   #insightsView h1, #programView h1 { font-size:34px; font-weight:700; margin:8px 0 10px; letter-spacing:.01em; }
   .chart { display:block; width:100%; height:auto; overflow:visible; } .chart .ax { font-size:10px; fill:var(--muted); }
   .legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--muted); margin-top:8px; }
@@ -421,6 +444,8 @@
     <div class="seg" id="insSeg"><button data-d="7">7 dagen</button><button data-d="30" class="on">30 dagen</button><button data-d="90">90 dagen</button></div>
     <div id="insBody"></div></div>
   <div id="programView" class="hidden"><h1>Coach</h1><div id="prgBody"></div></div>
+  <div id="recipesView" class="hidden"><div class="rchead"><h1>Recepten</h1><button class="round" id="rcNewBtn" aria-label="Nieuw recept"><svg class="ic"><use href="#i-plus"/></svg></button></div>
+    <input id="rcSearch" type="search" placeholder="Zoek recept of ingrediënt" enterkeyhint="search"><div id="rcList"></div></div>
   <div id="todayView">
   <div id="mini"></div>
   <div id="nav"><div><small class="brand">TR<b>E</b>CK</small><div id="day"></div><input id="datePick" type="date" aria-label="Kies een dag"></div>
@@ -454,7 +479,7 @@
   </div>
 </div></div>
 <nav id="tabs" class="hidden">
-  <button class="soon" data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
+  <button data-tab="recipes" data-i="i-book"><svg class="ic"><use href="#i-book"/></svg>Recepten</button>
   <button data-tab="insights" data-i="i-chart"><svg class="ic"><use href="#i-chart"/></svg>Inzichten</button>
   <button data-tab="today" class="act center" aria-label="Vandaag"><span><svg class="ic"><use href="#i-fork"/></svg></span></button>
   <button data-tab="plan" data-i="i-target"><svg class="ic"><use href="#i-target"/></svg>Coach</button>
@@ -522,13 +547,6 @@
   <div class="head"><button class="back" data-back><svg class="ic"><use href="#i-left"/></svg>Instellingen</button><b>Mijn gerechten</b><button id="mealNew">Nieuw</button></div>
   <ul class="group" id="mealList"></ul>
 </div></div>
-  <div class="group big"><b id="goalKcal"></b><span id="goalHint"></span></div>
-  <h2>Voortgang naar een persoonlijk doel</h2>
-  <div class="group">
-    <div class="cell" style="flex-wrap:wrap"><div>Gelogde dagen</div><span class="val" id="gDays"></span><div class="aibar" style="flex-basis:100%;padding:0 0 12px"><span><i id="gDaysBar"></i></span></div></div>
-    <div class="cell" style="flex-wrap:wrap"><div>Wegingen<small>Minstens 2, een week uit elkaar</small></div><span class="val" id="gW"></span><div class="aibar" style="flex-basis:100%;padding:0 0 12px"><span><i id="gWBar"></i></span></div></div>
-  </div>
-</div></div>
 <div id="progSheet" class="sheet hidden"><div class="card">
   <div class="head"><button data-x>Annuleer</button><b>Mijn doel</b><button id="progSave">Bewaar</button></div>
   <h2>Doel</h2><div class="group">
@@ -577,9 +595,18 @@
 <div id="acts" class="sheet hidden"><div class="as"><div class="group" id="actsList"></div><div class="group"><button class="cell" id="actsX"><div>Annuleer</div></button></div></div></div>
 <div id="ask" class="sheet alert hidden"><div class="card"><b id="askT"></b><p id="askM"></p><input id="askIn"><div class="status" id="askS"></div>
   <div class="btns"><button id="askX">Annuleer</button><button id="askOk">Bewaar</button></div></div></div>
+<div id="rcSheet" class="sheet hidden"><div class="card"><div class="head"><button id="rcClose">Sluit</button><b>Recept</b><span></span></div><div id="rcBody"></div></div></div>
+<div id="rcNew" class="sheet hidden"><div class="card"><div class="head"><button id="rcNewX">Annuleer</button><b>Nieuw recept</b><button id="rcNewOk">Plaats</button></div>
+  <label id="rcPhotoL"><svg class="ic"><use href="#i-camera"/></svg>Foto toevoegen<input id="rcPhotoIn" type="file" accept="image/*" hidden></label>
+  <div class="group"><input id="rcTitle" placeholder="Titel, bijv. Romige kip-pesto pasta" maxlength="80"><label class="cell">Porties<input id="rcServ" type="number" inputmode="numeric" min="1" value="2" style="width:70px;text-align:right"></label></div>
+  <div class="group"><textarea id="rcText" rows="8" placeholder="Ingrediënten met hoeveelheden, daarna de bereiding"></textarea></div>
+  <h2>Per portie</h2><div class="group rcnum"><label>kcal<input id="rcK" type="number" inputmode="numeric"></label><label>Eiwit g<input id="rcP" type="number" inputmode="numeric"></label><label>Koolh. g<input id="rcC" type="number" inputmode="numeric"></label><label>Vet g<input id="rcV" type="number" inputmode="numeric"></label></div>
+  <button class="btn ai" id="rcAi">Bereken macro's met AI</button><div id="rcNewS" class="status"></div>
+</div></div>
 <div id="toast" class="hidden"></div>
 <script src="app.js"></script>
 <script src="insights.js"></script>
 <script src="program.js"></script>
+<script src="recipes.js"></script>
 </body>
 </html>

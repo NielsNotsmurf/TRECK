@@ -71,6 +71,15 @@ Invoer: ${text}`;
   return JSON.parse(out || '{"acts":[]}').acts || [];
 }
 
+// 14 nov: macro's per portie van een recept (receptenblog).
+const REC = { type: 'OBJECT', properties: Object.fromEntries(['kcal', 'protein_g', 'carbs_g', 'fat_g'].map((k) => [k, { type: 'NUMBER' }])), required: ['kcal', 'protein_g', 'carbs_g', 'fat_g'] };
+export async function recept({ title, body, servings }, env, userId) {
+  const p = `Bereken de voedingswaarde PER PORTIE van dit recept (${servings || 1} porties). Tel de ingrediënten op en deel door het aantal porties. Geef kcal, protein_g, carbs_g, fat_g als afgeronde getallen.
+Recept: ${title}
+${body}`;
+  return JSON.parse(await ask([{ text: p }], { responseMimeType: 'application/json', responseSchema: REC }, env, userId, true) || '{}');
+}
+
 // Fase 12: vrije tekst (AI-samenvatting in Inzichten); zelfde limiet en teller.
 export const tekst = (prompt, env, userId) => ask([{ text: prompt }], {}, env, userId, true);
 

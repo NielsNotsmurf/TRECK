@@ -7,6 +7,7 @@ import * as push from './push.js';
 import * as ai from './ai.js';
 import * as insights from './insights.js';
 import * as program from './program.js';
+import * as recipes from './recipes.js';
 
 export default {
   async fetch(request, env) {
@@ -29,6 +30,12 @@ export default {
     if (route === 'GET /api/program') return program.show(ctx);
     if (route === 'POST /api/program') return program.save(ctx);
     if (route === 'POST /api/advice') return program.advice(ctx);
+    if (route === 'GET /api/recipes') return recipes.get(ctx);
+    if (route === 'POST /api/recipes') return recipes.post(ctx);
+    if (route === 'DELETE /api/recipes') return recipes.del(ctx);
+    if (route === 'POST /api/recipes/macros') return recipes.macros(ctx);
+    if (route === 'POST /api/comments') return recipes.comment(ctx);
+    if (route === 'DELETE /api/comments') return recipes.uncomment(ctx);
     if (route === 'POST /api/plan') return ai.plan(ctx);
     if (route === 'POST /api/transcribe') return ai.transcribe(ctx);
     if (route === 'POST /api/analyze') return analyze.onRequestPost(ctx);
